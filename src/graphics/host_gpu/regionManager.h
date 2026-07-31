@@ -16,7 +16,8 @@
 #include <windows.h>
 #undef min
 #undef max
-#elif defined(__APPLE__)
+#elif KYTY_PLATFORM == KYTY_PLATFORM_MACOS || defined(__APPLE__)
+#include <mach/mach.h>
 #include <pthread.h>
 #elif defined(__linux__)
 #include <sys/syscall.h>
@@ -52,9 +53,9 @@ private:
 	static uint32_t CurrentThread() noexcept {
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 		return GetCurrentThreadId();
-#elif defined(__APPLE__)
+#elif KYTY_PLATFORM == KYTY_PLATFORM_MACOS || defined(__APPLE__)
 		// mach thread port is a nonzero per-thread id (0 is the "no owner" sentinel).
-		return static_cast<uint32_t>(pthread_mach_thread_np(pthread_self()));
+		return static_cast<uint32_t>(mach_thread_self());
 #elif defined(__linux__)
 		static thread_local const uint32_t tid = static_cast<uint32_t>(::syscall(SYS_gettid));
 		return tid;
@@ -95,13 +96,17 @@ public:
 	void ChangeState(uint64_t vaddr, uint64_t size) {
 		const auto [start, end] = GetPageRange(vaddr, size);
 		if constexpr (source == DirtySource::Cpu && enable) {
-			if (RegionBits(m_gpu_dirty, start, end).Any()) {
-				EXIT("CPU dirty state conflicts with GPU dirty state\n");
+			for (auto page = start; page < end; page++) {
+				if (m_gpu_dirty.test(page)) {
+					EXIT("CPU dirty state conflicts with GPU dirty or pending fault state\n");
+				}
 			}
 		}
 		if constexpr (source == DirtySource::Gpu && enable) {
-			if (RegionBits(m_cpu_dirty, start, end).Any()) {
-				EXIT("GPU dirty state conflicts with CPU dirty state\n");
+			for (auto page = start; page < end; page++) {
+				if (m_cpu_dirty.test(page)) {
+					EXIT("GPU dirty state conflicts with CPU dirty or pending fault state\n");
+				}
 			}
 		}
 		auto& bits = GetBits<source>();

@@ -629,3 +629,12 @@ endif()
 if(KYTY_CLANG_CL)
 	install(FILES "${KYTY_THIRD_PARTY_DIR}/winpthread/bin/libwinpthread-1.dll" DESTINATION .)
 endif()
+
+if(BUILD_TESTING)
+	add_executable(metal_runtime_integration_tests EXCLUDE_FROM_ALL
+		"${KYTY_TESTS_DIR}/MetalRuntimeIntegrationTests.cpp"
+	)
+	target_link_libraries(metal_runtime_integration_tests common ${kyty_emulator_link_libraries})
+	target_include_directories(metal_runtime_integration_tests PRIVATE ${inc_headers})
+endif()
+

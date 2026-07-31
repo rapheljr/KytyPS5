@@ -109,7 +109,8 @@ public:
 		static_assert(std::is_nothrow_invocable_v<UploadFunc&>);
 		CheckNotInUploadCallback();
 		Iterate<true>(vaddr, size, [](RegionManager*, uint64_t, uint64_t) {});
-		const auto* previous_upload_owner = std::exchange(s_upload_owner, this);
+		const auto* previous_upload_owner = GetUploadOwner();
+		SetUploadOwner(this);
 		Iterate<false>(vaddr, size, [&](RegionManager* manager, uint64_t offset, uint64_t bytes) {
 			manager->lock.lock();
 			manager->ForEachModifiedRange<DirtySource::Cpu, true>(manager->GetCpuAddr() + offset,
@@ -127,15 +128,20 @@ public:
 				               manager->lock.unlock();
 			               });
 		}
-		s_upload_owner = previous_upload_owner;
+		SetUploadOwner(previous_upload_owner);
 	}
 
 private:
 	static constexpr size_t REGION_COUNT = TRACKER_ADDRESS_SIZE / TRACKER_REGION_SIZE;
+
+	static const MemoryTracker* GetUploadOwner() noexcept;
+	static void SetUploadOwner(const MemoryTracker* owner) noexcept;
+#if !defined(__APPLE__)
 	inline static thread_local const MemoryTracker* s_upload_owner = nullptr;
+#endif
 
 	void CheckNotInUploadCallback() const noexcept {
-		if (s_upload_owner == this) {
+		if (GetUploadOwner() == this) {
 			EXIT("memory tracker re-entered from upload callback\n");
 		}
 	}

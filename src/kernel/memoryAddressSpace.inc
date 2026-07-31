@@ -62,7 +62,7 @@ public:
 			CloseHandle(m_handle);
 			m_handle = nullptr;
 		}
-#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX
+#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
 #if defined(__APPLE__)
 		{
 			char shm_name[64];
@@ -111,7 +111,7 @@ public:
 		if (m_handle != nullptr) {
 			CloseHandle(m_handle);
 		}
-#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX
+#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
 		for (const auto& [_, entry]: m_maps) {
 			EXIT_IF(
 			    !UnmapViewPreservePlaceholder(reinterpret_cast<void*>(entry.vaddr), entry.size));
@@ -145,7 +145,7 @@ public:
 	[[nodiscard]] bool IsAvailable() const {
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 		return m_handle != nullptr && m_backing_base != nullptr;
-#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX
+#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
 		return m_fd >= 0 && m_backing_base != nullptr;
 #else
 		return false;
@@ -567,8 +567,9 @@ private:
 		return UnmapViewOfFile2(GetCurrentProcess(), vaddr, MEM_PRESERVE_PLACEHOLDER) != 0;
 	}
 
-	HANDLE m_handle = nullptr;
-#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX
+	HANDLE   m_handle      = nullptr;
+	uint64_t m_granularity = 0x10000;
+#elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
 	[[nodiscard]] static uint64_t GetMappableTestSize() { return 0x4000; }
 
 	static int GetProtect(VirtualMemory::Mode mode) {

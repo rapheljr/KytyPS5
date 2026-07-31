@@ -14,6 +14,13 @@
 #include <mutex>
 #include <vector>
 
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <pthread.h>
+#include <shared_mutex>
+#include <unordered_map>
+#endif
+
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -48,6 +55,49 @@ constexpr uint64_t REGION_PAGES = REGION_SIZE / PAGE_SIZE;
 constexpr uint32_t NO_ACCESS_PROTECTION  = PAGE_NOACCESS;
 constexpr uint32_t READ_ONLY_PROTECTION  = PAGE_READONLY;
 constexpr uint32_t READ_WRITE_PROTECTION = PAGE_READWRITE;
+// Zero is the unknown protection sentinel.
+constexpr uint32_t UNKNOWN_PROTECTION = 0;
+
+#if defined(__APPLE__)
+namespace {
+constexpr size_t MAX_FAULT_THREADS = 64;
+std::atomic<mach_port_t> g_fault_threads[MAX_FAULT_THREADS] {};
+
+bool GetInFaultResolution() noexcept {
+	const mach_port_t self = mach_thread_self();
+	for (size_t i = 0; i < MAX_FAULT_THREADS; i++) {
+		if (g_fault_threads[i].load(std::memory_order_relaxed) == self) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void SetInFaultResolution(bool value) noexcept {
+	const mach_port_t self = mach_thread_self();
+	if (value) {
+		for (size_t i = 0; i < MAX_FAULT_THREADS; i++) {
+			mach_port_t expected = 0;
+			if (g_fault_threads[i].compare_exchange_strong(expected, self, std::memory_order_relaxed)) {
+				return;
+			}
+		}
+	} else {
+		for (size_t i = 0; i < MAX_FAULT_THREADS; i++) {
+			if (g_fault_threads[i].load(std::memory_order_relaxed) == self) {
+				g_fault_threads[i].store(0, std::memory_order_relaxed);
+				return;
+			}
+		}
+	}
+}
+} // anonymous namespace
+#define g_in_fault_resolution GetInFaultResolution()
+#define SET_IN_FAULT_RESOLUTION(v) SetInFaultResolution(v)
+#else
+thread_local bool g_in_fault_resolution = false;
+#define SET_IN_FAULT_RESOLUTION(v) (g_in_fault_resolution = (v))
+#endif
 
 [[noreturn]] void FailFast(const char* reason = nullptr) noexcept {
 	std::fputs("PageManager fail-fast: ", stderr);
@@ -95,6 +145,24 @@ Common::VirtualMemory::Mode ToMemoryMode(uint32_t protection) {
 	}
 }
 
+uint32_t CurrentThread() noexcept {
+#if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
+	return GetCurrentThreadId();
+#elif defined(__APPLE__)
+	return static_cast<uint32_t>(mach_thread_self());
+#elif defined(__linux__)
+	static thread_local const uint32_t tid = [] {
+		const auto raw = static_cast<uint32_t>(::syscall(SYS_gettid));
+		if (raw == 0) {
+			FailFast("gettid returned the reserved zero owner token");
+		}
+		return raw;
+	}();
+	return tid;
+#else
+	FailFast("page tracking thread identity is unsupported on this platform");
+#endif
+}
 class SpinGuard final {
 public:
 	explicit SpinGuard(std::atomic_flag& lock): m_lock(lock) {
@@ -375,4 +443,208 @@ void PageManager::OnGpuMap(uint64_t, uint64_t) {}
 
 void PageManager::OnGpuUnmap(uint64_t, uint64_t) {}
 
+PageManager::BackingWrite::BackingWrite(PageManager& manager, uint64_t vaddr,
+                                        uint64_t size) noexcept
+    : m_manager(manager), m_vaddr(vaddr), m_size(size) {
+	m_manager.BeginBackingWrite(vaddr, size);
+}
+
+PageManager::BackingWrite::~BackingWrite() {
+	m_manager.EndBackingWrite(m_vaddr, m_size);
+}
+
+std::vector<std::unique_ptr<PageManager::BackingWrite>>
+PageManager::ReserveBackingWrites(std::span<const RangeSet::Range> ranges) {
+	if (ranges.empty()) {
+		Fatal("cannot reserve empty backing-write ranges");
+	}
+	std::vector<std::unique_ptr<BackingWrite>> writes;
+	writes.reserve(ranges.size());
+	uint64_t begin = 0;
+	uint64_t end   = 0;
+	for (const auto& range: ranges) {
+		if (range.address == 0 || range.size == 0 || range.size > UINT64_MAX - range.address ||
+		    range.address + range.size > UINT64_MAX - (PAGE_SIZE - 1)) {
+			Fatal("invalid backing-write range");
+		}
+		const auto page_begin = PageStart(range.address);
+		const auto page_end   = PageStart(range.address + range.size + PAGE_SIZE - 1);
+		if (begin != 0 && page_begin > end) {
+			writes.push_back(std::make_unique<BackingWrite>(*this, begin, end - begin));
+			begin = 0;
+		}
+		if (begin == 0) {
+			begin = page_begin;
+			end   = page_end;
+		} else {
+			end = std::max(end, page_end);
+		}
+	}
+	writes.push_back(std::make_unique<BackingWrite>(*this, begin, end - begin));
+	return writes;
+}
+
+void PageManager::BeginBackingWrite(uint64_t vaddr, uint64_t size) noexcept {
+	if (g_in_fault_resolution) {
+		FailFast("backing write began during fault resolution");
+	}
+	const auto end    = PageEnd(vaddr, size);
+	const auto writer = CurrentThread();
+	for (auto address = PageStart(vaddr); address < end; address += PAGE_SIZE) {
+		auto* region = m_impl->FindRegion(address);
+		if (region == nullptr) {
+			Fatal("backing write reserves an unknown page at 0x%016" PRIx64, address);
+		}
+		auto&     page = m_impl->GetPage(*region, address);
+		SpinGuard lock(page.lock);
+		if (page.resolving || page.backing_writer != 0 || page.access_watchers == 0) {
+			Fatal("backing write races page resolution at 0x%016" PRIx64, address);
+		}
+		page.resolving            = true;
+		page.resolving_read_write = true;
+		page.backing_writer       = writer;
+	}
+}
+
+void PageManager::EndBackingWrite(uint64_t vaddr, uint64_t size) noexcept {
+	if (g_in_fault_resolution) {
+		FailFast("backing write ended during fault resolution");
+	}
+	const auto end    = PageEnd(vaddr, size);
+	const auto writer = CurrentThread();
+	for (auto address = PageStart(vaddr); address < end; address += PAGE_SIZE) {
+		auto* region = m_impl->FindRegion(address);
+		if (region == nullptr) {
+			FailFast("backing write ended for an unknown page");
+		}
+		auto&     page = m_impl->GetPage(*region, address);
+		SpinGuard lock(page.lock);
+		if (!page.resolving || page.backing_writer != writer) {
+			FailFast("backing write ended without matching owner and resolving state");
+		}
+		const auto old_protection = NO_ACCESS_PROTECTION;
+		const auto new_protection = Impl::WatcherProtection(page);
+		if (new_protection != old_protection) {
+			m_impl->Protect(page, address, new_protection, old_protection, false);
+		}
+		Impl::PublishDelayedFaults(page, old_protection, new_protection);
+		if (page.write_watchers == 0 && page.access_watchers == 0) {
+			page.original_protection = 0;
+		}
+		page.backing_writer       = 0;
+		page.resolving            = false;
+		page.resolving_read_write = false;
+	}
+}
+
+bool PageManager::HandleFault(PageFaultAccess access, uint64_t fault_vaddr) noexcept {
+	if (g_in_fault_resolution) {
+		FailFast("nested HandleFault call");
+	}
+	auto* region = m_impl->FindRegion(fault_vaddr);
+	if (region == nullptr) {
+		return false;
+	}
+	auto& page   = m_impl->GetPage(*region, fault_vaddr);
+	bool  waited = false;
+	while (true) {
+		SpinGuard lock(page.lock);
+		if (access == PageFaultAccess::Read && page.late_read_pending &&
+		    Impl::AllowsAccess(page, fault_vaddr, access)) {
+			page.late_read_pending = false;
+			return true;
+		}
+		if (access == PageFaultAccess::Write && page.late_write_pending &&
+		    Impl::AllowsAccess(page, fault_vaddr, access)) {
+			page.late_write_pending = false;
+			return true;
+		}
+		if (page.resolving) {
+			if (page.backing_writer == CurrentThread()) {
+				FailFast("backing writer faulted on its own reserved page");
+			}
+			if ((!page.resolving_read_write && access != PageFaultAccess::Write) ||
+			    (page.resolving_read_write && access != PageFaultAccess::Read &&
+			     access != PageFaultAccess::Write)) {
+				FailFast("fault access is incompatible with the active resolver");
+			}
+			waited = true;
+			continue;
+		}
+		if (page.write_watchers == 0 && page.access_watchers == 0) {
+			if (access != PageFaultAccess::Read && access != PageFaultAccess::Write) {
+				return false;
+			}
+			bool&      pending = (access == PageFaultAccess::Read ? page.late_read_pending
+			                                                      : page.late_write_pending);
+			const bool allowed = Impl::AllowsAccess(page, fault_vaddr, access);
+			pending            = false;
+			if (waited && !allowed) {
+				FailFast("page remained inaccessible after waiting for its resolver");
+			}
+			// More than one CPU can fault before a protection transition becomes visible. The first
+			// delayed fault consumes the hint bit; later faults must also resume once the mapped
+			// page already permits the requested access. A genuinely read-only/no-access page still
+			// falls through to the guest exception path.
+			return allowed;
+		}
+		if ((access != PageFaultAccess::Read && access != PageFaultAccess::Write) ||
+		    (access == PageFaultAccess::Read && page.access_watchers == 0)) {
+			FailFast("fault access is incompatible with active page watchers");
+		}
+		page.resolving            = true;
+		page.resolving_read_write = page.access_watchers != 0;
+		break;
+	}
+	SET_IN_FAULT_RESOLUTION(true);
+	const bool handled    = m_impl->fault_handler(m_impl->fault_context, access, fault_vaddr, 1,
+	                                              PageFaultPhase::Invalidate);
+	SET_IN_FAULT_RESOLUTION(false);
+	{
+		SpinGuard lock(page.lock);
+		if (!handled || !page.resolving) {
+			FailFast("fault invalidation did not preserve the resolving state");
+		}
+	}
+	SET_IN_FAULT_RESOLUTION(true);
+	const bool completed  = m_impl->fault_handler(m_impl->fault_context, access, fault_vaddr, 1,
+	                                              PageFaultPhase::Complete);
+	SET_IN_FAULT_RESOLUTION(false);
+	{
+		SpinGuard lock(page.lock);
+		if (!completed || !page.resolving) {
+			FailFast("fault completion did not preserve the resolving state");
+		}
+		if (page.write_watchers != 0 || page.access_watchers != 0) {
+			const auto old_protection  = Impl::WatcherProtection(page);
+			const bool read_only_fault = access == PageFaultAccess::Read;
+			if (read_only_fault && page.access_watchers == 0) {
+				FailFast("read fault completed without a read/write watcher");
+			}
+			page.access_watchers = 0;
+			if (!read_only_fault) {
+				page.write_watchers = 0;
+			}
+			const auto restored_protection = Impl::WatcherProtection(page);
+			m_impl->Protect(page, PageStart(fault_vaddr), restored_protection, old_protection,
+			                true);
+			if (page.write_watchers == 0) {
+				page.original_protection = 0;
+			}
+			Impl::PublishDelayedFaults(page, old_protection, restored_protection);
+		} else if (!Impl::AllowsAccess(page, fault_vaddr, access)) {
+			FailFast("fault completion left the page inaccessible");
+		}
+		page.resolving            = false;
+		page.resolving_read_write = false;
+	}
+	SET_IN_FAULT_RESOLUTION(true);
+	const bool released   = m_impl->fault_handler(m_impl->fault_context, access, fault_vaddr, 1,
+	                                              PageFaultPhase::Release);
+	SET_IN_FAULT_RESOLUTION(false);
+	if (!released) {
+		FailFast("fault release callback failed");
+	}
+	return true;
+}
 } // namespace Libs::Graphics
