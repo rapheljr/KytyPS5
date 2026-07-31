@@ -843,7 +843,7 @@ static void ApplySignalUcontext(CONTEXT* dst_ctx, const SignalUcontext& src_ctx)
 }
 #endif
 
-#if KYTY_PLATFORM != KYTY_PLATFORM_WINDOWS && defined(__x86_64__)
+#if KYTY_PLATFORM != KYTY_PLATFORM_WINDOWS
 
 static SignalUcontext CreateSignalUcontextFromHost(const ucontext_t* host_ctx) {
 	SignalUcontext ctx = {};
@@ -852,8 +852,31 @@ static SignalUcontext CreateSignalUcontextFromHost(const ucontext_t* host_ctx) {
 	}
 
 #if defined(__APPLE__)
-	const auto& ss = host_ctx->uc_mcontext->__ss;
-
+	const auto* mc = host_ctx->uc_mcontext;
+#if defined(__arm64__) || defined(__aarch64__)
+	const auto& ss = mc->__ss;
+	ctx.uc_mcontext.mc_rdi    = ss.__x[0];
+	ctx.uc_mcontext.mc_rsi    = ss.__x[1];
+	ctx.uc_mcontext.mc_rdx    = ss.__x[2];
+	ctx.uc_mcontext.mc_rcx    = ss.__x[3];
+	ctx.uc_mcontext.mc_r8     = ss.__x[4];
+	ctx.uc_mcontext.mc_r9     = ss.__x[5];
+	ctx.uc_mcontext.mc_rax    = ss.__x[0];
+	ctx.uc_mcontext.mc_rbx    = ss.__x[19];
+	ctx.uc_mcontext.mc_rbp    = ss.__fp;
+	ctx.uc_mcontext.mc_r10    = ss.__x[10];
+	ctx.uc_mcontext.mc_r11    = ss.__x[11];
+	ctx.uc_mcontext.mc_r12    = ss.__x[12];
+	ctx.uc_mcontext.mc_r13    = ss.__x[13];
+	ctx.uc_mcontext.mc_r14    = ss.__x[14];
+	ctx.uc_mcontext.mc_r15    = ss.__x[15];
+	ctx.uc_mcontext.mc_rip    = ss.__pc;
+	ctx.uc_mcontext.mc_rsp    = ss.__sp;
+	ctx.uc_mcontext.mc_rflags = ss.__cpsr;
+	ctx.uc_mcontext.mc_len    = sizeof(SignalMcontext);
+	return ctx;
+#else
+	const auto& ss = mc->__ss;
 	ctx.uc_mcontext.mc_rdi    = ss.__rdi;
 	ctx.uc_mcontext.mc_rsi    = ss.__rsi;
 	ctx.uc_mcontext.mc_rdx    = ss.__rdx;
@@ -876,10 +899,33 @@ static SignalUcontext CreateSignalUcontextFromHost(const ucontext_t* host_ctx) {
 	ctx.uc_mcontext.mc_gs     = static_cast<uint16_t>(ss.__gs & 0xffffu);
 	ctx.uc_mcontext.mc_fs     = static_cast<uint16_t>(ss.__fs & 0xffffu);
 	ctx.uc_mcontext.mc_len    = sizeof(SignalMcontext);
-
+	return ctx;
+#endif
+#else
+	const auto* mc = &host_ctx->uc_mcontext;
+#if defined(__aarch64__)
+	ctx.uc_mcontext.mc_rdi    = mc->regs[0];
+	ctx.uc_mcontext.mc_rsi    = mc->regs[1];
+	ctx.uc_mcontext.mc_rdx    = mc->regs[2];
+	ctx.uc_mcontext.mc_rcx    = mc->regs[3];
+	ctx.uc_mcontext.mc_r8     = mc->regs[4];
+	ctx.uc_mcontext.mc_r9     = mc->regs[5];
+	ctx.uc_mcontext.mc_rax    = mc->regs[0];
+	ctx.uc_mcontext.mc_rbx    = mc->regs[19];
+	ctx.uc_mcontext.mc_rbp    = mc->regs[29];
+	ctx.uc_mcontext.mc_r10    = mc->regs[10];
+	ctx.uc_mcontext.mc_r11    = mc->regs[11];
+	ctx.uc_mcontext.mc_r12    = mc->regs[12];
+	ctx.uc_mcontext.mc_r13    = mc->regs[13];
+	ctx.uc_mcontext.mc_r14    = mc->regs[14];
+	ctx.uc_mcontext.mc_r15    = mc->regs[15];
+	ctx.uc_mcontext.mc_rip    = mc->pc;
+	ctx.uc_mcontext.mc_rsp    = mc->sp;
+	ctx.uc_mcontext.mc_rflags = mc->pstate;
+	ctx.uc_mcontext.mc_len    = sizeof(SignalMcontext);
 	return ctx;
 #else
-	const auto* gregs = host_ctx->uc_mcontext.gregs;
+	const auto* gregs = mc->gregs;
 
 	ctx.uc_mcontext.mc_rdi    = static_cast<uint64_t>(gregs[REG_RDI]);
 	ctx.uc_mcontext.mc_rsi    = static_cast<uint64_t>(gregs[REG_RSI]);
@@ -900,7 +946,6 @@ static SignalUcontext CreateSignalUcontextFromHost(const ucontext_t* host_ctx) {
 	ctx.uc_mcontext.mc_rsp    = static_cast<uint64_t>(gregs[REG_RSP]);
 	ctx.uc_mcontext.mc_rflags = static_cast<uint64_t>(gregs[REG_EFL]);
 
-	// Linux packs cs/gs/fs into one greg.
 	const auto csgsfs      = static_cast<uint64_t>(gregs[REG_CSGSFS]);
 	ctx.uc_mcontext.mc_cs  = csgsfs & 0xffffu;
 	ctx.uc_mcontext.mc_gs  = static_cast<uint16_t>((csgsfs >> 16u) & 0xffffu);
@@ -908,6 +953,7 @@ static SignalUcontext CreateSignalUcontextFromHost(const ucontext_t* host_ctx) {
 	ctx.uc_mcontext.mc_len = sizeof(SignalMcontext);
 
 	return ctx;
+#endif
 #endif
 }
 
@@ -917,8 +963,28 @@ static void ApplySignalUcontextToHost(ucontext_t* dst_ctx, const SignalUcontext&
 	}
 
 #if defined(__APPLE__)
-	auto& ss = dst_ctx->uc_mcontext->__ss;
-
+	auto* mc = dst_ctx->uc_mcontext;
+#if defined(__arm64__) || defined(__aarch64__)
+	auto& ss = mc->__ss;
+	ss.__x[0]  = src_ctx.uc_mcontext.mc_rdi;
+	ss.__x[1]  = src_ctx.uc_mcontext.mc_rsi;
+	ss.__x[2]  = src_ctx.uc_mcontext.mc_rdx;
+	ss.__x[3]  = src_ctx.uc_mcontext.mc_rcx;
+	ss.__x[4]  = src_ctx.uc_mcontext.mc_r8;
+	ss.__x[5]  = src_ctx.uc_mcontext.mc_r9;
+	ss.__x[19] = src_ctx.uc_mcontext.mc_rbx;
+	ss.__fp    = src_ctx.uc_mcontext.mc_rbp;
+	ss.__x[10] = src_ctx.uc_mcontext.mc_r10;
+	ss.__x[11] = src_ctx.uc_mcontext.mc_r11;
+	ss.__x[12] = src_ctx.uc_mcontext.mc_r12;
+	ss.__x[13] = src_ctx.uc_mcontext.mc_r13;
+	ss.__x[14] = src_ctx.uc_mcontext.mc_r14;
+	ss.__x[15] = src_ctx.uc_mcontext.mc_r15;
+	ss.__pc    = src_ctx.uc_mcontext.mc_rip;
+	ss.__sp    = src_ctx.uc_mcontext.mc_rsp;
+	ss.__cpsr  = static_cast<uint32_t>(src_ctx.uc_mcontext.mc_rflags);
+#else
+	auto& ss = mc->__ss;
 	ss.__rdi    = src_ctx.uc_mcontext.mc_rdi;
 	ss.__rsi    = src_ctx.uc_mcontext.mc_rsi;
 	ss.__rdx    = src_ctx.uc_mcontext.mc_rdx;
@@ -937,10 +1003,29 @@ static void ApplySignalUcontextToHost(ucontext_t* dst_ctx, const SignalUcontext&
 	ss.__rip    = src_ctx.uc_mcontext.mc_rip;
 	ss.__rsp    = src_ctx.uc_mcontext.mc_rsp;
 	ss.__rflags = src_ctx.uc_mcontext.mc_rflags;
-	// Segment selectors are left untouched; XNU validates them on sigreturn.
+#endif
 #else
-	auto* gregs = dst_ctx->uc_mcontext.gregs;
-
+	auto* mc = &dst_ctx->uc_mcontext;
+#if defined(__aarch64__)
+	mc->regs[0]  = src_ctx.uc_mcontext.mc_rdi;
+	mc->regs[1]  = src_ctx.uc_mcontext.mc_rsi;
+	mc->regs[2]  = src_ctx.uc_mcontext.mc_rdx;
+	mc->regs[3]  = src_ctx.uc_mcontext.mc_rcx;
+	mc->regs[4]  = src_ctx.uc_mcontext.mc_r8;
+	mc->regs[5]  = src_ctx.uc_mcontext.mc_r9;
+	mc->regs[19] = src_ctx.uc_mcontext.mc_rbx;
+	mc->regs[29] = src_ctx.uc_mcontext.mc_rbp;
+	mc->regs[10] = src_ctx.uc_mcontext.mc_r10;
+	mc->regs[11] = src_ctx.uc_mcontext.mc_r11;
+	mc->regs[12] = src_ctx.uc_mcontext.mc_r12;
+	mc->regs[13] = src_ctx.uc_mcontext.mc_r13;
+	mc->regs[14] = src_ctx.uc_mcontext.mc_r14;
+	mc->regs[15] = src_ctx.uc_mcontext.mc_r15;
+	mc->pc       = src_ctx.uc_mcontext.mc_rip;
+	mc->sp       = src_ctx.uc_mcontext.mc_rsp;
+	mc->pstate   = src_ctx.uc_mcontext.mc_rflags;
+#else
+	auto* gregs = mc->gregs;
 	gregs[REG_RDI] = static_cast<greg_t>(src_ctx.uc_mcontext.mc_rdi);
 	gregs[REG_RSI] = static_cast<greg_t>(src_ctx.uc_mcontext.mc_rsi);
 	gregs[REG_RDX] = static_cast<greg_t>(src_ctx.uc_mcontext.mc_rdx);
@@ -959,8 +1044,7 @@ static void ApplySignalUcontextToHost(ucontext_t* dst_ctx, const SignalUcontext&
 	gregs[REG_RIP] = static_cast<greg_t>(src_ctx.uc_mcontext.mc_rip);
 	gregs[REG_RSP] = static_cast<greg_t>(src_ctx.uc_mcontext.mc_rsp);
 	gregs[REG_EFL] = static_cast<greg_t>(src_ctx.uc_mcontext.mc_rflags);
-
-	// The kernel validates packed segment selectors on sigreturn.
+#endif
 #endif
 }
 

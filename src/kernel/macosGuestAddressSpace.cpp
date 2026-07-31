@@ -1,4 +1,4 @@
-#if defined(__APPLE__) && defined(__x86_64__)
+#if defined(__APPLE__) && (defined(__x86_64__) || defined(__aarch64__) || defined(__arm64__))
 
 // Make the process own the guest ranges before any runtime initialization.
 asm(".zerofill SYSTEM_MANAGED,SYSTEM_MANAGED,__kyty_system_managed,0x7fffbc000");

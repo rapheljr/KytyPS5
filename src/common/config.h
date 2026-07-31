@@ -18,6 +18,16 @@
 #define KYTY_ENDIAN_BIG    1
 #define KYTY_ENDIAN_LITTLE 2
 
+#define KYTY_ARCH_X86_64 1
+#define KYTY_ARCH_ARM64  2
+
+#if defined(__x86_64__) || defined(_M_X64)
+#define KYTY_ARCH KYTY_ARCH_X86_64
+#elif defined(__arm64__) || defined(__aarch64__) || defined(_M_ARM64)
+#define KYTY_ARCH KYTY_ARCH_ARM64
+#endif
+
 #include "cmake_config.h"
 
 #endif /* KYTY_COMMON_CONFIG_H_ */
+

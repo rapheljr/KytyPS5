@@ -10,6 +10,10 @@ if(NOT KYTY_GENERATOR_IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
+if(APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
+	set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for macOS")
+endif()
+
 project(Kyty)
 
 set(KYTY_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -498,6 +502,219 @@ if(NOT KYTY_CLANG_CL)
 		target_compile_options(${kyty_exception_test} PRIVATE -fexceptions)
 	endforeach()
 endif()
+
+set(inc_headers
+	${KYTY_SOURCE_DIR}
+	${KYTY_THIRD_PARTY_DIR}/SDL2/include
+	${KYTY_THIRD_PARTY_DIR}/VulkanMemoryAllocator/include
+	${KYTY_THIRD_PARTY_DIR}/SPIRV-Tools/include
+	${KYTY_THIRD_PARTY_DIR}/fmt/include
+	${KYTY_THIRD_PARTY_DIR}/xxhash
+	${KYTY_THIRD_PARTY_DIR}/cpuinfo/include
+	${KYTY_THIRD_PARTY_DIR}/stb
+)
+
+if (KYTY_CLANG_CL)
+	list(APPEND kyty_emulator_link_libraries winpthread)
+	list(APPEND inc_headers
+		${KYTY_THIRD_PARTY_DIR}/winpthread/include
+	)
+endif()
+
+list(APPEND check_headers
+	${KYTY_SOURCE_DIR}
+)
+
+function(add_kyty_full_emulator_test target source)
+	add_executable(${target} EXCLUDE_FROM_ALL ${source} ${kyty_emulator_src})
+	target_link_libraries(${target} ${kyty_emulator_link_libraries})
+	target_include_directories(${target} PRIVATE ${inc_headers})
+	if (WIN32)
+		target_link_libraries(${target} iphlpapi)
+	endif()
+	if (KYTY_CLANG_CL)
+		target_link_libraries(${target} onecore)
+		add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${KYTY_THIRD_PARTY_DIR}/winpthread/bin/libwinpthread-1.dll" $<TARGET_FILE_DIR:${target}>/libwinpthread-1.dll)
+	endif()
+	# The macOS x86_64 guest address space needs its .zerofill segments anchored
+	# by linker flags, or the kernel kills the binary on load (posix_spawn EIO).
+	configure_macos_guest_address_space(${target})
+endfunction()
+
+function(configure_macos_guest_address_space target)
+	if(APPLE AND (CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
+			(NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")))
+		target_sources(${target} PRIVATE "${KYTY_SOURCE_DIR}/kernel/macosGuestAddressSpace.cpp")
+		target_compile_definitions(${target} PRIVATE KYTY_LINKED_GUEST_ADDRESS_SPACE=1)
+		target_link_options(${target} PRIVATE
+			-Wl,-ld_classic,-no_pie,-no_fixup_chains,-no_huge,-pagezero_size,0x40000,-segaddr,SYSTEM_MANAGED,0x40000,-segaddr,SYSTEM_RESERVED,0x7ffffc000,-segaddr,USER_AREA,0x7000000000,-image_base,0x700000000000)
+	endif()
+endfunction()
+
+add_executable(architecture_config_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ArchitectureConfigTests.cpp"
+)
+target_include_directories(architecture_config_tests PRIVATE ${inc_headers})
+
+add_executable(signal_handling_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/SignalHandlingTests.cpp"
+)
+target_link_libraries(signal_handling_tests common)
+target_include_directories(signal_handling_tests PRIVATE ${inc_headers})
+
+add_executable(mach_api_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/MachApiTests.cpp"
+)
+target_link_libraries(mach_api_tests common)
+target_include_directories(mach_api_tests PRIVATE ${inc_headers})
+
+add_executable(thread_identity_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ThreadIdentityTests.cpp"
+)
+target_link_libraries(thread_identity_tests common)
+target_include_directories(thread_identity_tests PRIVATE ${inc_headers})
+
+add_executable(executable_memory_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ExecutableMemoryTests.cpp"
+)
+target_link_libraries(executable_memory_tests common)
+target_include_directories(executable_memory_tests PRIVATE ${inc_headers})
+
+add_executable(rosetta_workaround_matrix_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/RosettaWorkaroundMatrixTests.cpp"
+)
+target_link_libraries(rosetta_workaround_matrix_tests common)
+target_include_directories(rosetta_workaround_matrix_tests PRIVATE ${inc_headers})
+
+add_kyty_full_emulator_test(shader_cfg_tests "${KYTY_TESTS_DIR}/shaderCfgTests.cpp")
+
+add_executable(scalar_provenance_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ScalarProvenanceTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ReadLaneElimination.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ScalarProvenance.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/SrtWalker.cpp"
+)
+target_link_libraries(scalar_provenance_tests fmt::fmt)
+target_include_directories(scalar_provenance_tests PRIVATE ${inc_headers})
+
+add_executable(page_manager_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/PageManagerTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/pageManager.cpp"
+)
+target_include_directories(page_manager_tests PRIVATE ${inc_headers})
+
+add_executable(bit_array_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/BitArrayTests.cpp"
+)
+target_include_directories(bit_array_tests PRIVATE ${inc_headers})
+
+add_executable(memory_tracker_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/MemoryTrackerTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/pageManager.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/memoryTracker.cpp"
+)
+target_link_libraries(memory_tracker_tests fmt::fmt common)
+target_include_directories(memory_tracker_tests PRIVATE ${inc_headers})
+
+add_executable(shader_vertex_metadata_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ShaderVertexMetadataTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/shaderVertexMetadata.cpp"
+)
+target_include_directories(shader_vertex_metadata_tests PRIVATE ${inc_headers})
+
+add_executable(shader_stage_runtime_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ShaderStageRuntimeTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/gpu_format.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/shaderStageRuntime.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ResourceMaterialization.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ScalarProvenance.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/SrtWalker.cpp"
+)
+target_link_libraries(shader_stage_runtime_tests fmt::fmt)
+target_include_directories(shader_stage_runtime_tests PRIVATE ${inc_headers})
+
+add_executable(resource_tracking_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ResourceTrackingTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/gpu_format.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ScalarProvenance.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/SrtWalker.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/SrtPatcher.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ResourceTracking.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ResourceMaterialization.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/ShaderInfoCollection.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/BindingLayout.cpp"
+)
+target_link_libraries(resource_tracking_tests fmt::fmt)
+target_include_directories(resource_tracking_tests PRIVATE ${inc_headers})
+
+add_executable(resource_mutex_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ResourceMutexTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/cache/resourceMutex.cpp"
+)
+target_link_libraries(resource_mutex_tests common)
+target_include_directories(resource_mutex_tests PRIVATE ${inc_headers})
+
+add_executable(audio_out2_port_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/AudioOut2PortTests.cpp"
+	"${KYTY_SOURCE_DIR}/libs/libAudio2.cpp"
+	"${KYTY_SOURCE_DIR}/loader/timer.cpp"
+)
+target_link_libraries(audio_out2_port_tests common fmt::fmt)
+target_include_directories(audio_out2_port_tests PRIVATE ${inc_headers})
+
+add_executable(event_queue_lifetime_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/EventQueueLifetimeTests.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/eventQueue.cpp"
+	"${KYTY_SOURCE_DIR}/loader/timer.cpp"
+)
+target_link_libraries(event_queue_lifetime_tests common fmt::fmt)
+target_include_directories(event_queue_lifetime_tests PRIVATE ${inc_headers})
+
+add_executable(image_page_table_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ImagePageTableTests.cpp"
+)
+target_link_libraries(image_page_table_tests common fmt::fmt)
+target_include_directories(image_page_table_tests PRIVATE ${inc_headers})
+
+add_kyty_full_emulator_test(shader_recompiler_compute_tests "${KYTY_TESTS_DIR}/ShaderRecompilerComputeTests.cpp")
+
+set(gpu_test_generated_dir "${PROJECT_BINARY_DIR}/gpu_test_shaders")
+set(gpu_test_ms_depth_source
+	"${gpu_tiler_shader_dir}/gpu_test_ms_depth.comp")
+set(gpu_test_ms_depth_spv
+	"${gpu_test_generated_dir}/gpu_test_ms_depth.spv")
+set(gpu_test_ms_depth_header
+	"${gpu_test_generated_dir}/gpu_test_ms_depth_spv.h")
+add_custom_command(
+	OUTPUT "${gpu_test_ms_depth_header}"
+	COMMAND ${CMAKE_COMMAND} -E make_directory "${gpu_test_generated_dir}"
+	COMMAND "${KYTY_GLSLANG_VALIDATOR}" -V --target-env vulkan1.0 -Os
+	        -o "${gpu_test_ms_depth_spv}" "${gpu_test_ms_depth_source}"
+	COMMAND ${CMAKE_COMMAND} -DINPUT=${gpu_test_ms_depth_spv}
+	        -DOUTPUT=${gpu_test_ms_depth_header} -DSYMBOL=GPU_TEST_MS_DEPTH_SPV
+	        -P "${KYTY_SOURCE_DIR}/embed_spirv.cmake"
+	DEPENDS "${gpu_test_ms_depth_source}"
+	VERBATIM
+)
+target_sources(shader_recompiler_compute_tests PRIVATE
+	"${gpu_test_ms_depth_header}")
+
+add_kyty_full_emulator_test(virtual_memory_allocation_tests "${KYTY_TESTS_DIR}/VirtualMemoryAllocationTests.cpp")
+target_compile_definitions(virtual_memory_allocation_tests PRIVATE
+	KYTY_VIRTUAL_MEMORY_ALLOCATION_TESTS=1)
+
+# These tests use exceptions.
+if(NOT KYTY_CLANG_CL)
+	foreach(kyty_exception_test scalar_provenance_tests resource_tracking_tests
+			virtual_memory_allocation_tests)
+		target_compile_options(${kyty_exception_test} PRIVATE -fexceptions)
+	endforeach()
+endif()
+>>>>>>> d65f396 (feat: macOS/Rosetta 2 platform maturation (Phases 1–4))
 
 if(BUILD_TESTING)
 	add_test(NAME ime_dialog COMMAND $<TARGET_FILE:ime_dialog_tests>)

@@ -370,7 +370,7 @@ static KYTY_SYSV_ABI void RunEntry(uint64_t addr, EntryParams* params, atexit_fu
 		guest_root_frame[0]    = 0;
 		guest_root_frame[1]    = 0;
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && defined(__x86_64__)
 		// Clang on macOS can allocate plain "r" inputs to r12/r13, which the template
 		// clobbers before consuming them. Pin the inputs to registers the SysV guest
 		// preserves without changing register allocation on Windows or Linux.
@@ -452,7 +452,7 @@ static KYTY_SYSV_ABI void RunEntry(uint64_t addr, EntryParams* params, atexit_fu
 
 	uintptr_t guest_root_frame[2] = {};
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && defined(__x86_64__)
 	register entry_func_t func_reg asm("rbx")      = func;
 	register uintptr_t    guest_rbp_reg asm("r14") = reinterpret_cast<uintptr_t>(guest_root_frame);
 #endif

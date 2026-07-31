@@ -353,6 +353,11 @@ bool SysVirtualFlushInstructionCache(uint64_t address, uint64_t size) {
 	return true;
 }
 
+bool SysVirtualSetJitWriteProtect(bool writable) {
+	KYTY_UNUSED(writable);
+	return true;
+}
+
 } // namespace Common
 
 #endif
