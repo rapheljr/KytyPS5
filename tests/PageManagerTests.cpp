@@ -87,6 +87,9 @@ uint32_t Protection(const void *address) {
 
   kern_return_t kr = mach_vm_region(mach_task_self(), &region_addr, &region_size, VM_REGION_BASIC_INFO_64,
                                      reinterpret_cast<vm_region_info_t>(&info), &count, &object_name);
+  if (MACH_PORT_VALID(object_name)) {
+    mach_port_deallocate(mach_task_self(), object_name);
+  }
   if (kr != KERN_SUCCESS || region_addr > query_addr || (region_addr + region_size) <= query_addr) {
     return 0; // Not mapped
   }

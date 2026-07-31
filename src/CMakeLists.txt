@@ -5,7 +5,7 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 4.0)
 endif()
 
 if(APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
-	set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for macOS" FORCE)
+	set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for macOS")
 endif()
 
 project(Kyty)
@@ -320,7 +320,7 @@ function(add_kyty_full_emulator_test target source)
 endfunction()
 
 function(configure_macos_guest_address_space target)
-	if(APPLE AND (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR
+	if(APPLE AND (CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
 			(NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")))
 		target_sources(${target} PRIVATE kernel/macosGuestAddressSpace.cpp)
 		target_compile_definitions(${target} PRIVATE KYTY_LINKED_GUEST_ADDRESS_SPACE=1)
@@ -328,6 +328,41 @@ function(configure_macos_guest_address_space target)
 			-Wl,-ld_classic,-no_pie,-no_fixup_chains,-no_huge,-pagezero_size,0x40000,-segaddr,SYSTEM_MANAGED,0x40000,-segaddr,SYSTEM_RESERVED,0x7ffffc000,-segaddr,USER_AREA,0x7000000000,-image_base,0x700000000000)
 	endif()
 endfunction()
+
+add_executable(architecture_config_tests EXCLUDE_FROM_ALL
+	../tests/ArchitectureConfigTests.cpp
+)
+target_include_directories(architecture_config_tests PRIVATE ${inc_headers})
+
+add_executable(signal_handling_tests EXCLUDE_FROM_ALL
+	../tests/SignalHandlingTests.cpp
+)
+target_link_libraries(signal_handling_tests common)
+target_include_directories(signal_handling_tests PRIVATE ${inc_headers})
+
+add_executable(mach_api_tests EXCLUDE_FROM_ALL
+	../tests/MachApiTests.cpp
+)
+target_link_libraries(mach_api_tests common)
+target_include_directories(mach_api_tests PRIVATE ${inc_headers})
+
+add_executable(thread_identity_tests EXCLUDE_FROM_ALL
+	../tests/ThreadIdentityTests.cpp
+)
+target_link_libraries(thread_identity_tests common)
+target_include_directories(thread_identity_tests PRIVATE ${inc_headers})
+
+add_executable(executable_memory_tests EXCLUDE_FROM_ALL
+	../tests/ExecutableMemoryTests.cpp
+)
+target_link_libraries(executable_memory_tests common)
+target_include_directories(executable_memory_tests PRIVATE ${inc_headers})
+
+add_executable(rosetta_workaround_matrix_tests EXCLUDE_FROM_ALL
+	../tests/RosettaWorkaroundMatrixTests.cpp
+)
+target_link_libraries(rosetta_workaround_matrix_tests common)
+target_include_directories(rosetta_workaround_matrix_tests PRIVATE ${inc_headers})
 
 add_kyty_full_emulator_test(shader_cfg_tests ../tests/shaderCfgTests.cpp)
 

@@ -58,9 +58,10 @@ public:
 #elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
 #if defined(__APPLE__)
 		{
-			char shm_name[64];
-			snprintf(shm_name, sizeof(shm_name), "/kyty-dm-%d-%llx", static_cast<int>(getpid()),
-			         static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(this)));
+			static std::atomic<uint32_t> shm_counter {0};
+			char shm_name[32];
+			snprintf(shm_name, sizeof(shm_name), "/kdm-%d-%u", static_cast<int>(getpid()),
+			         shm_counter.fetch_add(1, std::memory_order_relaxed));
 			m_fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
 			if (m_fd >= 0) {
 				shm_unlink(shm_name);

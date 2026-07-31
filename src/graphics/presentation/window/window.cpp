@@ -501,6 +501,10 @@ void WindowContext::ProcessEvent(double time_s) {
 
 		case SDL_APP_DIDENTERFOREGROUND: GameEventDidEnterForeground(game); break;
 
+#if defined(__APPLE__)
+		case SDL_USEREVENT: DrainMainThreadTasks(); break;
+#endif
+
 		case SDL_KEYDOWN:
 		case SDL_KEYUP: {
 			EventKeyboard key {};
@@ -800,9 +804,7 @@ static void WindowCreate(WindowContext& context) {
 
 	uint32_t window_flags = KYTY_SDL_WINDOW_FLAGS;
 #if defined(__APPLE__)
-	// macOS 26 window chrome (CoreUI asset decode, SwiftUI titlebar) has been observed
-	// throwing NSExceptions under Rosetta during the first CATransaction commit. A
-	// borderless window skips that machinery entirely.
+	window_flags |= static_cast<uint32_t>(SDL_WINDOW_ALLOW_HIGHDPI);
 	if (std::getenv("KYTY_BORDERLESS") != nullptr) {
 		window_flags |= static_cast<uint32_t>(SDL_WINDOW_BORDERLESS);
 	}

@@ -144,13 +144,12 @@ static LONG WINAPI ExceptionFilter(PEXCEPTION_POINTERS exception) {
 
 static std::atomic<Handler> g_handler {nullptr};
 static std::atomic_uint32_t g_install_state {0};
-#if defined(__APPLE__)
 namespace {
 constexpr size_t MAX_FILTER_THREADS = 64;
 std::atomic<mach_port_t> g_filter_threads[MAX_FILTER_THREADS] {};
 
 bool GetInExceptionFilter() noexcept {
-	const mach_port_t self = mach_thread_self();
+	const mach_port_t self = pthread_mach_thread_np(pthread_self());
 	for (size_t i = 0; i < MAX_FILTER_THREADS; i++) {
 		if (g_filter_threads[i].load(std::memory_order_relaxed) == self) {
 			return true;
@@ -160,7 +159,7 @@ bool GetInExceptionFilter() noexcept {
 }
 
 void SetInExceptionFilter(bool value) noexcept {
-	const mach_port_t self = mach_thread_self();
+	const mach_port_t self = pthread_mach_thread_np(pthread_self());
 	if (value) {
 		for (size_t i = 0; i < MAX_FILTER_THREADS; i++) {
 			mach_port_t expected = 0;
@@ -178,9 +177,6 @@ void SetInExceptionFilter(bool value) noexcept {
 	}
 }
 } // namespace
-#else
-static thread_local bool g_in_exception_filter = false;
-#endif
 
 static_assert(decltype(g_handler)::is_always_lock_free);
 static_assert(decltype(g_install_state)::is_always_lock_free);
@@ -222,15 +218,45 @@ static void SignalHandler(int sig, siginfo_t* si, void* uctx) {
 	g_in_exception_filter = true;
 #endif
 
-	auto*       uc  = static_cast<ucontext_t*>(uctx);
-	const auto* mc  = uc->uc_mcontext;
-	const auto& ss  = mc->__ss;
-
+	auto*       uc = static_cast<ucontext_t*>(uctx);
 	ExceptionInfo info {};
-	info.exception_address = ss.__rip;
-	info.native_code       = static_cast<uint32_t>(si->si_code);
-	info.native_context    = uctx;
+	info.native_code    = static_cast<uint32_t>(si->si_code);
+	info.native_context = uctx;
 
+#if defined(__APPLE__)
+	const auto* mc = uc->uc_mcontext;
+#if defined(__arm64__) || defined(__aarch64__)
+	const auto& ss = mc->__ss;
+	info.exception_address = ss.__pc;
+	if (sig == SIGILL) {
+		info.type = ExceptionType::IllegalInstruction;
+	} else {
+		info.type                   = ExceptionType::AccessViolation;
+		const uint64_t esr          = mc->__es.__esr;
+		const bool     is_write     = (esr & 0x40u) != 0;
+		info.access_violation_type  = is_write ? AccessViolationType::Write : AccessViolationType::Read;
+		info.access_violation_vaddr = reinterpret_cast<uint64_t>(si->si_addr);
+	}
+
+	info.rax = ss.__x[0];
+	info.rbx = ss.__x[1];
+	info.rcx = ss.__x[2];
+	info.rdx = ss.__x[3];
+	info.rsi = ss.__x[4];
+	info.rdi = ss.__x[5];
+	info.rbp = ss.__fp;
+	info.rsp = ss.__sp;
+	info.r8  = ss.__x[8];
+	info.r9  = ss.__x[9];
+	info.r10 = ss.__x[10];
+	info.r11 = ss.__x[11];
+	info.r12 = ss.__x[12];
+	info.r13 = ss.__x[13];
+	info.r14 = ss.__x[14];
+	info.r15 = ss.__x[15];
+#else
+	const auto& ss = mc->__ss;
+	info.exception_address = ss.__rip;
 	if (sig == SIGILL) {
 		info.type = ExceptionType::IllegalInstruction;
 	} else {
@@ -255,6 +281,64 @@ static void SignalHandler(int sig, siginfo_t* si, void* uctx) {
 	info.r13 = ss.__r13;
 	info.r14 = ss.__r14;
 	info.r15 = ss.__r15;
+#endif
+#else
+	const auto* mc = &uc->uc_mcontext;
+#if defined(__aarch64__)
+	info.exception_address = mc->pc;
+	if (sig == SIGILL) {
+		info.type = ExceptionType::IllegalInstruction;
+	} else {
+		info.type                   = ExceptionType::AccessViolation;
+		info.access_violation_type  = AccessViolationType::Write;
+		info.access_violation_vaddr = reinterpret_cast<uint64_t>(si->si_addr);
+	}
+
+	info.rax = mc->regs[0];
+	info.rbx = mc->regs[1];
+	info.rcx = mc->regs[2];
+	info.rdx = mc->regs[3];
+	info.rsi = mc->regs[4];
+	info.rdi = mc->regs[5];
+	info.rbp = mc->regs[29];
+	info.rsp = mc->sp;
+	info.r8  = mc->regs[8];
+	info.r9  = mc->regs[9];
+	info.r10 = mc->regs[10];
+	info.r11 = mc->regs[11];
+	info.r12 = mc->regs[12];
+	info.r13 = mc->regs[13];
+	info.r14 = mc->regs[14];
+	info.r15 = mc->regs[15];
+#else
+	const auto* gregs = mc->gregs;
+	info.exception_address = static_cast<uint64_t>(gregs[REG_RIP]);
+	if (sig == SIGILL) {
+		info.type = ExceptionType::IllegalInstruction;
+	} else {
+		info.type                   = ExceptionType::AccessViolation;
+		info.access_violation_type  = DecodeAccess(static_cast<uint64_t>(gregs[REG_ERR]));
+		info.access_violation_vaddr = reinterpret_cast<uint64_t>(si->si_addr);
+	}
+
+	info.rax = static_cast<uint64_t>(gregs[REG_RAX]);
+	info.rbx = static_cast<uint64_t>(gregs[REG_RBX]);
+	info.rcx = static_cast<uint64_t>(gregs[REG_RCX]);
+	info.rdx = static_cast<uint64_t>(gregs[REG_RDX]);
+	info.rsi = static_cast<uint64_t>(gregs[REG_RSI]);
+	info.rdi = static_cast<uint64_t>(gregs[REG_RDI]);
+	info.rbp = static_cast<uint64_t>(gregs[REG_RBP]);
+	info.rsp = static_cast<uint64_t>(gregs[REG_RSP]);
+	info.r8  = static_cast<uint64_t>(gregs[REG_R8]);
+	info.r9  = static_cast<uint64_t>(gregs[REG_R9]);
+	info.r10 = static_cast<uint64_t>(gregs[REG_R10]);
+	info.r11 = static_cast<uint64_t>(gregs[REG_R11]);
+	info.r12 = static_cast<uint64_t>(gregs[REG_R12]);
+	info.r13 = static_cast<uint64_t>(gregs[REG_R13]);
+	info.r14 = static_cast<uint64_t>(gregs[REG_R14]);
+	info.r15 = static_cast<uint64_t>(gregs[REG_R15]);
+#endif
+#endif
 
 	const auto handler = g_handler.load(std::memory_order_acquire);
 	if (handler == nullptr) {
@@ -377,7 +461,7 @@ bool InstallHandler(Handler handler) {
 #elif defined(__APPLE__)
 	struct sigaction sa {};
 	sa.sa_sigaction = SignalHandler;
-	sa.sa_flags     = SA_SIGINFO;
+	sa.sa_flags     = SA_SIGINFO | SA_RESTART;
 	sigemptyset(&sa.sa_mask);
 	// The guest signal-dispatch path (KernelRaiseException) interrupts threads with
 	// SIGUSR1; block it while a fault is being resolved so a stop-the-world request
@@ -398,6 +482,8 @@ bool InstallHandler(Handler handler) {
 	struct sigaction action {};
 	action.sa_sigaction = SignalHandler;
 	sigemptyset(&action.sa_mask);
+	sigaddset(&action.sa_mask, SIGRTMIN + 3);
+	sigaddset(&action.sa_mask, SIGUSR1);
 	// Fault resolution needs the normal thread stack.
 	action.sa_flags = SA_SIGINFO | SA_RESTART;
 

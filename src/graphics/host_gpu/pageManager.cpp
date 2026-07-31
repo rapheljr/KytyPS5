@@ -69,7 +69,7 @@ constexpr size_t MAX_FAULT_THREADS = 64;
 std::atomic<mach_port_t> g_fault_threads[MAX_FAULT_THREADS] {};
 
 bool GetInFaultResolution() noexcept {
-	const mach_port_t self = mach_thread_self();
+	const mach_port_t self = pthread_mach_thread_np(pthread_self());
 	for (size_t i = 0; i < MAX_FAULT_THREADS; i++) {
 		if (g_fault_threads[i].load(std::memory_order_relaxed) == self) {
 			return true;
@@ -79,7 +79,7 @@ bool GetInFaultResolution() noexcept {
 }
 
 void SetInFaultResolution(bool value) noexcept {
-	const mach_port_t self = mach_thread_self();
+	const mach_port_t self = pthread_mach_thread_np(pthread_self());
 	if (value) {
 		for (size_t i = 0; i < MAX_FAULT_THREADS; i++) {
 			mach_port_t expected = 0;
@@ -154,7 +154,7 @@ uint32_t CurrentThread() noexcept {
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 	return GetCurrentThreadId();
 #elif defined(__APPLE__)
-	return static_cast<uint32_t>(mach_thread_self());
+	return static_cast<uint32_t>(pthread_mach_thread_np(pthread_self()));
 #elif defined(__linux__)
 	static thread_local const uint32_t tid = [] {
 		const auto raw = static_cast<uint32_t>(::syscall(SYS_gettid));
@@ -246,21 +246,16 @@ struct PageManager::Impl {
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 		SYSTEM_INFO info {};
 		GetSystemInfo(&info);
-		if (info.dwPageSize != PAGE_SIZE) {
-			Fatal("unsupported host page size 0x%08" PRIx32,
-			      static_cast<uint32_t>(info.dwPageSize));
-		}
+		const auto host_page_size = static_cast<uint64_t>(info.dwPageSize);
 #elif defined(__APPLE__)
-		// Under Rosetta the host page size is 4 KB, matching TRACKER_PAGE_SIZE.
-		if (static_cast<uint64_t>(getpagesize()) != PAGE_SIZE) {
-			Fatal("unsupported host page size 0x%08" PRIx32, static_cast<uint32_t>(getpagesize()));
-		}
+		const auto host_page_size = static_cast<uint64_t>(getpagesize());
 #else
-		const auto host_page_size = ::sysconf(_SC_PAGESIZE);
-		if (host_page_size < 0 || static_cast<uint64_t>(host_page_size) != PAGE_SIZE) {
-			Fatal("unsupported host page size %ld", static_cast<long>(host_page_size));
-		}
+		const auto raw_host_size  = ::sysconf(_SC_PAGESIZE);
+		const auto host_page_size = raw_host_size > 0 ? static_cast<uint64_t>(raw_host_size) : 0;
 #endif
+		if (host_page_size < PAGE_SIZE || (host_page_size % PAGE_SIZE) != 0) {
+			Fatal("unsupported host page size 0x%08" PRIx64, host_page_size);
+		}
 		regions = std::make_unique<std::atomic<Region*>[]>(REGION_COUNT);
 		for (uint64_t i = 0; i < REGION_COUNT; i++) {
 			regions[i].store(nullptr, std::memory_order_relaxed);

@@ -20,7 +20,7 @@ constexpr size_t MAX_TRACKER_THREADS = 64;
 ThreadOwner g_tracker_threads[MAX_TRACKER_THREADS] {};
 
 const MemoryTracker* GetUploadOwnerImpl() noexcept {
-	const mach_port_t self = mach_thread_self();
+	const mach_port_t self = pthread_mach_thread_np(pthread_self());
 	for (size_t i = 0; i < MAX_TRACKER_THREADS; i++) {
 		if (g_tracker_threads[i].thread.load(std::memory_order_relaxed) == self) {
 			return g_tracker_threads[i].owner.load(std::memory_order_relaxed);
@@ -30,7 +30,7 @@ const MemoryTracker* GetUploadOwnerImpl() noexcept {
 }
 
 void SetUploadOwnerImpl(const MemoryTracker* owner) noexcept {
-	const mach_port_t self = mach_thread_self();
+	const mach_port_t self = pthread_mach_thread_np(pthread_self());
 	if (owner != nullptr) {
 		for (size_t i = 0; i < MAX_TRACKER_THREADS; i++) {
 			mach_port_t expected = 0;

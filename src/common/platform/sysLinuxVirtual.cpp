@@ -12,6 +12,10 @@
 #include <map>
 #include <pthread.h>
 #include <sys/mman.h>
+
+#if defined(__APPLE__)
+#include <libkern/OSCacheControl.h>
+#endif
 #include <unistd.h>
 
 #if defined(__APPLE__)
@@ -34,7 +38,18 @@ static pthread_mutex_t              g_virtual_mutex {};
 static std::map<uintptr_t, size_t>* g_allocs   = nullptr;
 static std::map<uintptr_t, int>*    g_protects = nullptr;
 
+static uintptr_t GetHostPageSize() {
+	static const uintptr_t page_size = [] {
+		const auto ps = static_cast<uintptr_t>(sysconf(_SC_PAGESIZE));
+		return ps != 0 ? ps : 4096u;
+	}();
+	return page_size;
+}
+
 void SysVirtualInit() {
+	if (g_allocs != nullptr) {
+		return;
+	}
 	pthread_mutexattr_t attr {};
 
 	pthread_mutexattr_init(&attr);
@@ -48,6 +63,12 @@ void SysVirtualInit() {
 
 	g_allocs   = new std::map<uintptr_t, size_t>;
 	g_protects = new std::map<uintptr_t, int>;
+}
+
+static void EnsureVirtualInit() {
+	if (g_allocs == nullptr) {
+		SysVirtualInit();
+	}
 }
 
 static int get_protection_flag(VirtualMemory::Mode mode) {
@@ -124,6 +145,11 @@ static uintptr_t align_up_to(uintptr_t addr, uint64_t alignment) {
 
 // Freed arena addresses are not reused while GPU caches remain keyed by address.
 static void* map_anonymous(uintptr_t addr, size_t size, int protect, int flags) {
+#if defined(__APPLE__) && defined(MAP_JIT)
+	if ((protect & PROT_EXEC) != 0) {
+		flags |= MAP_JIT;
+	}
+#endif
 	if (addr != 0) {
 		return mmap(reinterpret_cast<void*>(addr), size, protect, flags, -1, 0); // NOLINT
 	}
@@ -148,7 +174,7 @@ static void* map_anonymous(uintptr_t addr, size_t size, int protect, int flags) 
 }
 
 uint64_t SysVirtualAlloc(uint64_t address, uint64_t size, VirtualMemory::Mode mode) {
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 
 	auto addr = static_cast<uintptr_t>(address);
 
@@ -182,7 +208,7 @@ uint64_t SysVirtualAllocAligned(uint64_t address, uint64_t size, VirtualMemory::
 		return 0;
 	}
 
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 
 	auto addr    = static_cast<uintptr_t>(address);
 	int  protect = get_protection_flag(mode);
@@ -276,6 +302,9 @@ static bool is_mapped(void* ptr, size_t length) {
 	kern_return_t kr =
 	    mach_vm_region(mach_task_self(), &region_addr, &region_size, VM_REGION_BASIC_INFO_64,
 	                   reinterpret_cast<vm_region_info_t>(&info), &count, &object_name);
+	if (MACH_PORT_VALID(object_name)) {
+		mach_port_deallocate(mach_task_self(), object_name);
+	}
 	if (kr != KERN_SUCCESS) {
 		return false; // no region at or above the address → unmapped
 	}
@@ -309,7 +338,7 @@ static bool is_mapped(void* ptr, size_t length) {
 #endif
 
 bool SysVirtualAllocFixed(uint64_t address, uint64_t size, VirtualMemory::Mode mode) {
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 
 	auto addr    = static_cast<uintptr_t>(address);
 	int  protect = get_protection_flag(mode);
@@ -363,7 +392,7 @@ uint64_t SysVirtualReserveAligned(uint64_t address, uint64_t size, uint64_t alig
 		return 0;
 	}
 
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 
 	auto addr = static_cast<uintptr_t>(address);
 
@@ -438,7 +467,7 @@ uint64_t SysVirtualReserveAligned(uint64_t address, uint64_t size, uint64_t alig
 }
 
 bool SysVirtualReserveFixed(uint64_t address, uint64_t size) {
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 
 	auto addr = static_cast<uintptr_t>(address);
 
@@ -500,7 +529,7 @@ bool SysVirtualDecommit(uint64_t address, uint64_t size) {
 }
 
 bool SysVirtualFree(uint64_t address) {
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 	size_t size = 0;
 
 	auto addr = static_cast<uintptr_t>(address & ~static_cast<uint64_t>(0xfffu));
@@ -531,7 +560,7 @@ bool SysVirtualFree(uint64_t address) {
 }
 
 bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
-	EXIT_IF(g_allocs == nullptr);
+	EnsureVirtualInit();
 	if (size == 0 || (address & 0xfffu) != 0 || (size & 0xfffu) != 0) {
 		return false;
 	}
@@ -591,6 +620,7 @@ bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
 
 bool SysVirtualProtect(uint64_t address, uint64_t size, VirtualMemory::Mode mode,
                        VirtualMemory::Mode* old_mode) {
+	EnsureVirtualInit();
 	auto addr = static_cast<uintptr_t>(address);
 
 	pthread_mutex_lock(&g_virtual_mutex);
@@ -603,10 +633,15 @@ bool SysVirtualProtect(uint64_t address, uint64_t size, VirtualMemory::Mode mode
 	}
 	pthread_mutex_unlock(&g_virtual_mutex);
 
-	uintptr_t page_start = addr >> 12u;
-	uintptr_t page_end   = (addr + size - 1) >> 12u;
-	if (mprotect(reinterpret_cast<void*>(page_start << 12u), (page_end - page_start + 1) << 12u,
+	const uintptr_t host_page_size = GetHostPageSize();
+	const uintptr_t mprotect_start = addr & ~(host_page_size - 1);
+	const uintptr_t mprotect_end   = (addr + size + host_page_size - 1) & ~(host_page_size - 1);
+	const uintptr_t mprotect_size  = mprotect_end > mprotect_start ? (mprotect_end - mprotect_start) : host_page_size;
+
+	if (mprotect(reinterpret_cast<void*>(mprotect_start), mprotect_size,
 	             get_protection_flag(mode)) == 0) {
+		uintptr_t page_start = addr >> 12u;
+		uintptr_t page_end   = (addr + size - 1) >> 12u;
 		pthread_mutex_lock(&g_virtual_mutex);
 		for (uintptr_t page = page_start; page <= page_end; page++) {
 			(*g_protects)[page] = get_protection_flag(mode);
@@ -618,8 +653,29 @@ bool SysVirtualProtect(uint64_t address, uint64_t size, VirtualMemory::Mode mode
 	return false;
 }
 
-bool SysVirtualFlushInstructionCache(uint64_t /*address*/, uint64_t /*size*/) {
+bool SysVirtualFlushInstructionCache(uint64_t address, uint64_t size) {
+#if defined(__APPLE__)
+	if (address != 0 && size != 0) {
+		sys_icache_invalidate(reinterpret_cast<void*>(address), static_cast<size_t>(size));
+	}
+#elif defined(__GNUC__) || defined(__clang__)
+	if (address != 0 && size != 0) {
+		char* begin = reinterpret_cast<char*>(address);
+		char* end   = begin + size;
+		__builtin___clear_cache(begin, end);
+	}
+#endif
 	return true;
+}
+
+bool SysVirtualSetJitWriteProtect(bool writable) {
+#if defined(__APPLE__)
+	pthread_jit_write_protect_np(writable ? 0 : 1);
+	return true;
+#else
+	KYTY_UNUSED(writable);
+	return true;
+#endif
 }
 
 } // namespace Common

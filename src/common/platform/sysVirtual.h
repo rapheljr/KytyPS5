@@ -22,6 +22,7 @@ bool     SysVirtualFreeRange(uint64_t address, uint64_t size);
 bool     SysVirtualProtect(uint64_t address, uint64_t size, VirtualMemory::Mode mode,
                            VirtualMemory::Mode* old_mode = nullptr);
 bool     SysVirtualFlushInstructionCache(uint64_t address, uint64_t size);
+bool     SysVirtualSetJitWriteProtect(bool writable);
 
 } // namespace Common
 

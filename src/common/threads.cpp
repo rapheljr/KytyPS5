@@ -310,6 +310,10 @@ void Thread::SleepNano(uint64_t nanos) {
 }
 
 bool Thread::IsMainThread() {
+	if (g_main_thread == std::thread::id()) {
+		g_main_thread     = std::this_thread::get_id();
+		g_main_thread_int = Thread::GetThreadIdUnique();
+	}
 	return g_main_thread == std::this_thread::get_id();
 }
 
