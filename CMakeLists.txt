@@ -587,6 +587,13 @@ add_executable(rosetta_workaround_matrix_tests EXCLUDE_FROM_ALL
 target_link_libraries(rosetta_workaround_matrix_tests common)
 target_include_directories(rosetta_workaround_matrix_tests PRIVATE ${inc_headers})
 
+add_executable(run_on_guest_stack_arm64_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/RunOnGuestStackARM64Tests.cpp"
+)
+target_link_libraries(run_on_guest_stack_arm64_tests common)
+target_include_directories(run_on_guest_stack_arm64_tests PRIVATE ${inc_headers})
+
+
 add_executable(exception_pipeline_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ExceptionPipelineTests.cpp"
 )
@@ -827,6 +834,7 @@ if(BUILD_TESTING)
 		thread_identity_tests
 		executable_memory_tests
 		rosetta_workaround_matrix_tests
+		run_on_guest_stack_arm64_tests
 		exception_pipeline_tests
 		virtual_memory_benchmark_tests
 		renderer_profiling_benchmark_tests
