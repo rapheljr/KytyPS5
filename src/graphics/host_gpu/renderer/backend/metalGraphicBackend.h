@@ -2,7 +2,9 @@
 #define EMULATOR_INCLUDE_EMULATOR_GRAPHICS_RENDERER_BACKEND_METALGRAPHICBACKEND_H_
 
 #include "graphics/host_gpu/renderer/backend/graphicBackend.h"
+#include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
 #include <cstdint>
+#include <memory>
 
 namespace Libs::Graphics {
 
@@ -29,17 +31,21 @@ public:
 	void                             Shutdown() override;
 	void                             WaitIdle() override;
 
-	[[nodiscard]] const MetalCapabilities& GetCapabilities() const noexcept { return m_capabilities; }
-	[[nodiscard]] void*                    GetMTLDevice() const noexcept { return m_device; }
-	[[nodiscard]] void*                    GetMTLCommandQueue() const noexcept { return m_command_queue; }
-	[[nodiscard]] uint64_t                 GetInitializationTimeNs() const noexcept { return m_init_time_ns; }
+	[[nodiscard]] const MetalCapabilities&    GetCapabilities() const noexcept { return m_capabilities; }
+	[[nodiscard]] void*                       GetMTLDevice() const noexcept { return m_device; }
+	[[nodiscard]] void*                       GetMTLCommandQueue() const noexcept { return m_command_queue; }
+	[[nodiscard]] uint64_t                    GetInitializationTimeNs() const noexcept { return m_init_time_ns; }
+
+	/// Returns the Phase C command queue wrapper.  Null before Initialize().
+	[[nodiscard]] MetalCommandQueue*          GetCommandQueue() noexcept { return m_metal_queue.get(); }
 
 private:
-	bool              m_initialized = false;
-	void*             m_device = nullptr;        // id<MTLDevice>
-	void*             m_command_queue = nullptr; // id<MTLCommandQueue>
-	MetalCapabilities m_capabilities {};
-	uint64_t          m_init_time_ns = 0;
+	bool                             m_initialized   = false;
+	void*                            m_device        = nullptr; // id<MTLDevice>
+	void*                            m_command_queue = nullptr; // id<MTLCommandQueue>
+	std::unique_ptr<MetalCommandQueue> m_metal_queue;
+	MetalCapabilities                m_capabilities {};
+	uint64_t                         m_init_time_ns  = 0;
 
 	void QueryCapabilities();
 };

@@ -1,4 +1,5 @@
 #include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
+#include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
 #include "common/timer.h"
 
 #include <chrono>
@@ -55,6 +56,9 @@ bool MetalGraphicBackend::Initialize() {
 
 	m_device        = (void*)device;
 	m_command_queue = (void*)queue;
+
+	// Phase C: construct the command queue C++ wrapper
+	m_metal_queue = std::make_unique<MetalCommandQueue>(m_command_queue);
 
 	QueryCapabilities();
 
@@ -152,7 +156,9 @@ void MetalGraphicBackend::Shutdown() {
 }
 
 void MetalGraphicBackend::WaitIdle() {
-	// Stub for Phase B queue synchronization
+	if (m_metal_queue != nullptr) {
+		m_metal_queue->WaitAllCompleted();
+	}
 }
 
 } // namespace Libs::Graphics
