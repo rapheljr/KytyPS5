@@ -993,6 +993,78 @@ static KYTY_SYSV_ABI void* RunOnGuestStack(void* arg, pthread_entry_func_t func,
 	}
 
 	return ret;
+#elif defined(__arm64__) || defined(__aarch64__) || defined(_M_ARM64)
+	void*      ret = nullptr;
+	const auto aligned_stack_top =
+	    reinterpret_cast<uintptr_t>(stack_top) & ~static_cast<uintptr_t>(0x0f);
+	const auto guest_sp = aligned_stack_top - 2u * sizeof(uintptr_t);
+	const auto guest_fp = guest_sp;
+
+	auto* guest_root_frame = reinterpret_cast<uintptr_t*>(guest_fp);
+	guest_root_frame[0]    = 0;
+	guest_root_frame[1]    = 0;
+
+	g_guest_entry_return_rsp = guest_sp - sizeof(uint64_t);
+
+	uintptr_t host_sp = 0;
+	uintptr_t host_fp = 0;
+	asm volatile("mov %0, sp\n\t"
+	             "mov %1, x29\n\t"
+	             : "=r"(host_sp), "=r"(host_fp)
+	             :
+	             : "memory");
+
+	if (g_pthread_self != nullptr) {
+		g_pthread_self->guest_host_rsp = host_sp;
+		g_pthread_self->guest_host_rbp = host_fp;
+	}
+
+	// AAPCS64 trampoline: save callee-saved registers x19-x30 and d8-d15 (160 bytes = 10 pairs).
+	asm volatile(
+	    "stp x29, x30, [sp, #-16]!\n\t"
+	    "stp x27, x28, [sp, #-16]!\n\t"
+	    "stp x25, x26, [sp, #-16]!\n\t"
+	    "stp x23, x24, [sp, #-16]!\n\t"
+	    "stp x21, x22, [sp, #-16]!\n\t"
+	    "stp x19, x20, [sp, #-16]!\n\t"
+	    "stp d14, d15, [sp, #-16]!\n\t"
+	    "stp d12, d13, [sp, #-16]!\n\t"
+	    "stp d10, d11, [sp, #-16]!\n\t"
+	    "stp d8,  d9,  [sp, #-16]!\n\t"
+	    "mov x19, sp\n\t"
+	    "mov sp, %[guest_sp]\n\t"
+	    "mov x29, %[guest_fp]\n\t"
+	    "mov x0, %[arg]\n\t"
+	    "blr %[func]\n\t"
+	    "mov %[ret], x0\n\t"
+	    "mov sp, x19\n\t"
+	    "ldp d8,  d9,  [sp], #16\n\t"
+	    "ldp d10, d11, [sp], #16\n\t"
+	    "ldp d12, d13, [sp], #16\n\t"
+	    "ldp d14, d15, [sp], #16\n\t"
+	    "ldp x19, x20, [sp], #16\n\t"
+	    "ldp x21, x22, [sp], #16\n\t"
+	    "ldp x23, x24, [sp], #16\n\t"
+	    "ldp x25, x26, [sp], #16\n\t"
+	    "ldp x27, x28, [sp], #16\n\t"
+	    "ldp x29, x30, [sp], #16\n\t"
+	    : [ret] "=r"(ret)
+	    : [arg] "r"(arg), [func] "r"(func), [guest_sp] "r"(guest_sp), [guest_fp] "r"(guest_fp)
+	    : "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7",
+	      "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18",
+	      "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+	      "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+	      "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31",
+	      "cc", "memory"
+	);
+
+	g_guest_entry_return_rsp = 0;
+	if (g_pthread_self != nullptr) {
+		g_pthread_self->guest_host_rsp = 0;
+		g_pthread_self->guest_host_rbp = 0;
+	}
+
+	return ret;
 #else
 	(void)stack_top;
 	return func(arg);
