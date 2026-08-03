@@ -73,18 +73,21 @@ uint32_t DescriptorCount(const ShaderRecompiler::IR::DescriptorBinding& binding)
 	return binding.resources.empty() ? 1u : static_cast<uint32_t>(binding.resources.size());
 }
 
-std::vector<uint32_t> LayoutKey(DescriptorCache::Stage               stage,
-                                const ShaderRecompiler::IR::Program& program) {
-	std::vector<uint32_t> key;
-	key.reserve(1u + program.bindings.descriptors.size() * 4u);
-	key.push_back(static_cast<uint32_t>(stage));
+uint64_t LayoutHash(DescriptorCache::Stage               stage,
+                     const ShaderRecompiler::IR::Program& program) {
+	uint64_t hash = 14695981039346656037ull;
+	auto     add_word = [&hash](uint32_t val) {
+		hash ^= val;
+		hash *= 1099511628211ull;
+	};
+	add_word(static_cast<uint32_t>(stage));
 	for (const auto& binding: program.bindings.descriptors) {
-		key.push_back(static_cast<uint32_t>(binding.kind));
-		key.push_back(binding.binding);
-		key.push_back(DescriptorCount(binding));
-		key.push_back(static_cast<uint32_t>(DescriptorType(binding.kind)));
+		add_word(static_cast<uint32_t>(binding.kind));
+		add_word(binding.binding);
+		add_word(DescriptorCount(binding));
+		add_word(static_cast<uint32_t>(DescriptorType(binding.kind)));
 	}
-	return key;
+	return hash;
 }
 
 vk::DescriptorBufferInfo BufferInfo(const BufferView& view) {
@@ -119,7 +122,7 @@ DescriptorCache::~DescriptorCache() {
 vk::DescriptorSetLayout
 DescriptorCache::GetDescriptorSetLayoutInternal(Stage                                stage,
                                                 const ShaderRecompiler::IR::Program& program) {
-	const auto key = LayoutKey(stage, program);
+	const auto key = LayoutHash(stage, program);
 	if (const auto found = m_descriptor_set_layouts.find(key);
 	    found != m_descriptor_set_layouts.end()) {
 		return found->second;

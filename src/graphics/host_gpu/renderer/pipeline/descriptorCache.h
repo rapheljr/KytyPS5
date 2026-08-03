@@ -106,7 +106,7 @@ private:
 	int               m_first_free_pool = -1;
 	std::unordered_map<vk::DescriptorSetLayout, std::vector<VulkanDescriptorSet*>>
 	                                                         m_free_sets_by_layout;
-	std::map<std::vector<uint32_t>, vk::DescriptorSetLayout> m_descriptor_set_layouts;
+	std::unordered_map<uint64_t, vk::DescriptorSetLayout> m_descriptor_set_layouts;
 };
 
 } // namespace Libs::Graphics
