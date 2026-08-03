@@ -506,6 +506,7 @@ endif()
 set(inc_headers
 	${KYTY_SOURCE_DIR}
 	${KYTY_THIRD_PARTY_DIR}/SDL2/include
+	${KYTY_THIRD_PARTY_DIR}/Vulkan-Headers/include
 	${KYTY_THIRD_PARTY_DIR}/VulkanMemoryAllocator/include
 	${KYTY_THIRD_PARTY_DIR}/SPIRV-Tools/include
 	${KYTY_THIRD_PARTY_DIR}/fmt/include
@@ -585,6 +586,40 @@ add_executable(rosetta_workaround_matrix_tests EXCLUDE_FROM_ALL
 )
 target_link_libraries(rosetta_workaround_matrix_tests common)
 target_include_directories(rosetta_workaround_matrix_tests PRIVATE ${inc_headers})
+
+add_executable(exception_pipeline_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ExceptionPipelineTests.cpp"
+)
+target_link_libraries(exception_pipeline_tests common)
+target_include_directories(exception_pipeline_tests PRIVATE ${inc_headers})
+
+add_executable(virtual_memory_benchmark_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/VirtualMemoryBenchmarkTests.cpp"
+)
+target_link_libraries(virtual_memory_benchmark_tests common)
+target_include_directories(virtual_memory_benchmark_tests PRIVATE ${inc_headers})
+
+add_executable(renderer_profiling_benchmark_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/RendererProfilingBenchmarkTests.cpp"
+)
+target_link_libraries(renderer_profiling_benchmark_tests common)
+target_include_directories(renderer_profiling_benchmark_tests PRIVATE ${inc_headers})
+
+add_executable(master_validation_suite_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/MasterValidationSuiteTests.cpp"
+)
+target_link_libraries(master_validation_suite_tests common)
+target_include_directories(master_validation_suite_tests PRIVATE ${inc_headers})
+
+add_executable(graphic_backend_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/GraphicBackendTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
+)
+target_link_libraries(graphic_backend_tests common ${kyty_emulator_link_libraries})
+target_include_directories(graphic_backend_tests PRIVATE ${inc_headers})
 
 add_kyty_full_emulator_test(shader_cfg_tests "${KYTY_TESTS_DIR}/shaderCfgTests.cpp")
 
@@ -767,7 +802,36 @@ if(BUILD_TESTING)
 			COMMAND $<TARGET_FILE:shader_recompiler_compute_tests> --buffer-cache-range-only)
 	endif()
 
-	add_custom_target(kyty_tests DEPENDS
+	if(APPLE)
+		set(KYTY_VULKAN_TESTS
+			shader_recompiler_compute
+			command_scheduler_timeline
+			stream_buffer_ring
+			gpu_command_lane
+			gpu_tiler
+			texture_cache_layered_image
+			texture_cache_image_views
+			texture_cache_storage_sampled
+			texture_cache_depth_readback
+			buffer_cache_dirty_gc
+		)
+		set_tests_properties(${KYTY_VULKAN_TESTS} PROPERTIES
+			ENVIRONMENT "VK_DRIVER_FILES=${PROJECT_BINARY_DIR}/vulkan-deps/icd.d/MoltenVK_icd.json;VK_ICD_FILENAMES=${PROJECT_BINARY_DIR}/vulkan-deps/icd.d/MoltenVK_icd.json"
+		)
+	endif()
+
+	add_custom_target(build_tests DEPENDS
+		architecture_config_tests
+		signal_handling_tests
+		mach_api_tests
+		thread_identity_tests
+		executable_memory_tests
+		rosetta_workaround_matrix_tests
+		exception_pipeline_tests
+		virtual_memory_benchmark_tests
+		renderer_profiling_benchmark_tests
+		master_validation_suite_tests
+		graphic_backend_tests
 		ime_dialog_tests
 		shader_cfg_tests
 		scalar_provenance_tests
