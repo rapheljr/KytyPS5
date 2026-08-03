@@ -223,6 +223,8 @@ file(GLOB kyty_emulator_src CONFIGURE_DEPENDS
 	"${KYTY_SOURCE_DIR}/kernel/*.h"
 	"${KYTY_SOURCE_DIR}/loader/*.cpp"
 	"${KYTY_SOURCE_DIR}/loader/*.h"
+	"${KYTY_SOURCE_DIR}/emulator/*.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/*.h"
 )
 
 find_program(KYTY_GLSLANG_VALIDATOR glslangValidator REQUIRED)
@@ -593,6 +595,14 @@ add_executable(run_on_guest_stack_arm64_tests EXCLUDE_FROM_ALL
 target_link_libraries(run_on_guest_stack_arm64_tests common)
 target_include_directories(run_on_guest_stack_arm64_tests PRIVATE ${inc_headers})
 
+add_executable(arm64_backend_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ARM64BackendTests.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/arm64RegisterAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/arm64Relocation.cpp"
+)
+target_link_libraries(arm64_backend_tests common)
+target_include_directories(arm64_backend_tests PRIVATE ${inc_headers})
 
 add_executable(exception_pipeline_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ExceptionPipelineTests.cpp"
@@ -854,6 +864,8 @@ if(BUILD_TESTING)
 		sync_on_address_tests
 		shader_recompiler_compute_tests
 		virtual_memory_allocation_tests
+		bit_array_tests
+		arm64_backend_tests
 	)
 endif()
 
