@@ -628,11 +628,24 @@ add_executable(master_validation_suite_tests EXCLUDE_FROM_ALL
 target_link_libraries(master_validation_suite_tests common)
 target_include_directories(master_validation_suite_tests PRIVATE ${inc_headers})
 
+if(APPLE)
+	set(METAL_BACKEND_SRC
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.mm"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandBuffer.mm"
+	)
+else()
+	set(METAL_BACKEND_SRC
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.cpp"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandBuffer.cpp"
+	)
+endif()
+
 add_executable(graphic_backend_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/GraphicBackendTests.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
+	${METAL_BACKEND_SRC}
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
 )
 target_link_libraries(graphic_backend_tests common ${kyty_emulator_link_libraries})
