@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 #include <windows.h> // IWYU pragma: keep
@@ -12,6 +13,7 @@
 #include <pthread.h>
 #include <shared_mutex>
 #include <sys/ucontext.h>
+#include <unistd.h>
 #include <unordered_map>
 #else
 #include <csignal>
@@ -38,12 +40,26 @@ static_assert(decltype(g_handler)::is_always_lock_free);
 static_assert(decltype(g_install_state)::is_always_lock_free);
 
 [[noreturn]] static void FailFast(const char* reason) noexcept {
+#if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
+	// Windows VEH runs in normal thread context — FILE* I/O is safe here.
 	std::fputs("HostException fail-fast: ", stderr);
 	std::fputs(reason != nullptr ? reason : "unspecified", stderr);
 	std::fputc('\n', stderr);
 	std::fflush(stderr);
-#if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 	TerminateProcess(GetCurrentProcess(), static_cast<UINT>(EXCEPTION_NONCONTINUABLE_EXCEPTION));
+#else
+	// POSIX: use write(2) which is async-signal-safe (POSIX.1-2017 §2.4.3).
+	// std::fputs / std::fflush hold the FILE lock and are NOT async-signal-safe.
+	static constexpr char kPrefix[] = "HostException fail-fast: ";
+	static constexpr char kUnspec[] = "unspecified";
+	static constexpr char kNewline  = '\n';
+	::write(STDERR_FILENO, kPrefix, sizeof(kPrefix) - 1);
+	if (reason != nullptr) {
+		::write(STDERR_FILENO, reason, std::strlen(reason));
+	} else {
+		::write(STDERR_FILENO, kUnspec, sizeof(kUnspec) - 1);
+	}
+	::write(STDERR_FILENO, &kNewline, 1);
 #endif
 	std::_Exit(321);
 }
@@ -182,10 +198,18 @@ static_assert(decltype(g_handler)::is_always_lock_free);
 static_assert(decltype(g_install_state)::is_always_lock_free);
 
 [[noreturn]] static void FailFast(const char* reason) noexcept {
-	std::fputs("HostException fail-fast: ", stderr);
-	std::fputs(reason != nullptr ? reason : "unspecified", stderr);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
+	// Use write(2): async-signal-safe per POSIX.1-2017 §2.4.3.
+	// std::fputs / std::fflush hold the FILE lock and are NOT async-signal-safe.
+	static constexpr char kPrefix[] = "HostException fail-fast: ";
+	static constexpr char kUnspec[] = "unspecified";
+	static constexpr char kNewline  = '\n';
+	::write(STDERR_FILENO, kPrefix, sizeof(kPrefix) - 1);
+	if (reason != nullptr) {
+		::write(STDERR_FILENO, reason, std::strlen(reason));
+	} else {
+		::write(STDERR_FILENO, kUnspec, sizeof(kUnspec) - 1);
+	}
+	::write(STDERR_FILENO, &kNewline, 1);
 	std::_Exit(321);
 }
 
@@ -289,8 +313,13 @@ static void SignalHandler(int sig, siginfo_t* si, void* uctx) {
 	if (sig == SIGILL) {
 		info.type = ExceptionType::IllegalInstruction;
 	} else {
-		info.type                   = ExceptionType::AccessViolation;
-		info.access_violation_type  = AccessViolationType::Write;
+		info.type = ExceptionType::AccessViolation;
+		// Linux ARM64: the ESR (Exception Syndrome Register) is not exposed through
+		// the standard ucontext_t fields on all kernel versions, so we cannot reliably
+		// distinguish read from write faults here. Report Unknown rather than silently
+		// misidentifying every read fault as a write. Callers that need the distinction
+		// can inspect their own page-watcher state (write_watchers vs access_watchers).
+		info.access_violation_type  = AccessViolationType::Unknown;
 		info.access_violation_vaddr = reinterpret_cast<uint64_t>(si->si_addr);
 	}
 

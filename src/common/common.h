@@ -14,6 +14,7 @@
 #endif
 
 // IWYU pragma: begin_exports
+#include "common/hostArchitecture.h"
 #include <cinttypes>
 #include <cstddef>
 #include <cstdint>
