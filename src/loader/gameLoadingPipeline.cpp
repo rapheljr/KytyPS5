@@ -4,6 +4,8 @@
 
 #include "loader/gameLoadingPipeline.h"
 
+#include "compat/titleCompatibility.h"
+#include "compat/versionDetection.h"
 #include "common/logging/log.h"
 #include "kernel/memory.h"
 #include "kernel/processManager.h"
@@ -131,6 +133,14 @@ bool GameLoadingPipeline::LoadGame(const GamePipelineConfig& config) {
 	if (!LoadExecutableAndDependencies(eboot_path)) {
 		m_diagnostics.status = GamePipelineStatus::Failed;
 		return false;
+	}
+
+	auto version_info = Compat::VersionDetector::DetectFromAppDir(config.game_path);
+	if (version_info.valid) {
+		m_diagnostics.title_id    = version_info.title_id;
+		m_diagnostics.title_name  = version_info.title_name;
+		m_diagnostics.app_version = version_info.app_version;
+		m_diagnostics.sdk_version = version_info.sdk_version;
 	}
 
 	m_diagnostics.status = GamePipelineStatus::Loaded;

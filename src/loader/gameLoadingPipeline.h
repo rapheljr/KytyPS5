@@ -35,7 +35,9 @@ struct GamePipelineConfig {
 struct GamePipelineDiagnostics {
 	GamePipelineStatus  status              = GamePipelineStatus::Unloaded;
 	std::string         title_id;
+	std::string         title_name;
 	std::string         app_version;
+	std::string         sdk_version;
 	size_t              mounted_files_count = 0;
 	size_t              loaded_modules_count = 0;
 	uint64_t            entry_vaddr         = 0;

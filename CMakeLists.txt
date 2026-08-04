@@ -893,12 +893,31 @@ add_executable(ps5_game_loading_pipeline_tests EXCLUDE_FROM_ALL
 	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/processManager.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/kernelObject.cpp"
+	"${KYTY_SOURCE_DIR}/compat/titleCompatibility.cpp"
+	"${KYTY_SOURCE_DIR}/compat/versionDetection.cpp"
+	"${KYTY_SOURCE_DIR}/compat/compatibilityReporter.cpp"
+	"${KYTY_SOURCE_DIR}/compat/compatDevTools.cpp"
 )
 target_link_libraries(ps5_game_loading_pipeline_tests common ${kyty_emulator_link_libraries})
 target_include_directories(ps5_game_loading_pipeline_tests PRIVATE ${inc_headers})
 
 if(APPLE)
 	target_link_options(ps5_game_loading_pipeline_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+add_executable(ps5_title_compat_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Ps5TitleCompatTests.cpp"
+	"${KYTY_SOURCE_DIR}/compat/titleCompatibility.cpp"
+	"${KYTY_SOURCE_DIR}/compat/versionDetection.cpp"
+	"${KYTY_SOURCE_DIR}/compat/compatibilityReporter.cpp"
+	"${KYTY_SOURCE_DIR}/compat/compatDevTools.cpp"
+	"${KYTY_SOURCE_DIR}/loader/systemContent.cpp"
+)
+target_link_libraries(ps5_title_compat_tests common ${kyty_emulator_link_libraries})
+target_include_directories(ps5_title_compat_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(ps5_title_compat_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
 add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
