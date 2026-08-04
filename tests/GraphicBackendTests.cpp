@@ -975,6 +975,186 @@ void BenchmarkPhaseH_SynchronizationOverhead() {
 #endif
 }
 
+// ─── Phase I: Final Metal Presentation & Frame Pacing ─────────────────────────
+
+void TestPhaseI_VSyncAndSwapIntervalControl() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed for VSync test");
+
+	SDL_Window* window = SDL_CreateWindow("KytyPS5 Metal VSync Test",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	swapchain.SetDisplaySyncEnabled(true);
+	Check(swapchain.IsDisplaySyncEnabled() == true, "DisplaySyncEnabled must be true");
+
+	swapchain.SetDisplaySyncEnabled(false);
+	Check(swapchain.IsDisplaySyncEnabled() == false, "DisplaySyncEnabled must be false");
+
+	swapchain.SetSwapInterval(0);
+	Check(swapchain.GetSwapInterval() == 0, "Swap interval must be 0");
+	Check(swapchain.IsDisplaySyncEnabled() == false, "DisplaySyncEnabled must be false for swap interval 0");
+
+	swapchain.SetSwapInterval(1);
+	Check(swapchain.GetSwapInterval() == 1, "Swap interval must be 1");
+	Check(swapchain.IsDisplaySyncEnabled() == true, "DisplaySyncEnabled must be true for swap interval 1");
+
+	swapchain.SetTripleBuffering(true);
+	Check(swapchain.IsTripleBufferingEnabled() == true, "Triple buffering must be true");
+
+	swapchain.SetTripleBuffering(false);
+	Check(swapchain.IsTripleBufferingEnabled() == false, "Triple buffering must be false");
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase I: VSync, Swap Interval, and Double/Triple Buffering Control\n");
+#else
+	std::printf("  [SKIP] Phase I: TestPhaseI_VSyncAndSwapIntervalControl (non-Apple)\n");
+#endif
+}
+
+void TestPhaseI_ScheduledPresentation() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed for Scheduled Present test");
+
+	SDL_Window* window = SDL_CreateWindow("KytyPS5 Metal Scheduled Present Test",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	auto frame = swapchain.AcquireDrawable();
+	Check(frame.drawable != nullptr, "AcquireDrawable failed");
+
+	Libs::Graphics::MetalCommandBuffer cmd_buf(backend.GetMTLCommandQueue());
+	swapchain.PresentDrawableScheduled(frame, &cmd_buf, 0.0166);
+	cmd_buf.Commit();
+	cmd_buf.WaitUntilCompleted();
+
+	Check(swapchain.GetTotalFramesPresented() == 1, "Total frames presented must be 1");
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase I: Scheduled Presentation (presentDrawable:afterMinimumDuration:)\n");
+#else
+	std::printf("  [SKIP] Phase I: TestPhaseI_ScheduledPresentation (non-Apple)\n");
+#endif
+}
+
+void TestPhaseI_WindowMinimizeRestoreAndFullscreen() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed");
+
+	SDL_Window* window = SDL_CreateWindow("KytyPS5 Metal Window State Test",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	swapchain.HandleWindowMinimize();
+	Check(swapchain.IsMinimized() == true, "IsMinimized must be true");
+
+	auto frame1 = swapchain.AcquireDrawable();
+	Check(frame1.drawable == nullptr, "AcquireDrawable must return null when window is minimized");
+
+	swapchain.HandleWindowRestore();
+	Check(swapchain.IsMinimized() == false, "IsMinimized must be false after restore");
+
+	auto frame2 = swapchain.AcquireDrawable();
+	Check(frame2.drawable != nullptr, "AcquireDrawable must succeed after restore");
+	swapchain.PresentDrawable(frame2);
+
+	swapchain.SetFullscreen(true);
+	Check(swapchain.IsFullscreen() == true, "IsFullscreen must be true");
+
+	swapchain.SetFullscreen(false);
+	Check(swapchain.IsFullscreen() == false, "IsFullscreen must be false");
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase I: Window Minimize, Restore, and Fullscreen State Transitions\n");
+#else
+	std::printf("  [SKIP] Phase I: TestPhaseI_WindowMinimizeRestoreAndFullscreen (non-Apple)\n");
+#endif
+}
+
+void TestPhaseI_MultiMonitorDisplayChange() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed");
+
+	SDL_Window* window = SDL_CreateWindow("KytyPS5 Multi-Monitor Display Test",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	swapchain.HandleDisplayChange();
+	Check(swapchain.GetDrawableWidth() > 0 && swapchain.GetDrawableHeight() > 0, "Drawable size must be non-zero after display change");
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase I: Multi-Monitor Display Scale Factor & Re-creation\n");
+#else
+	std::printf("  [SKIP] Phase I: TestPhaseI_MultiMonitorDisplayChange (non-Apple)\n");
+#endif
+}
+
+void BenchmarkPhaseI_PresentationOverheadAndLatency() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for Phase I bench");
+
+	SDL_Window* window = SDL_CreateWindow("KytyPS5 Metal Presentation Benchmark",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	static constexpr size_t ITERS = 100;
+	for (size_t i = 0; i < ITERS; ++i) {
+		auto frame = swapchain.AcquireDrawable();
+		Check(frame.drawable != nullptr, "AcquireDrawable failed in bench");
+		swapchain.PresentDrawable(frame);
+	}
+
+	double avg_acquire_us = swapchain.GetAverageAcquireLatencyNs() / 1000.0;
+	double avg_present_us = swapchain.GetAveragePresentLatencyNs() / 1000.0;
+	double cpu_overhead_us = static_cast<double>(swapchain.GetEstimatedCpuOverheadNs()) / 1000.0;
+	double gpu_util = swapchain.GetGpuUtilizationPercent();
+
+	std::printf("  [Bench] Average Acquire Latency: %.2f µs/frame\n", avg_acquire_us);
+	std::printf("  [Bench] Average Present Latency: %.2f µs/frame\n", avg_present_us);
+	std::printf("  [Bench] Estimated CPU Overhead per Frame: %.2f µs\n", cpu_overhead_us);
+	std::printf("  [Bench] Estimated GPU Utilization: %.2f%%\n", gpu_util);
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+#else
+	std::printf("  [SKIP] BenchmarkPhaseI_PresentationOverheadAndLatency (non-Apple)\n");
+#endif
+}
+
 } // namespace
 
 int main() {
@@ -1049,6 +1229,17 @@ int main() {
 
 	std::printf("\n");
 	BenchmarkPhaseH_SynchronizationOverhead();
+
+	std::printf("\n--- Phase I: Final Metal Presentation & Frame Pacing ---\n\n");
+
+	// Phase I
+	TestPhaseI_VSyncAndSwapIntervalControl();
+	TestPhaseI_ScheduledPresentation();
+	TestPhaseI_WindowMinimizeRestoreAndFullscreen();
+	TestPhaseI_MultiMonitorDisplayChange();
+
+	std::printf("\n");
+	BenchmarkPhaseI_PresentationOverheadAndLatency();
 
 	std::printf("\nGraphicBackendTests: PASSED\n");
 

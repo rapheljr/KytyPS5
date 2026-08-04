@@ -8,23 +8,17 @@
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
-// SDL2 SysWM gives us the NSWindow pointer.
-// Guard the import so the header compiles cleanly without SDL in other TUs.
 #include "SDL_syswm.h"
 #endif
 
+#include <algorithm>
 #include <cstdint>
 
 namespace Libs::Graphics {
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal helpers (Apple-only)
-// ─────────────────────────────────────────────────────────────────────────────
-
 #if defined(__APPLE__)
 
 static NSView* GetSDLWindowNSView(SDL_Window* sdl_window) {
-	// SDL2: SDL_GetWindowWMInfo populates info.info.cocoa.window (NSWindow*)
 	SDL_SysWMinfo wm_info {};
 	SDL_VERSION(&wm_info.version);
 	if (SDL_GetWindowWMInfo(sdl_window, &wm_info) != SDL_TRUE) {
@@ -48,10 +42,6 @@ static MTLPixelFormat ToMTLPixelFormat(MetalPixelFormat fmt) {
 
 #endif // __APPLE__
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MetalSwapchain
-// ─────────────────────────────────────────────────────────────────────────────
-
 MetalSwapchain::~MetalSwapchain() {
 	if (IsAttached()) {
 		Detach();
@@ -67,35 +57,34 @@ bool MetalSwapchain::Attach(SDL_Window* sdl_window,
 		return false;
 	}
 	if (m_layer != nullptr) {
-		Detach(); // re-attach: tear down the previous layer first
+		Detach();
 	}
 
 	NSView* view = GetSDLWindowNSView(sdl_window);
 	if (view == nil) {
 		return false;
 	}
-	m_view = (void*)view; // non-owning; SDL owns the NSWindow/NSView
+	m_view = (void*)view;
 
-	// Create and configure the CAMetalLayer
 	CAMetalLayer* layer         = [CAMetalLayer layer];
 	layer.device                = (__bridge id<MTLDevice>)mtl_device;
 	layer.pixelFormat           = ToMTLPixelFormat(format);
-	layer.framebufferOnly       = YES; // no CPU readback, maximise GPU bandwidth
+	layer.framebufferOnly       = YES;
 	layer.maximumDrawableCount  = static_cast<NSUInteger>(max_frames);
-	layer.displaySyncEnabled    = YES; // vsync; caller can turn off via SetDisplaySync()
+	m_triple_buffering          = (max_frames >= 3);
 
-	// HiDPI: match the window's backing scale factor so we render at native resolution
+	if (@available(macOS 10.13, *)) {
+		layer.displaySyncEnabled = m_display_sync ? YES : NO;
+	}
+
 	m_content_scale             = [view window].backingScaleFactor;
 	layer.contentsScale         = static_cast<CGFloat>(m_content_scale);
 
-	// Attach to the NSView
 	[view setWantsLayer:YES];
 	[view setLayer:layer];
 
-	// Retain so we can safely CFBridgingRelease later
 	m_layer = (void*)CFBridgingRetain(layer);
 
-	// Set the initial drawable size from the view's current bounds
 	CGSize bounds = view.bounds.size;
 	UpdateDrawableSize(static_cast<uint32_t>(bounds.width),
 	                   static_cast<uint32_t>(bounds.height));
@@ -115,7 +104,6 @@ void MetalSwapchain::Detach() {
 	CAMetalLayer* layer = (__bridge CAMetalLayer*)m_layer;
 	NSView*       view  = (__bridge NSView*)m_view;
 
-	// Remove from the view hierarchy on the calling (main) thread
 	if (view != nil && view.layer == layer) {
 		[view setLayer:nil];
 		[view setWantsLayer:NO];
@@ -129,16 +117,73 @@ void MetalSwapchain::Detach() {
 #endif
 }
 
+void MetalSwapchain::SetDisplaySyncEnabled(bool enabled) {
+	m_display_sync = enabled;
+#if defined(__APPLE__)
+	if (m_layer != nullptr) {
+		CAMetalLayer* layer = (__bridge CAMetalLayer*)m_layer;
+		if (@available(macOS 10.13, *)) {
+			layer.displaySyncEnabled = enabled ? YES : NO;
+		}
+	}
+#endif
+}
+
+void MetalSwapchain::SetSwapInterval(int interval) {
+	m_swap_interval = interval;
+	SetDisplaySyncEnabled(interval > 0);
+}
+
+void MetalSwapchain::SetTripleBuffering(bool enable) {
+	m_triple_buffering = enable;
+#if defined(__APPLE__)
+	if (m_layer != nullptr) {
+		CAMetalLayer* layer = (__bridge CAMetalLayer*)m_layer;
+		layer.maximumDrawableCount = enable ? 3 : 2;
+	}
+#endif
+}
+
+void MetalSwapchain::HandleWindowMinimize() {
+	m_minimized = true;
+}
+
+void MetalSwapchain::HandleWindowRestore() {
+	m_minimized = false;
+}
+
+void MetalSwapchain::HandleDisplayChange() {
+#if defined(__APPLE__)
+	if (m_layer == nullptr || m_view == nullptr) {
+		return;
+	}
+	NSView* view = (__bridge NSView*)m_view;
+	if ([view window] != nil) {
+		m_content_scale     = [view window].backingScaleFactor;
+		CAMetalLayer* layer = (__bridge CAMetalLayer*)m_layer;
+		layer.contentsScale = static_cast<CGFloat>(m_content_scale);
+		UpdateDrawableSize(static_cast<uint32_t>(view.bounds.size.width),
+		                   static_cast<uint32_t>(view.bounds.size.height));
+		layer.drawableSize = CGSizeMake(static_cast<CGFloat>(m_drawable_width),
+		                                static_cast<CGFloat>(m_drawable_height));
+	}
+#endif
+}
+
+void MetalSwapchain::SetFullscreen(bool fullscreen) {
+	m_fullscreen = fullscreen;
+	HandleDisplayChange();
+}
+
 void MetalSwapchain::Resize(uint32_t logical_width, uint32_t logical_height) {
 #if defined(__APPLE__)
 	if (m_layer == nullptr || logical_width == 0 || logical_height == 0) {
 		return;
 	}
-	// Refresh backing scale in case the window moved to a different display
-	NSView*       view = (__bridge NSView*)m_view;
-	m_content_scale    = (view != nil && [view window] != nil)
-	                         ? [view window].backingScaleFactor
-	                         : 1.0;
+	NSView* view    = (__bridge NSView*)m_view;
+	m_content_scale = (view != nil && [view window] != nil)
+	                      ? [view window].backingScaleFactor
+	                      : 1.0;
 
 	CAMetalLayer* layer = (__bridge CAMetalLayer*)m_layer;
 	layer.contentsScale = static_cast<CGFloat>(m_content_scale);
@@ -160,24 +205,28 @@ void MetalSwapchain::UpdateDrawableSize(uint32_t logical_w, uint32_t logical_h) 
 
 MetalDrawableFrame MetalSwapchain::AcquireDrawable(uint64_t /*max_wait_ns*/) {
 	MetalDrawableFrame frame {};
+	if (m_minimized) {
+		return frame;
+	}
+
 #if defined(__APPLE__)
 	if (m_layer == nullptr) {
 		return frame;
 	}
 
-	const uint64_t t0   = Common::Timer::QueryPerformanceCounter();
+	const uint64_t t0    = Common::Timer::QueryPerformanceCounter();
 	CAMetalLayer*  layer = (__bridge CAMetalLayer*)m_layer;
 	id<CAMetalDrawable> drawable = [layer nextDrawable];
-	const uint64_t t1   = Common::Timer::QueryPerformanceCounter();
-	const uint64_t freq = Common::Timer::QueryPerformanceFrequency();
-	const uint64_t dt   = (freq > 0) ? ((t1 - t0) * 1'000'000'000ULL / freq) : 0;
+	const uint64_t t1    = Common::Timer::QueryPerformanceCounter();
+	const uint64_t freq  = Common::Timer::QueryPerformanceFrequency();
+	const uint64_t dt    = (freq > 0) ? ((t1 - t0) * 1'000'000'000ULL / freq) : 0;
 
 	if (drawable == nil) {
 		return frame;
 	}
 
 	frame.drawable        = (void*)CFBridgingRetain(drawable);
-	frame.texture         = (void*)(__bridge void*)drawable.texture; // non-owning
+	frame.texture         = (void*)(__bridge void*)drawable.texture;
 	frame.width           = static_cast<uint32_t>(drawable.texture.width);
 	frame.height          = static_cast<uint32_t>(drawable.texture.height);
 	frame.acquire_time_ns = dt;
@@ -195,30 +244,77 @@ void MetalSwapchain::PresentDrawable(const MetalDrawableFrame& frame,
 	if (frame.drawable == nullptr) {
 		return;
 	}
+
+	const uint64_t t0       = Common::Timer::QueryPerformanceCounter();
 	id<CAMetalDrawable> drawable = (__bridge id<CAMetalDrawable>)frame.drawable;
 
-	if (command_buffer != nullptr) {
-		// Schedule present after the command buffer's GPU work finishes.
-		// This is the zero-copy path: no blit, no extra submission — just
-		// the Metal scheduler enqueues the present after the existing work.
-		//
-		// We use [MTLCommandBuffer presentDrawable:] directly via the
-		// MetalCommandBuffer's raw handle accessor.
-		// NOTE: command_buffer must NOT yet have been Commit()ted;
-		//       the caller should call PresentDrawable() before Commit().
+	if (command_buffer != nullptr && command_buffer->GetNativeCommandBuffer() != nullptr) {
+		id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)command_buffer->GetNativeCommandBuffer();
+		[cb presentDrawable:drawable];
+	} else {
+		[drawable present];
 	}
 
-	// scheduledPresentationTime == 0 → present as soon as the drawable is
-	// done being rendered to (respects displaySyncEnabled / vsync).
-	[drawable present];
+	const uint64_t t1   = Common::Timer::QueryPerformanceCounter();
+	const uint64_t freq = Common::Timer::QueryPerformanceFrequency();
+	const uint64_t dt   = (freq > 0) ? ((t1 - t0) * 1'000'000'000ULL / freq) : 0;
 
-	// Release our retained reference from AcquireDrawable
+	m_last_present_ns   = dt;
+	m_total_present_ns += dt;
+
 	CFBridgingRelease(frame.drawable);
-
 	++m_frames_presented;
 #else
 	(void)frame; (void)command_buffer;
 #endif
+}
+
+void MetalSwapchain::PresentDrawableScheduled(const MetalDrawableFrame& frame,
+                                               MetalCommandBuffer*        command_buffer,
+                                               double                     delay_seconds) {
+#if defined(__APPLE__)
+	if (frame.drawable == nullptr) {
+		return;
+	}
+
+	const uint64_t t0       = Common::Timer::QueryPerformanceCounter();
+	id<CAMetalDrawable> drawable = (__bridge id<CAMetalDrawable>)frame.drawable;
+
+	if (command_buffer != nullptr && command_buffer->GetNativeCommandBuffer() != nullptr) {
+		id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)command_buffer->GetNativeCommandBuffer();
+		if (@available(macOS 10.15, *)) {
+			[cb presentDrawable:drawable afterMinimumDuration:delay_seconds];
+		} else {
+			[cb presentDrawable:drawable];
+		}
+	} else {
+		[drawable present];
+	}
+
+	const uint64_t t1   = Common::Timer::QueryPerformanceCounter();
+	const uint64_t freq = Common::Timer::QueryPerformanceFrequency();
+	const uint64_t dt   = (freq > 0) ? ((t1 - t0) * 1'000'000'000ULL / freq) : 0;
+
+	m_last_present_ns   = dt;
+	m_total_present_ns += dt;
+
+	CFBridgingRelease(frame.drawable);
+	++m_frames_presented;
+#else
+	(void)frame; (void)command_buffer; (void)delay_seconds;
+#endif
+}
+
+double MetalSwapchain::GetGpuUtilizationPercent() const noexcept {
+	if (m_last_acquire_ns == 0) {
+		return 100.0;
+	}
+	// Estimate: target frame budget ~16.66 ms (60 FPS).
+	// Idle wait time in AcquireDrawable corresponds to GPU bubble.
+	double acquire_ms = static_cast<double>(m_last_acquire_ns) / 1'000'000.0;
+	double idle_ratio = acquire_ms / 16.666;
+	double util       = (1.0 - std::clamp(idle_ratio, 0.0, 1.0)) * 100.0;
+	return util;
 }
 
 } // namespace Libs::Graphics
