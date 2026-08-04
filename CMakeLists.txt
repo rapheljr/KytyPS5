@@ -920,6 +920,71 @@ if(APPLE)
 	target_link_options(ps5_title_compat_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(ps5_commercial_title_boot_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Ps5CommercialTitleBootTests.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/bootPipelineManager.cpp"
+	"${KYTY_SOURCE_DIR}/compat/titleCompatibility.cpp"
+	"${KYTY_SOURCE_DIR}/compat/versionDetection.cpp"
+	"${KYTY_SOURCE_DIR}/compat/compatibilityReporter.cpp"
+	"${KYTY_SOURCE_DIR}/compat/compatDevTools.cpp"
+	"${KYTY_SOURCE_DIR}/loader/gameLoadingPipeline.cpp"
+	"${KYTY_SOURCE_DIR}/loader/moduleDependencyGraph.cpp"
+	"${KYTY_SOURCE_DIR}/loader/selfParser.cpp"
+	"${KYTY_SOURCE_DIR}/loader/elf.cpp"
+	"${KYTY_SOURCE_DIR}/loader/runtimeLinker.cpp"
+	"${KYTY_SOURCE_DIR}/loader/symbolDatabase.cpp"
+	"${KYTY_SOURCE_DIR}/loader/gamePatch.cpp"
+	"${KYTY_SOURCE_DIR}/loader/systemContent.cpp"
+	"${KYTY_SOURCE_DIR}/loader/timer.cpp"
+	"${KYTY_SOURCE_DIR}/loader/x64InstructionEmulator.cpp"
+	"${KYTY_SOURCE_DIR}/libs/libKernel.cpp"
+	"${KYTY_SOURCE_DIR}/libs/libAmpr.cpp"
+	"${KYTY_SOURCE_DIR}/libs/guestPrintf.cpp"
+	"${KYTY_SOURCE_DIR}/libs/network.cpp"
+	"${KYTY_SOURCE_DIR}/libs/libC.cpp"
+	"${KYTY_SOURCE_DIR}/libs/errno.cpp"
+	"${KYTY_SOURCE_DIR}/audio/audioEngine.cpp"
+	"${KYTY_SOURCE_DIR}/audio/audioVoiceMixer.cpp"
+	"${KYTY_SOURCE_DIR}/audio/audio3DEngine.cpp"
+	"${KYTY_SOURCE_DIR}/audio/coreAudioBackend.mm"
+	"${KYTY_SOURCE_DIR}/input/inputEngine.cpp"
+	"${KYTY_SOURCE_DIR}/input/macOsHidBackend.mm"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
+	${METAL_BACKEND_SRC}
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/memory.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/pthread.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/kernelScheduler.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/kernelTimer.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/semaphore.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/eventFlag.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/eventQueue.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/fileSystem.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/processManager.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/kernelObject.cpp"
+)
+target_link_libraries(ps5_commercial_title_boot_tests common ${kyty_emulator_link_libraries})
+target_include_directories(ps5_commercial_title_boot_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(ps5_commercial_title_boot_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+	target_link_libraries(ps5_commercial_title_boot_tests "-framework AudioToolbox" "-framework CoreAudio" "-framework IOKit" "-framework CoreFoundation")
+endif()
+
 add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/EmulatorIntegrationTests.cpp"
 	"${KYTY_SOURCE_DIR}/emulator/emulatorIntegration.cpp"
