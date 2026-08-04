@@ -109,13 +109,37 @@ void Pm4CommandList::RecordTimestampQuery(uint64_t query_addr) {
 void Pm4CommandList::RecordSetRegister(uint32_t reg_offset, const uint32_t* values, uint32_t count, bool is_sh) {
 	CmdSetRegisterState cmd{};
 	cmd.reg_offset = reg_offset;
-	cmd.count      = std::min(count, 16u);
-	if (values && cmd.count > 0) {
-		std::memcpy(cmd.values, values, sizeof(uint32_t) * cmd.count);
-	}
+	cmd.count      = (count > 16) ? 16 : count;
 	cmd.is_sh_reg  = is_sh;
+	if (values && count > 0) {
+		std::memcpy(cmd.values, values, cmd.count * sizeof(uint32_t));
+	}
 
 	m_commands.push_back(GenericCommand{CommandType::SetRegisterState, cmd});
+}
+
+void Pm4CommandList::RecordSetPredication(uint64_t query_addr, bool enable, bool hint_draw) {
+	CmdSetPredication cmd{};
+	cmd.query_gpu_addr = query_addr;
+	cmd.pred_enable    = enable;
+	cmd.hint_draw      = hint_draw;
+
+	m_commands.push_back(GenericCommand{CommandType::SetPredication, cmd});
+}
+
+void Pm4CommandList::RecordMemSemaphore(uint64_t sem_addr, uint32_t op) {
+	CmdMemSemaphore cmd{};
+	cmd.sem_gpu_addr = sem_addr;
+	cmd.sem_op       = op;
+
+	m_commands.push_back(GenericCommand{CommandType::MemSemaphore, cmd});
+}
+
+void Pm4CommandList::RecordSetIndexType(uint32_t index_type) {
+	CmdSetIndexType cmd{};
+	cmd.index_type = index_type;
+
+	m_commands.push_back(GenericCommand{CommandType::SetIndexType, cmd});
 }
 
 void Pm4CommandList::Append(const Pm4CommandList& other) {

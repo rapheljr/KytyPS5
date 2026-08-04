@@ -862,6 +862,21 @@ if(APPLE)
 	target_link_options(arm64_guest_jit_backend_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(pm4_complete_translator_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Pm4CompleteTranslatorTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Parser.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Disassembler.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4CommandList.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Translator.cpp"
+)
+target_link_libraries(pm4_complete_translator_tests common ${kyty_emulator_link_libraries})
+target_include_directories(pm4_complete_translator_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(pm4_complete_translator_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+
 
 
 

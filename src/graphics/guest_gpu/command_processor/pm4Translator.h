@@ -26,7 +26,7 @@ struct TranslationStats {
 
 class Pm4Translator {
 public:
-	explicit Pm4Translator(IGraphicBackend* backend) : m_backend(backend) {}
+	explicit Pm4Translator(IGraphicBackend* backend = nullptr) : m_backend(backend) {}
 	~Pm4Translator() = default;
 
 	KYTY_CLASS_NO_COPY(Pm4Translator);

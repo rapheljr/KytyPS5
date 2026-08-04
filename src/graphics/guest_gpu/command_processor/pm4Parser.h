@@ -105,6 +105,57 @@ struct SetRegisterPacket {
 	bool     is_context_reg = false;
 };
 
+struct SetBasePacket {
+	uint32_t base_type = 0;
+	uint64_t gpu_addr  = 0;
+};
+
+struct ClearStatePacket {
+	uint32_t flags = 0;
+};
+
+struct IndexBufferInfoPacket {
+	uint64_t gpu_addr   = 0;
+	uint32_t size_bytes = 0;
+	uint32_t index_type = 0; // 0: 16-bit, 1: 32-bit
+};
+
+struct SetPredicationPacket {
+	uint64_t query_gpu_addr = 0;
+	bool     pred_enable    = false;
+	bool     hint_draw      = false;
+};
+
+struct CondExecPacket {
+	uint64_t test_gpu_addr  = 0;
+	uint32_t skip_count_dw  = 0;
+};
+
+struct ContextControlPacket {
+	uint32_t load_control   = 0;
+	uint32_t shadow_control = 0;
+};
+
+struct MultiDrawIndirectPacket {
+	uint64_t indirect_gpu_addr = 0;
+	uint32_t draw_count        = 1;
+	uint32_t stride_bytes      = 0;
+	bool     indexed           = false;
+};
+
+struct NumInstancesPacket {
+	uint32_t instance_count = 1;
+};
+
+struct MemSemaphorePacket {
+	uint64_t sem_gpu_addr = 0;
+	uint32_t sem_op       = 0; // 0: Signal, 1: Wait
+};
+
+struct RewindPacket {
+	uint32_t rewind_offset = 0;
+};
+
 using DecodedPacketData = std::variant<
 	DrawPacket,
 	DispatchPacket,
@@ -113,8 +164,19 @@ using DecodedPacketData = std::variant<
 	BarrierPacket,
 	EventPacket,
 	QueryPacket,
-	SetRegisterPacket
+	SetRegisterPacket,
+	SetBasePacket,
+	ClearStatePacket,
+	IndexBufferInfoPacket,
+	SetPredicationPacket,
+	CondExecPacket,
+	ContextControlPacket,
+	MultiDrawIndirectPacket,
+	NumInstancesPacket,
+	MemSemaphorePacket,
+	RewindPacket
 >;
+
 
 struct DecodedPacket {
 	PacketHeader      header;

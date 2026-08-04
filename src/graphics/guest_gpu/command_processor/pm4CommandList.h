@@ -25,7 +25,10 @@ enum class CommandType : uint8_t {
 	PipelineBarrier,
 	SetEvent,
 	TimestampQuery,
-	SetRegisterState
+	SetRegisterState,
+	SetPredication,
+	MemSemaphore,
+	SetIndexType
 };
 
 struct CmdDrawNonIndexed {
@@ -100,6 +103,21 @@ struct CmdSetRegisterState {
 	bool     is_sh_reg      = false;
 };
 
+struct CmdSetPredication {
+	uint64_t query_gpu_addr = 0;
+	bool     pred_enable    = false;
+	bool     hint_draw      = false;
+};
+
+struct CmdMemSemaphore {
+	uint64_t sem_gpu_addr   = 0;
+	uint32_t sem_op         = 0;
+};
+
+struct CmdSetIndexType {
+	uint32_t index_type     = 0;
+};
+
 using GenericCommandData = std::variant<
 	CmdDrawNonIndexed,
 	CmdDrawIndexed,
@@ -111,8 +129,12 @@ using GenericCommandData = std::variant<
 	CmdPipelineBarrier,
 	CmdSetEvent,
 	CmdTimestampQuery,
-	CmdSetRegisterState
+	CmdSetRegisterState,
+	CmdSetPredication,
+	CmdMemSemaphore,
+	CmdSetIndexType
 >;
+
 
 struct GenericCommand {
 	CommandType        type = CommandType::DrawNonIndexed;
@@ -140,6 +162,10 @@ public:
 	void RecordSetEvent(uint32_t event_type, uint64_t signal_addr, uint64_t value);
 	void RecordTimestampQuery(uint64_t query_addr);
 	void RecordSetRegister(uint32_t reg_offset, const uint32_t* values, uint32_t count, bool is_sh);
+	void RecordSetPredication(uint64_t query_addr, bool enable, bool hint_draw);
+	void RecordMemSemaphore(uint64_t sem_addr, uint32_t op);
+	void RecordSetIndexType(uint32_t index_type);
+
 
 	[[nodiscard]] const std::vector<GenericCommand>& GetCommands() const noexcept { return m_commands; }
 	[[nodiscard]] size_t GetCommandCount() const noexcept { return m_commands.size(); }

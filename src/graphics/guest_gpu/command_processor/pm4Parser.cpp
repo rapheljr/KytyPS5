@@ -219,11 +219,107 @@ DecodedPacketData Pm4RingBufferParser::DecodePayload(const PacketHeader& header,
 			return reg;
 		}
 
-		default:
-			break;
-	}
+		case IT_SET_BASE: {
+			SetBasePacket base{};
+			base.base_type = payload[0];
+			if (payload_dw >= 3) {
+				base.gpu_addr = (static_cast<uint64_t>(payload[2]) << 32u) | payload[1];
+			}
+			return base;
+		}
 
-	return SetRegisterPacket{};
+		case IT_CLEAR_STATE: {
+			ClearStatePacket clr{};
+			if (payload_dw >= 1) clr.flags = payload[0];
+			return clr;
+		}
+
+		case IT_INDEX_BUFFER_SIZE:
+		case IT_INDEX_BASE:
+		case IT_INDEX_TYPE: {
+			IndexBufferInfoPacket ib_info{};
+			if (header.opcode == IT_INDEX_BUFFER_SIZE && payload_dw >= 1) {
+				ib_info.size_bytes = payload[0] * 4;
+			} else if (header.opcode == IT_INDEX_BASE && payload_dw >= 2) {
+				ib_info.gpu_addr = (static_cast<uint64_t>(payload[1]) << 32u) | payload[0];
+			} else if (header.opcode == IT_INDEX_TYPE && payload_dw >= 1) {
+				ib_info.index_type = payload[0];
+			}
+			return ib_info;
+		}
+
+		case IT_SET_PREDICATION: {
+			SetPredicationPacket pred{};
+			if (payload_dw >= 2) {
+				pred.query_gpu_addr = (static_cast<uint64_t>(payload[1]) << 32u) | payload[0];
+			}
+			if (payload_dw >= 3) {
+				pred.pred_enable = ((payload[2] & 0x1u) != 0);
+				pred.hint_draw   = ((payload[2] & 0x2u) != 0);
+			}
+			return pred;
+		}
+
+		case IT_COND_EXEC: {
+			CondExecPacket cond{};
+			if (payload_dw >= 2) {
+				cond.test_gpu_addr = (static_cast<uint64_t>(payload[1]) << 32u) | payload[0];
+			}
+			if (payload_dw >= 3) {
+				cond.skip_count_dw = payload[2];
+			}
+			return cond;
+		}
+
+		case IT_CONTEXT_CONTROL: {
+			ContextControlPacket ctrl{};
+			if (payload_dw >= 2) {
+				ctrl.load_control   = payload[0];
+				ctrl.shadow_control = payload[1];
+			}
+			return ctrl;
+		}
+
+		case IT_DRAW_INDIRECT_MULTI:
+		case IT_DRAW_INDEX_INDIRECT_MULTI: {
+			MultiDrawIndirectPacket multi{};
+			multi.indexed = (header.opcode == IT_DRAW_INDEX_INDIRECT_MULTI);
+			if (payload_dw >= 3) {
+				multi.indirect_gpu_addr = (static_cast<uint64_t>(payload[1]) << 32u) | payload[0];
+				multi.draw_count        = payload[2];
+			}
+			if (payload_dw >= 4) {
+				multi.stride_bytes = payload[3];
+			}
+			return multi;
+		}
+
+		case IT_NUM_INSTANCES: {
+			NumInstancesPacket num{};
+			if (payload_dw >= 1) num.instance_count = payload[0];
+			return num;
+		}
+
+		case IT_MEM_SEMAPHORE: {
+			MemSemaphorePacket sem{};
+			if (payload_dw >= 2) {
+				sem.sem_gpu_addr = (static_cast<uint64_t>(payload[1]) << 32u) | payload[0];
+			}
+			if (payload_dw >= 3) {
+				sem.sem_op = payload[2];
+			}
+			return sem;
+		}
+
+		case IT_REWIND: {
+			RewindPacket rwd{};
+			if (payload_dw >= 1) rwd.rewind_offset = payload[0];
+			return rwd;
+		}
+
+		default:
+			return SetRegisterPacket{};
+	}
 }
 
 } // namespace Libs::Graphics::Pm4

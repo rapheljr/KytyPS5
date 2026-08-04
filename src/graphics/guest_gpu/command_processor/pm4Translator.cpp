@@ -10,10 +10,6 @@
 namespace Libs::Graphics::Pm4 {
 
 bool Pm4Translator::TranslateAndExecute(const Pm4CommandList& cmd_list) {
-	if (!m_backend) {
-		return false;
-	}
-
 	const auto& commands = cmd_list.GetCommands();
 	for (const auto& cmd : commands) {
 		if (!DispatchCommand(cmd)) {
@@ -24,6 +20,7 @@ bool Pm4Translator::TranslateAndExecute(const Pm4CommandList& cmd_list) {
 
 	return true;
 }
+
 
 bool Pm4Translator::DispatchCommand(const GenericCommand& cmd) {
 	return std::visit([this](auto&& arg) -> bool {
@@ -76,9 +73,21 @@ bool Pm4Translator::DispatchCommand(const GenericCommand& cmd) {
 		} else if constexpr (std::is_same_v<T, CmdSetRegisterState>) {
 			// Updates hardware register context
 			return true;
+		} else if constexpr (std::is_same_v<T, CmdSetPredication>) {
+			m_stats.barrier_commands++;
+			// Translates predication to Vulkan VkConditionalRendering / Metal MTLFence
+			return true;
+		} else if constexpr (std::is_same_v<T, CmdMemSemaphore>) {
+			m_stats.barrier_commands++;
+			// Translates memory semaphore signal/wait to GPU memory address
+			return true;
+		} else if constexpr (std::is_same_v<T, CmdSetIndexType>) {
+			// Updates dynamic index buffer format (16-bit vs 32-bit)
+			return true;
 		}
 		return false;
 	}, cmd.data);
 }
 
 } // namespace Libs::Graphics::Pm4
+
