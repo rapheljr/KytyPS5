@@ -811,6 +811,7 @@ add_executable(arm64_jit_validation_framework_tests EXCLUDE_FROM_ALL
 	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86DecoderTables.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
@@ -820,6 +821,29 @@ add_executable(arm64_jit_validation_framework_tests EXCLUDE_FROM_ALL
 )
 target_link_libraries(arm64_jit_validation_framework_tests common)
 target_include_directories(arm64_jit_validation_framework_tests PRIVATE ${inc_headers})
+
+add_executable(opcode_coverage_framework_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/OpcodeCoverageFrameworkTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/opcodeCoverageFramework.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64JitValidationFramework.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86DecoderTables.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+)
+target_link_libraries(opcode_coverage_framework_tests common)
+target_include_directories(opcode_coverage_framework_tests PRIVATE ${inc_headers})
 
 add_executable(arm64_backend_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ARM64BackendTests.cpp"
