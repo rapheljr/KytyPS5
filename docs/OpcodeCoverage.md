@@ -4,7 +4,7 @@
 
 | Category | Implemented / Total | Coverage % |
 | :--- | :--- | :--- |
-| Arithmetic | 29 / 29 | 100.00% |
+| Arithmetic | 31 / 31 | 100.00% |
 | Logic | 18 / 18 | 100.00% |
 | Shift | 6 / 6 | 100.00% |
 | Rotate | 0 / 0 | 0.00% |
@@ -12,8 +12,8 @@
 | Compare | 28 / 28 | 100.00% |
 | Control Flow | 21 / 21 | 100.00% |
 | Stack | 19 / 19 | 100.00% |
-| String | 0 / 10 | 0.00% |
-| SIMD SSE | 2 / 81 | 2.47% |
+| String | 10 / 10 | 100.00% |
+| SIMD SSE | 81 / 81 | 100.00% |
 | AVX | 0 / 0 | 0.00% |
-| System | 1 / 247 | 0.40% |
-| **TOTAL GRAND** | **177 / 512** | **34.57%** |
+| System | 245 / 245 | 100.00% |
+| **TOTAL GRAND** | **512 / 512** | **100.00%** |

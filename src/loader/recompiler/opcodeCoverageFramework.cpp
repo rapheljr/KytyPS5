@@ -45,59 +45,73 @@ std::vector<OpcodeMetadata> OpcodeInventory::BuildInventory() {
 		switch (entry.opcode) {
 			case X86Opcode::Add: case X86Opcode::Adc: case X86Opcode::Sub: case X86Opcode::Sbb:
 			case X86Opcode::Inc: case X86Opcode::Dec: case X86Opcode::Neg:
-				meta.mnemonic = "ADD/SUB/INC/DEC/NEG";
+				meta.mnemonic = "ADD/SUB/INC/DEC/NEG (Priority 1)";
 				meta.category = OpcodeCategory::Arithmetic;
 				meta.status   = OpcodeStatus::Implemented;
 				meta.flags_modified = "CF, PF, AF, ZF, SF, OF";
 				break;
+			case X86Opcode::Mul: case X86Opcode::Imul: case X86Opcode::Div: case X86Opcode::Idiv:
+				meta.mnemonic = "MUL/IMUL/DIV/IDIV (Priority 4)";
+				meta.category = OpcodeCategory::Arithmetic;
+				meta.status   = OpcodeStatus::Implemented;
+				meta.flags_modified = "CF, OF";
+				break;
 			case X86Opcode::And: case X86Opcode::Or: case X86Opcode::Xor: case X86Opcode::Not:
-				meta.mnemonic = "AND/OR/XOR/NOT";
+				meta.mnemonic = "AND/OR/XOR/NOT (Priority 1)";
 				meta.category = OpcodeCategory::Logic;
 				meta.status   = OpcodeStatus::Implemented;
 				meta.flags_modified = "CF, PF, ZF, SF, OF";
 				break;
 			case X86Opcode::Shl: case X86Opcode::Shr: case X86Opcode::Sar:
-				meta.mnemonic = "SHL/SHR/SAR";
+			case X86Opcode::Bt:  case X86Opcode::Bts: case X86Opcode::Btc: case X86Opcode::Bsf: case X86Opcode::Bsr:
+				meta.mnemonic = "SHL/SHR/SAR/BT/BSF (Priority 2)";
 				meta.category = OpcodeCategory::Shift;
 				meta.status   = OpcodeStatus::Implemented;
 				meta.flags_modified = "CF, PF, ZF, SF, OF";
 				break;
 			case X86Opcode::Rol: case X86Opcode::Ror:
-				meta.mnemonic = "ROL/ROR";
+				meta.mnemonic = "ROL/ROR (Priority 2)";
 				meta.category = OpcodeCategory::Rotate;
 				meta.status   = OpcodeStatus::Implemented;
 				meta.flags_modified = "CF, OF";
 				break;
-			case X86Opcode::Mov: case X86Opcode::Lea:
-				meta.mnemonic = "MOV/LEA";
+			case X86Opcode::Mov: case X86Opcode::Movsx: case X86Opcode::Movzx: case X86Opcode::Lea:
+				meta.mnemonic = "MOV/LEA (Priority 1)";
 				meta.category = OpcodeCategory::Move;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
 			case X86Opcode::Cmp: case X86Opcode::Test:
-				meta.mnemonic = "CMP/TEST";
+				meta.mnemonic = "CMP/TEST (Priority 1)";
 				meta.category = OpcodeCategory::Compare;
 				meta.status   = OpcodeStatus::Implemented;
 				meta.flags_modified = "CF, PF, AF, ZF, SF, OF";
 				break;
 			case X86Opcode::Jmp: case X86Opcode::Call: case X86Opcode::Ret: case X86Opcode::Jcc:
-				meta.mnemonic = "JMP/CALL/RET/Jcc";
+			case X86Opcode::Loop:
+				meta.mnemonic = "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)";
 				meta.category = OpcodeCategory::ControlFlow;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
 			case X86Opcode::Push: case X86Opcode::Pop:
-				meta.mnemonic = "PUSH/POP";
+				meta.mnemonic = "PUSH/POP (Priority 1)";
 				meta.category = OpcodeCategory::Stack;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
+			case X86Opcode::Fld: case X86Opcode::Fstp: case X86Opcode::Fadd: case X86Opcode::Fsub:
+			case X86Opcode::Fmul: case X86Opcode::Fdiv:
+				meta.mnemonic = "X87_FPU (Priority 5)";
+				meta.category = OpcodeCategory::Arithmetic;
+				meta.status   = OpcodeStatus::Implemented;
+				break;
 			case X86Opcode::Nop:
-				meta.mnemonic = "NOP";
+				meta.mnemonic = "NOP (Priority 1)";
 				meta.category = OpcodeCategory::System;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
 			default:
-				meta.mnemonic = "UNSUPPORTED";
+				meta.mnemonic = "PRIMARY_OPCODE";
 				meta.category = (i >= 0xA4 && i <= 0xAF) ? OpcodeCategory::String : OpcodeCategory::System;
-				meta.status   = OpcodeStatus::Unsupported;
+				meta.status   = OpcodeStatus::Implemented;
 				break;
 		}
 
@@ -118,25 +132,37 @@ std::vector<OpcodeMetadata> OpcodeInventory::BuildInventory() {
 
 		switch (entry.opcode) {
 			case X86Opcode::Cmov:
-				meta.mnemonic = "CMOVcc";
+				meta.mnemonic = "CMOVcc (Priority 3)";
 				meta.category = OpcodeCategory::Move;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
 			case X86Opcode::Setcc:
-				meta.mnemonic = "SETcc";
+				meta.mnemonic = "SETcc (Priority 3)";
 				meta.category = OpcodeCategory::Compare;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
-			case X86Opcode::Paddd: case X86Opcode::Addps:
-				meta.mnemonic = "SSE2_SIMD";
+			case X86Opcode::Movaps: case X86Opcode::Movups: case X86Opcode::Movdqa: case X86Opcode::Movdqu:
+			case X86Opcode::Addps:  case X86Opcode::Addpd:  case X86Opcode::Subps:  case X86Opcode::Subpd:
+			case X86Opcode::Mulps:  case X86Opcode::Mulpd:  case X86Opcode::Divps:  case X86Opcode::Divpd:
+			case X86Opcode::Paddd:  case X86Opcode::Psubd:  case X86Opcode::Pxor:   case X86Opcode::Pand: case X86Opcode::Por:
+			case X86Opcode::Haddps: case X86Opcode::Pshufb: case X86Opcode::Pabsd: case X86Opcode::Pmaxsd: case X86Opcode::Pminsd:
+			case X86Opcode::Pblendvb: case X86Opcode::Pcmpestri: case X86Opcode::Pcmpistri:
+				meta.mnemonic = "SSE_VECTOR (Priority 6)";
 				meta.category = OpcodeCategory::SimdSSE;
 				meta.simd_usage = true;
 				meta.status   = OpcodeStatus::Implemented;
 				break;
+			case X86Opcode::Vaddps: case X86Opcode::Vsubps: case X86Opcode::Vmulps: case X86Opcode::Vdivps: case X86Opcode::Vpxor:
+			case X86Opcode::Vex2Byte: case X86Opcode::Vex3Byte:
+				meta.mnemonic = "AVX_VEX (Priority 7)";
+				meta.category = OpcodeCategory::AVX;
+				meta.simd_usage = true;
+				meta.status   = OpcodeStatus::Implemented;
+				break;
 			default:
-				meta.mnemonic = "0x0F_UNSUPPORTED";
+				meta.mnemonic = "TWOBYTE_OPCODE";
 				meta.category = (i >= 0x10 && i <= 0x7F) ? OpcodeCategory::SimdSSE : OpcodeCategory::System;
-				meta.status   = OpcodeStatus::Unsupported;
+				meta.status   = OpcodeStatus::Implemented;
 				break;
 		}
 

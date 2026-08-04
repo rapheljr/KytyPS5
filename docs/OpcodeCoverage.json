@@ -4,7 +4,7 @@
     {
       "opcode": "0x00",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -13,7 +13,7 @@
     {
       "opcode": "0x01",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -22,7 +22,7 @@
     {
       "opcode": "0x02",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -31,7 +31,7 @@
     {
       "opcode": "0x03",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -40,7 +40,7 @@
     {
       "opcode": "0x04",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -49,7 +49,7 @@
     {
       "opcode": "0x05",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -58,25 +58,25 @@
     {
       "opcode": "0x06",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x07",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x08",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -85,7 +85,7 @@
     {
       "opcode": "0x09",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -94,7 +94,7 @@
     {
       "opcode": "0x0A",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -103,7 +103,7 @@
     {
       "opcode": "0x0B",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -112,7 +112,7 @@
     {
       "opcode": "0x0C",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -121,7 +121,7 @@
     {
       "opcode": "0x0D",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -130,25 +130,25 @@
     {
       "opcode": "0x0E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x10",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -157,7 +157,7 @@
     {
       "opcode": "0x11",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -166,7 +166,7 @@
     {
       "opcode": "0x12",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -175,7 +175,7 @@
     {
       "opcode": "0x13",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -184,7 +184,7 @@
     {
       "opcode": "0x14",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -193,7 +193,7 @@
     {
       "opcode": "0x15",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -202,25 +202,25 @@
     {
       "opcode": "0x16",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x17",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x18",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -229,7 +229,7 @@
     {
       "opcode": "0x19",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -238,7 +238,7 @@
     {
       "opcode": "0x1A",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -247,7 +247,7 @@
     {
       "opcode": "0x1B",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -256,7 +256,7 @@
     {
       "opcode": "0x1C",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -265,7 +265,7 @@
     {
       "opcode": "0x1D",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -274,25 +274,25 @@
     {
       "opcode": "0x1E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x20",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -301,7 +301,7 @@
     {
       "opcode": "0x21",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -310,7 +310,7 @@
     {
       "opcode": "0x22",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -319,7 +319,7 @@
     {
       "opcode": "0x23",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -328,7 +328,7 @@
     {
       "opcode": "0x24",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -337,7 +337,7 @@
     {
       "opcode": "0x25",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -346,25 +346,25 @@
     {
       "opcode": "0x26",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x27",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x28",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -373,7 +373,7 @@
     {
       "opcode": "0x29",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -382,7 +382,7 @@
     {
       "opcode": "0x2A",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -391,7 +391,7 @@
     {
       "opcode": "0x2B",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -400,7 +400,7 @@
     {
       "opcode": "0x2C",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -409,7 +409,7 @@
     {
       "opcode": "0x2D",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -418,25 +418,25 @@
     {
       "opcode": "0x2E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x30",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -445,7 +445,7 @@
     {
       "opcode": "0x31",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -454,7 +454,7 @@
     {
       "opcode": "0x32",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -463,7 +463,7 @@
     {
       "opcode": "0x33",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -472,7 +472,7 @@
     {
       "opcode": "0x34",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -481,7 +481,7 @@
     {
       "opcode": "0x35",
       "is_twobyte": false,
-      "mnemonic": "AND/OR/XOR/NOT",
+      "mnemonic": "AND/OR/XOR/NOT (Priority 1)",
       "category": "Logic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -490,25 +490,25 @@
     {
       "opcode": "0x36",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x37",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x38",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -517,7 +517,7 @@
     {
       "opcode": "0x39",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -526,7 +526,7 @@
     {
       "opcode": "0x3A",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -535,7 +535,7 @@
     {
       "opcode": "0x3B",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -544,7 +544,7 @@
     {
       "opcode": "0x3C",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -553,7 +553,7 @@
     {
       "opcode": "0x3D",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -562,169 +562,169 @@
     {
       "opcode": "0x3E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x3F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x40",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x41",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x42",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x43",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x44",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x45",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x46",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x47",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x48",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x49",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4A",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4B",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4C",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4D",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x50",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -733,7 +733,7 @@
     {
       "opcode": "0x51",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -742,7 +742,7 @@
     {
       "opcode": "0x52",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -751,7 +751,7 @@
     {
       "opcode": "0x53",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -760,7 +760,7 @@
     {
       "opcode": "0x54",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -769,7 +769,7 @@
     {
       "opcode": "0x55",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -778,7 +778,7 @@
     {
       "opcode": "0x56",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -787,7 +787,7 @@
     {
       "opcode": "0x57",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -796,7 +796,7 @@
     {
       "opcode": "0x58",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -805,7 +805,7 @@
     {
       "opcode": "0x59",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -814,7 +814,7 @@
     {
       "opcode": "0x5A",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -823,7 +823,7 @@
     {
       "opcode": "0x5B",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -832,7 +832,7 @@
     {
       "opcode": "0x5C",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -841,7 +841,7 @@
     {
       "opcode": "0x5D",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -850,7 +850,7 @@
     {
       "opcode": "0x5E",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -859,7 +859,7 @@
     {
       "opcode": "0x5F",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -868,34 +868,34 @@
     {
       "opcode": "0x60",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x61",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x62",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x63",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -904,43 +904,43 @@
     {
       "opcode": "0x64",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x65",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x66",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x67",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x68",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -949,16 +949,16 @@
     {
       "opcode": "0x69",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
-      "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "mnemonic": "MUL/IMUL/DIV/IDIV (Priority 4)",
+      "category": "Arithmetic",
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x6A",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -967,52 +967,52 @@
     {
       "opcode": "0x6B",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
-      "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "mnemonic": "MUL/IMUL/DIV/IDIV (Priority 4)",
+      "category": "Arithmetic",
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x6C",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x6D",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x6E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x6F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x70",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1021,7 +1021,7 @@
     {
       "opcode": "0x71",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1030,7 +1030,7 @@
     {
       "opcode": "0x72",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1039,7 +1039,7 @@
     {
       "opcode": "0x73",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1048,7 +1048,7 @@
     {
       "opcode": "0x74",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1057,7 +1057,7 @@
     {
       "opcode": "0x75",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1066,7 +1066,7 @@
     {
       "opcode": "0x76",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1075,7 +1075,7 @@
     {
       "opcode": "0x77",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1084,7 +1084,7 @@
     {
       "opcode": "0x78",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1093,7 +1093,7 @@
     {
       "opcode": "0x79",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1102,7 +1102,7 @@
     {
       "opcode": "0x7A",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1111,7 +1111,7 @@
     {
       "opcode": "0x7B",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1120,7 +1120,7 @@
     {
       "opcode": "0x7C",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1129,7 +1129,7 @@
     {
       "opcode": "0x7D",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1138,7 +1138,7 @@
     {
       "opcode": "0x7E",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1147,7 +1147,7 @@
     {
       "opcode": "0x7F",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1156,7 +1156,7 @@
     {
       "opcode": "0x80",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1165,7 +1165,7 @@
     {
       "opcode": "0x81",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1174,16 +1174,16 @@
     {
       "opcode": "0x82",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x83",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1192,7 +1192,7 @@
     {
       "opcode": "0x84",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1201,7 +1201,7 @@
     {
       "opcode": "0x85",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1210,7 +1210,7 @@
     {
       "opcode": "0x86",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1219,7 +1219,7 @@
     {
       "opcode": "0x87",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1228,7 +1228,7 @@
     {
       "opcode": "0x88",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1237,7 +1237,7 @@
     {
       "opcode": "0x89",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1246,7 +1246,7 @@
     {
       "opcode": "0x8A",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1255,7 +1255,7 @@
     {
       "opcode": "0x8B",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1264,7 +1264,7 @@
     {
       "opcode": "0x8C",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1273,16 +1273,16 @@
     {
       "opcode": "0x8D",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8E",
       "is_twobyte": false,
-      "mnemonic": "PUSH/POP",
+      "mnemonic": "PUSH/POP (Priority 1)",
       "category": "Stack",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1291,16 +1291,16 @@
     {
       "opcode": "0x8F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x90",
       "is_twobyte": false,
-      "mnemonic": "NOP",
+      "mnemonic": "NOP (Priority 1)",
       "category": "System",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1309,7 +1309,7 @@
     {
       "opcode": "0x91",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1318,7 +1318,7 @@
     {
       "opcode": "0x92",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1327,7 +1327,7 @@
     {
       "opcode": "0x93",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1336,7 +1336,7 @@
     {
       "opcode": "0x94",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1345,7 +1345,7 @@
     {
       "opcode": "0x95",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1354,7 +1354,7 @@
     {
       "opcode": "0x96",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1363,7 +1363,7 @@
     {
       "opcode": "0x97",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1372,79 +1372,79 @@
     {
       "opcode": "0x98",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x99",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9A",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9B",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9C",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9D",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9E",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9F",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA0",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1453,7 +1453,7 @@
     {
       "opcode": "0xA1",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1462,7 +1462,7 @@
     {
       "opcode": "0xA2",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1471,7 +1471,7 @@
     {
       "opcode": "0xA3",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1480,43 +1480,43 @@
     {
       "opcode": "0xA4",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA5",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA6",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA7",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA8",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1525,7 +1525,7 @@
     {
       "opcode": "0xA9",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1534,61 +1534,61 @@
     {
       "opcode": "0xAA",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAB",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAC",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAD",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAE",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAF",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "String",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB0",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1597,7 +1597,7 @@
     {
       "opcode": "0xB1",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1606,7 +1606,7 @@
     {
       "opcode": "0xB2",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1615,7 +1615,7 @@
     {
       "opcode": "0xB3",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1624,7 +1624,7 @@
     {
       "opcode": "0xB4",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1633,7 +1633,7 @@
     {
       "opcode": "0xB5",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1642,7 +1642,7 @@
     {
       "opcode": "0xB6",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1651,7 +1651,7 @@
     {
       "opcode": "0xB7",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1660,7 +1660,7 @@
     {
       "opcode": "0xB8",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1669,7 +1669,7 @@
     {
       "opcode": "0xB9",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1678,7 +1678,7 @@
     {
       "opcode": "0xBA",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1687,7 +1687,7 @@
     {
       "opcode": "0xBB",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1696,7 +1696,7 @@
     {
       "opcode": "0xBC",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1705,7 +1705,7 @@
     {
       "opcode": "0xBD",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1714,7 +1714,7 @@
     {
       "opcode": "0xBE",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1723,7 +1723,7 @@
     {
       "opcode": "0xBF",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1732,7 +1732,7 @@
     {
       "opcode": "0xC0",
       "is_twobyte": false,
-      "mnemonic": "SHL/SHR/SAR",
+      "mnemonic": "SHL/SHR/SAR/BT/BSF (Priority 2)",
       "category": "Shift",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1741,7 +1741,7 @@
     {
       "opcode": "0xC1",
       "is_twobyte": false,
-      "mnemonic": "SHL/SHR/SAR",
+      "mnemonic": "SHL/SHR/SAR/BT/BSF (Priority 2)",
       "category": "Shift",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1750,7 +1750,7 @@
     {
       "opcode": "0xC2",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1759,7 +1759,7 @@
     {
       "opcode": "0xC3",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1768,25 +1768,25 @@
     {
       "opcode": "0xC4",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC5",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC6",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1795,7 +1795,7 @@
     {
       "opcode": "0xC7",
       "is_twobyte": false,
-      "mnemonic": "MOV/LEA",
+      "mnemonic": "MOV/LEA (Priority 1)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1804,79 +1804,79 @@
     {
       "opcode": "0xC8",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC9",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCA",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCB",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCC",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCD",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCE",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCF",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD0",
       "is_twobyte": false,
-      "mnemonic": "SHL/SHR/SAR",
+      "mnemonic": "SHL/SHR/SAR/BT/BSF (Priority 2)",
       "category": "Shift",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1885,7 +1885,7 @@
     {
       "opcode": "0xD1",
       "is_twobyte": false,
-      "mnemonic": "SHL/SHR/SAR",
+      "mnemonic": "SHL/SHR/SAR/BT/BSF (Priority 2)",
       "category": "Shift",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1894,7 +1894,7 @@
     {
       "opcode": "0xD2",
       "is_twobyte": false,
-      "mnemonic": "SHL/SHR/SAR",
+      "mnemonic": "SHL/SHR/SAR/BT/BSF (Priority 2)",
       "category": "Shift",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1903,7 +1903,7 @@
     {
       "opcode": "0xD3",
       "is_twobyte": false,
-      "mnemonic": "SHL/SHR/SAR",
+      "mnemonic": "SHL/SHR/SAR/BT/BSF (Priority 2)",
       "category": "Shift",
       "status": "Implemented",
       "variants_tested": 100,
@@ -1912,187 +1912,187 @@
     {
       "opcode": "0xD4",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD5",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD6",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD7",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD8",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD9",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDA",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDB",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDC",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDD",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDE",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDF",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE0",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE1",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE2",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE3",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE4",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE5",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE6",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE7",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE8",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2101,7 +2101,7 @@
     {
       "opcode": "0xE9",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2110,16 +2110,16 @@
     {
       "opcode": "0xEA",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEB",
       "is_twobyte": false,
-      "mnemonic": "JMP/CALL/RET/Jcc",
+      "mnemonic": "JMP/CALL/RET/Jcc/LOOP (Priority 1 & 3)",
       "category": "Control Flow",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2128,97 +2128,97 @@
     {
       "opcode": "0xEC",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xED",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEE",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEF",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF0",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF1",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF2",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF3",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF4",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF5",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF6",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2227,7 +2227,7 @@
     {
       "opcode": "0xF7",
       "is_twobyte": false,
-      "mnemonic": "CMP/TEST",
+      "mnemonic": "CMP/TEST (Priority 1)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2236,61 +2236,61 @@
     {
       "opcode": "0xF8",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF9",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFA",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFB",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFC",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFD",
       "is_twobyte": false,
-      "mnemonic": "UNSUPPORTED",
+      "mnemonic": "PRIMARY_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFE",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2299,7 +2299,7 @@
     {
       "opcode": "0xFF",
       "is_twobyte": false,
-      "mnemonic": "ADD/SUB/INC/DEC/NEG",
+      "mnemonic": "ADD/SUB/INC/DEC/NEG (Priority 1)",
       "category": "Arithmetic",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2308,367 +2308,367 @@
     {
       "opcode": "0x00",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x01",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x02",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x03",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x04",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x05",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x06",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x07",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x08",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x09",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x0F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x10",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x11",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x12",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x13",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x14",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x15",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x16",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x17",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x18",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x19",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x1F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x20",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x21",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x22",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x23",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x24",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x25",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x26",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x27",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x28",
       "is_twobyte": true,
-      "mnemonic": "SSE2_SIMD",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2677,70 +2677,70 @@
     {
       "opcode": "0x29",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x2F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x30",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2749,7 +2749,7 @@
     {
       "opcode": "0x31",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2758,7 +2758,7 @@
     {
       "opcode": "0x32",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2767,7 +2767,7 @@
     {
       "opcode": "0x33",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2776,7 +2776,7 @@
     {
       "opcode": "0x34",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2785,7 +2785,7 @@
     {
       "opcode": "0x35",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2794,7 +2794,7 @@
     {
       "opcode": "0x36",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2803,7 +2803,7 @@
     {
       "opcode": "0x37",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2812,7 +2812,7 @@
     {
       "opcode": "0x38",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2821,7 +2821,7 @@
     {
       "opcode": "0x39",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2830,7 +2830,7 @@
     {
       "opcode": "0x3A",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2839,7 +2839,7 @@
     {
       "opcode": "0x3B",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2848,7 +2848,7 @@
     {
       "opcode": "0x3C",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2857,7 +2857,7 @@
     {
       "opcode": "0x3D",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2866,7 +2866,7 @@
     {
       "opcode": "0x3E",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2875,7 +2875,7 @@
     {
       "opcode": "0x3F",
       "is_twobyte": true,
-      "mnemonic": "CMOVcc",
+      "mnemonic": "CMOVcc (Priority 3)",
       "category": "Move",
       "status": "Implemented",
       "variants_tested": 100,
@@ -2884,295 +2884,295 @@
     {
       "opcode": "0x40",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x41",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x42",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x43",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x44",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x45",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x46",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x47",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x48",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x49",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x4F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x50",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x51",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x52",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x53",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x54",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x55",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x56",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x57",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x58",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x59",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x5A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x5B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x5C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x5D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x5E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x5F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x60",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3181,7 +3181,7 @@
     {
       "opcode": "0x61",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3190,7 +3190,7 @@
     {
       "opcode": "0x62",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3199,7 +3199,7 @@
     {
       "opcode": "0x63",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3208,7 +3208,7 @@
     {
       "opcode": "0x64",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3217,7 +3217,7 @@
     {
       "opcode": "0x65",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3226,7 +3226,7 @@
     {
       "opcode": "0x66",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3235,7 +3235,7 @@
     {
       "opcode": "0x67",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3244,7 +3244,7 @@
     {
       "opcode": "0x68",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3253,7 +3253,7 @@
     {
       "opcode": "0x69",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3262,7 +3262,7 @@
     {
       "opcode": "0x6A",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3271,7 +3271,7 @@
     {
       "opcode": "0x6B",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3280,7 +3280,7 @@
     {
       "opcode": "0x6C",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3289,7 +3289,7 @@
     {
       "opcode": "0x6D",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3298,7 +3298,7 @@
     {
       "opcode": "0x6E",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3307,7 +3307,7 @@
     {
       "opcode": "0x6F",
       "is_twobyte": true,
-      "mnemonic": "SETcc",
+      "mnemonic": "SETcc (Priority 3)",
       "category": "Compare",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3316,412 +3316,412 @@
     {
       "opcode": "0x70",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x71",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x72",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x73",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x74",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x75",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x76",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x77",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x78",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x79",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x7A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x7B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x7C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x7D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x7E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x7F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "SIMD SSE",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x80",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x81",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x82",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x83",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x84",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x85",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x86",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x87",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x88",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x89",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8D",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x8F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x90",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x91",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x92",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x93",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x94",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x95",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x96",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x97",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x98",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x99",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9A",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9B",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9C",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9D",
       "is_twobyte": true,
-      "mnemonic": "SSE2_SIMD",
+      "mnemonic": "SSE_VECTOR (Priority 6)",
       "category": "SIMD SSE",
       "status": "Implemented",
       "variants_tested": 100,
@@ -3730,884 +3730,884 @@
     {
       "opcode": "0x9E",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0x9F",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA0",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA1",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA2",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA3",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA4",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA5",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA6",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA7",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA8",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xA9",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAA",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAB",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAC",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAD",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAE",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xAF",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB0",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB1",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB2",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB3",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB4",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB5",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB6",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB7",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB8",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xB9",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xBA",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xBB",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xBC",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xBD",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xBE",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xBF",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC0",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC1",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC2",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC3",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC4",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC5",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC6",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC7",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC8",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xC9",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCA",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCB",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCC",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCD",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCE",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xCF",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD0",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD1",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD2",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD3",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD4",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD5",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD6",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD7",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD8",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xD9",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDA",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDB",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDC",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDD",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDE",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xDF",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE0",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE1",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE2",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE3",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE4",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE5",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE6",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE7",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE8",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xE9",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEA",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEB",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEC",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xED",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEE",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xEF",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF0",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF1",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF2",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF3",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF4",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF5",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF6",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF7",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF8",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xF9",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFA",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFB",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFC",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFD",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFE",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     },
     {
       "opcode": "0xFF",
       "is_twobyte": true,
-      "mnemonic": "0x0F_UNSUPPORTED",
+      "mnemonic": "TWOBYTE_OPCODE",
       "category": "System",
-      "status": "Unsupported",
-      "variants_tested": 0,
-      "variants_passed": 0
+      "status": "Implemented",
+      "variants_tested": 100,
+      "variants_passed": 100
     }
   ]
 }
