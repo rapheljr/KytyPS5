@@ -832,6 +832,19 @@ if(APPLE)
 	target_link_options(emulator_integration_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(compatibility_framework_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/CompatibilityFrameworkTests.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/compat/compatFramework.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/compat/developerTools.cpp"
+)
+target_link_libraries(compatibility_framework_tests common ${kyty_emulator_link_libraries})
+target_include_directories(compatibility_framework_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(compatibility_framework_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+
 
 
 
