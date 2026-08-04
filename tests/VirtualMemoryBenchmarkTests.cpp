@@ -153,7 +153,7 @@ void BenchmarkAlignedOverhead(size_t iterations, size_t alloc_size, uint64_t ali
 }
 
 // ---------------------------------------------------------------------------
-// Benchmark 5: Multi-threaded Contention (g_virtual_mutex)
+// Benchmark 5: Multi-threaded Contention (SysVirtualAlloc & SysVirtualFree)
 // ---------------------------------------------------------------------------
 
 void BenchmarkThreadContention(size_t num_threads, size_t ops_per_thread, size_t alloc_size) {
@@ -182,7 +182,61 @@ void BenchmarkThreadContention(size_t num_threads, size_t ops_per_thread, size_t
     const double avg_ns_per_op = static_cast<double>(elapsed) / static_cast<double>(total_ops);
     const double ops_per_sec = (1e9 * static_cast<double>(total_ops)) / static_cast<double>(elapsed);
 
-    std::printf("[BENCHMARK] Multi-threaded Contention (threads = %zu, ops/thread = %zu, alloc = %zu bytes):\n",
+    std::printf("[BENCHMARK] Multi-threaded Allocation Scaling (threads = %zu, ops/thread = %zu, alloc = %zu bytes):\n",
+                num_threads, ops_per_thread, alloc_size);
+    std::printf("  Total Time: %.3f ms\n", static_cast<double>(elapsed) / 1e6);
+    std::printf("  Effective Latency: %.1f ns/op\n", avg_ns_per_op);
+    std::printf("  Total Throughput:  %.2f ops/sec\n\n", ops_per_sec);
+}
+
+// ---------------------------------------------------------------------------
+// Benchmark 6: Concurrent Read/Write Contention (SysVirtualProtect & Query vs Alloc)
+// ---------------------------------------------------------------------------
+
+void BenchmarkReadWriteContention(size_t num_threads, size_t ops_per_thread, size_t alloc_size) {
+    uint64_t shared_region = Common::SysVirtualAlloc(0, alloc_size, Common::VirtualMemory::Mode::ReadWrite);
+    if (shared_region == 0) {
+        std::fprintf(stderr, "BenchmarkReadWriteContention: SysVirtualAlloc failed\n");
+        std::abort();
+    }
+
+    const auto start = Clock::now();
+
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+
+    for (size_t t = 0; t < num_threads; ++t) {
+        threads.emplace_back([ops_per_thread, alloc_size, shared_region, t]() {
+            if (t % 2 == 0) {
+                // Reader thread: query protection and mode transitions
+                for (size_t i = 0; i < ops_per_thread; ++i) {
+                    Common::VirtualMemory::Mode old_mode;
+                    Common::SysVirtualProtect(shared_region, alloc_size, Common::VirtualMemory::Mode::ReadWrite, &old_mode);
+                }
+            } else {
+                // Writer thread: allocate & free local virtual regions
+                for (size_t i = 0; i < ops_per_thread; ++i) {
+                    uint64_t addr = Common::SysVirtualAlloc(0, alloc_size, Common::VirtualMemory::Mode::ReadWrite);
+                    if (addr != 0) {
+                        Common::SysVirtualFree(addr);
+                    }
+                }
+            }
+        });
+    }
+
+    for (auto& th : threads) {
+        th.join();
+    }
+
+    const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - start).count();
+    Common::SysVirtualFree(shared_region);
+
+    const size_t total_ops = num_threads * ops_per_thread;
+    const double avg_ns_per_op = static_cast<double>(elapsed) / static_cast<double>(total_ops);
+    const double ops_per_sec = (1e9 * static_cast<double>(total_ops)) / static_cast<double>(elapsed);
+
+    std::printf("[BENCHMARK] Concurrent Read/Write Contention (threads = %zu, ops/thread = %zu, alloc = %zu bytes):\n",
                 num_threads, ops_per_thread, alloc_size);
     std::printf("  Total Time: %.3f ms\n", static_cast<double>(elapsed) / 1e6);
     std::printf("  Effective Latency: %.1f ns/op\n", avg_ns_per_op);
@@ -190,6 +244,7 @@ void BenchmarkThreadContention(size_t num_threads, size_t ops_per_thread, size_t
 }
 
 } // namespace
+
 
 int main() {
     std::printf("====================================================\n");
@@ -202,9 +257,24 @@ int main() {
     BenchmarkReserveCommitLifecycle(5000, 65536);
     BenchmarkProtectTransitions(10000, 65536);
     BenchmarkAlignedOverhead(2000, 65536, 0x10000); // 64 KB alignment
+
+    std::printf("--- Multi-Threaded Allocation Scalability (1, 2, 4, 8, 16, 32 threads) ---\n\n");
+    BenchmarkThreadContention(1, 2000, 65536);
+    BenchmarkThreadContention(2, 2000, 65536);
     BenchmarkThreadContention(4, 2000, 65536);
     BenchmarkThreadContention(8, 2000, 65536);
+    BenchmarkThreadContention(16, 2000, 65536);
+    BenchmarkThreadContention(32, 2000, 65536);
+
+    std::printf("--- Concurrent Read/Write Contention Scaling (1, 2, 4, 8, 16, 32 threads) ---\n\n");
+    BenchmarkReadWriteContention(1, 2000, 65536);
+    BenchmarkReadWriteContention(2, 2000, 65536);
+    BenchmarkReadWriteContention(4, 2000, 65536);
+    BenchmarkReadWriteContention(8, 2000, 65536);
+    BenchmarkReadWriteContention(16, 2000, 65536);
+    BenchmarkReadWriteContention(32, 2000, 65536);
 
     std::printf("VirtualMemoryBenchmarkTests: COMPLETED\n");
     return 0;
 }
+
