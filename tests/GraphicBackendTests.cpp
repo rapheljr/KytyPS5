@@ -9,7 +9,10 @@
 #include "graphics/host_gpu/renderer/backend/metalCommandBuffer.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
 #include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
+#include "graphics/host_gpu/renderer/backend/metalSwapchain.h"
 #include "graphics/host_gpu/renderer/backend/vulkanGraphicBackend.h"
+
+#include "SDL.h"
 
 #include <chrono>
 #include <cstdio>
@@ -263,9 +266,201 @@ void BenchmarkPhaseC_QueueOverhead() {
 #endif
 }
 
+// ─── Phase D: CAMetalLayer Integration & Swapchain Tests ───────────────────────
+
+void TestPhaseD_AttachDetach() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init for Phase D failed");
+
+	SDL_Window* window = SDL_CreateWindow("TestPhaseD_AttachDetach",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      800, 600, SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(!swapchain.IsAttached(), "Newly constructed swapchain must not be attached");
+
+	bool attach_ok = swapchain.Attach(window, backend.GetMTLDevice());
+	Check(attach_ok, "MetalSwapchain::Attach failed");
+	Check(swapchain.IsAttached(), "MetalSwapchain must be attached");
+
+	Check(swapchain.GetDrawableWidth() >= 800, "Drawable width must be >= 800");
+	Check(swapchain.GetDrawableHeight() >= 600, "Drawable height must be >= 600");
+
+	swapchain.Detach();
+	Check(!swapchain.IsAttached(), "Swapchain must not be attached after Detach");
+
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase D: CAMetalLayer Attach & Detach\n");
+#else
+	std::printf("  [SKIP] Phase D: TestPhaseD_AttachDetach (non-Apple)\n");
+#endif
+}
+
+void TestPhaseD_ResizeAndDrawableRecreation() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed");
+
+	SDL_Window* window = SDL_CreateWindow("TestPhaseD_Resize",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      800, 600, SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	// Initial acquisition
+	auto frame1 = swapchain.AcquireDrawable();
+	Check(frame1.drawable != nullptr, "AcquireDrawable failed on initial 800x600");
+	Check(frame1.texture != nullptr, "Drawable texture must not be null");
+	Check(frame1.width >= 800, "Frame 1 width must be >= 800");
+	Check(frame1.height >= 600, "Frame 1 height must be >= 600");
+
+	// Present frame 1
+	swapchain.PresentDrawable(frame1);
+
+	// Resize to 1280x720
+	SDL_SetWindowSize(window, 1280, 720);
+	swapchain.Resize(1280, 720);
+
+	Check(swapchain.GetDrawableWidth() >= 1280, "Drawable width after resize must be >= 1280");
+	Check(swapchain.GetDrawableHeight() >= 720, "Drawable height after resize must be >= 720");
+
+	// Recreated acquisition after resize
+	auto frame2 = swapchain.AcquireDrawable();
+	Check(frame2.drawable != nullptr, "AcquireDrawable failed after resize");
+	Check(frame2.width >= 1280, "Frame 2 width must match resized size");
+	Check(frame2.height >= 720, "Frame 2 height must match resized size");
+
+	swapchain.PresentDrawable(frame2);
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase D: Window Resize & Drawable Recreation\n");
+#else
+	std::printf("  [SKIP] Phase D: TestPhaseD_ResizeAndDrawableRecreation (non-Apple)\n");
+#endif
+}
+
+void TestPhaseD_FullscreenToggle() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed");
+
+	SDL_Window* window = SDL_CreateWindow("TestPhaseD_Fullscreen",
+	                                      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	                                      1024, 768, SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	// Toggle fake/desktop fullscreen flag
+	SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+	int fw = 0, fh = 0;
+	SDL_GetWindowSize(window, &fw, &fh);
+	swapchain.Resize(static_cast<uint32_t>(fw), static_cast<uint32_t>(fh));
+
+	auto frame = swapchain.AcquireDrawable();
+	Check(frame.drawable != nullptr, "AcquireDrawable in fullscreen failed");
+	swapchain.PresentDrawable(frame);
+
+	// Restore windowed mode
+	SDL_SetWindowFullscreen(window, 0);
+	swapchain.Resize(1024, 768);
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+	std::printf("  [OK] Phase D: Fullscreen Toggle & Presentation\n");
+#else
+	std::printf("  [SKIP] Phase D: TestPhaseD_FullscreenToggle (non-Apple)\n");
+#endif
+}
+
+void TestPhaseD_MultipleWindows() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed");
+
+	SDL_Window* win1 = SDL_CreateWindow("Win1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	SDL_Window* win2 = SDL_CreateWindow("Win2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(win1 != nullptr && win2 != nullptr, "Multiple SDL window creation failed");
+
+	Libs::Graphics::MetalSwapchain swap1;
+	Libs::Graphics::MetalSwapchain swap2;
+
+	Check(swap1.Attach(win1, backend.GetMTLDevice()), "Attach win1 failed");
+	Check(swap2.Attach(win2, backend.GetMTLDevice()), "Attach win2 failed");
+
+	auto f1 = swap1.AcquireDrawable();
+	auto f2 = swap2.AcquireDrawable();
+
+	Check(f1.drawable != nullptr, "Win1 acquire failed");
+	Check(f2.drawable != nullptr, "Win2 acquire failed");
+
+	swap1.PresentDrawable(f1);
+	swap2.PresentDrawable(f2);
+
+	swap1.Detach();
+	swap2.Detach();
+
+	SDL_DestroyWindow(win1);
+	SDL_DestroyWindow(win2);
+	backend.Shutdown();
+	std::printf("  [OK] Phase D: Multiple Independent Metal Windows\n");
+#else
+	std::printf("  [SKIP] Phase D: TestPhaseD_MultipleWindows (non-Apple)\n");
+#endif
+}
+
+void BenchmarkPhaseD_DrawableAcquisitionLatency() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed for benchmark");
+
+	SDL_Window* window = SDL_CreateWindow("BenchWindow", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Check(window != nullptr, "SDL_CreateWindow failed");
+
+	Libs::Graphics::MetalSwapchain swapchain;
+	Check(swapchain.Attach(window, backend.GetMTLDevice()), "Attach failed");
+
+	static constexpr size_t FRAMES = 100;
+	const auto t0 = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < FRAMES; ++i) {
+		auto frame = swapchain.AcquireDrawable();
+		Check(frame.drawable != nullptr, "Acquire failed during bench");
+		swapchain.PresentDrawable(frame);
+	}
+	const auto t1 = std::chrono::high_resolution_clock::now();
+
+	double total_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count()) / 1000.0;
+	double avg_acq_us = swapchain.GetAverageAcquireLatencyNs() / 1000.0;
+
+	std::printf("  [Bench] CAMetalLayer Drawable Acquisition Latency: %.2f µs/frame (Total: %.2f ms over %zu frames)\n",
+	            avg_acq_us, total_ms, FRAMES);
+
+	swapchain.Detach();
+	SDL_DestroyWindow(window);
+	backend.Shutdown();
+#else
+	std::printf("  [SKIP] BenchmarkPhaseD_DrawableAcquisitionLatency (non-Apple)\n");
+#endif
+}
+
 } // namespace
 
 int main() {
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		std::fprintf(stderr, "GraphicBackendTests: SDL_Init failed: %s\n", SDL_GetError());
+		return 1;
+	}
+
 	std::printf("====================================================\n");
 	std::printf(" KytyPS5 Graphic Backend Interface Tests            \n");
 	std::printf("====================================================\n\n");
@@ -290,7 +485,21 @@ int main() {
 	std::printf("\n");
 	BenchmarkPhaseC_QueueOverhead();
 
+	std::printf("\n--- Phase D: CAMetalLayer Integration & Presentation ---\n\n");
+
+	// Phase D
+	TestPhaseD_AttachDetach();
+	TestPhaseD_ResizeAndDrawableRecreation();
+	TestPhaseD_FullscreenToggle();
+	TestPhaseD_MultipleWindows();
+
+	std::printf("\n");
+	BenchmarkPhaseD_DrawableAcquisitionLatency();
+
 	std::printf("\nGraphicBackendTests: PASSED\n");
+
+	SDL_Quit();
 	return 0;
 }
+
 
