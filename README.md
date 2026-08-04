@@ -103,6 +103,7 @@ as the primary instruction-encoding reference when working on shader decoding an
 
 Important areas of the codebase:
 
+- [`src/loader/recompiler`](src/loader/recompiler) — native x86-64 to ARM64 JIT recompiler (table-driven decoder, SSA IR, 9 optimization passes, linear scan register allocator, NEON SIMD translator, direct block linking, 64-bit lock-free radix code cache, and 6-domain differential validation framework)
 - [`src/emulator`](src/emulator) — commercial PS5 title boot pipeline manager and title compatibility framework
 - [`src/kernel`](src/kernel) — FreeBSD kernel syscalls (60+), process manager, memory address space, and VFS mount system
 - [`src/graphics/shader/recompiler`](src/graphics/shader/recompiler) — instruction decoding, IR, optimization passes, SPIR-V and Metal MSL emission
