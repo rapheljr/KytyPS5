@@ -1,11 +1,12 @@
 // Arm64JitValidationFrameworkTests.cpp
 //
-// Complete Test Suite for ARM64 JIT Validation Framework & Differential Execution Comparator.
+// Test Suite for High-Scale ARM64 JIT Differential Testing & Minimization Framework.
 
 #include "loader/recompiler/arm64JitValidationFramework.h"
 
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 
 namespace {
 
@@ -20,62 +21,78 @@ using namespace Loader::Recompiler;
 
 void TestRandomProgramGenerator() {
 	std::printf("  [Validation Test 1] Testing Random Program Stream Generator...\n");
-
 	RandomProgramGenerator gen(42);
-	std::vector<uint8_t> prog = gen.GenerateProgram(50);
 
-	Check(!prog.empty(), "Generated program must not be empty");
-	Check(prog.back() == 0xC3, "Generated program must end with RET (0xC3)");
+	auto prog1 = gen.GenerateProgram(20);
+	Check(!prog1.empty(), "Generated program 1 must not be empty");
+	Check(prog1.back() == 0xC3, "Generated program must end with RET instruction (0xC3)");
+
+	auto prog2 = gen.GenerateProgram(50);
+	Check(prog2.size() > prog1.size(), "Program 2 must contain more instruction bytes than Program 1");
 
 	std::printf("  [OK] Validation Test 1: Random Program Generator passed\n");
 }
 
-void TestStateDifferentialComparator() {
-	std::printf("  [Validation Test 2] Testing 6-Domain State Differential Comparator...\n");
+void TestByteLevelStateComparator() {
+	std::printf("  [Validation Test 2] Testing Byte-Level State Comparator...\n");
 
 	GuestCpuContext ctx1;
 	GuestCpuContext ctx2;
+	ctx1.rax = 0x123456789ABCDEF0ULL;
+	ctx2.rax = 0x123456789ABCDEF0ULL;
+	ctx1.rsp = 0x7FFFFFFF0000ULL;
+	ctx2.rsp = 0x7FFFFFFF0000ULL;
 
-	ctx1.rax = 0x12345678ULL;
-	ctx2.rax = 0x12345678ULL;
+	uint8_t stack_buf1[64] = { 0 };
+	uint8_t stack_buf2[64] = { 0 };
 
-	StateDifferentialResult res1 = StateDifferentialComparator::CompareStates(ctx1, ctx2);
-	Check(res1.overall_passed, "Matching contexts must pass differential check");
+	auto res = ByteLevelStateComparator::CompareStates(ctx1, ctx2, stack_buf1, stack_buf2, 64);
+	Check(res.overall_passed, "Identical register and stack state must pass differential verification");
 
-	ctx2.rax = 0xDEADBEEFULL; // Inject GPR mismatch
-	StateDifferentialResult res2 = StateDifferentialComparator::CompareStates(ctx1, ctx2);
-	Check(!res2.gpr_match, "GPR mismatch must be detected");
-	Check(!res2.overall_passed, "Context with GPR mismatch must fail");
+	ctx2.rax = 0x9999999999999999ULL;
+	auto res_mismatch = ByteLevelStateComparator::CompareStates(ctx1, ctx2, stack_buf1, stack_buf2, 64);
+	Check(!res_mismatch.overall_passed, "Modified RAX must trigger state mismatch");
+	Check(!res_mismatch.gpr_match, "GPR match flag must be false on RAX diff");
 
-	std::printf("  [OK] Validation Test 2: 6-Domain Differential Comparator passed\n");
+	std::printf("  [OK] Validation Test 2: Byte-Level State Comparator passed\n");
 }
 
-void TestDifferentialVerifierEngineAndDashboard() {
-	std::printf("  [Validation Test 3] Testing Differential Verifier Engine & Fuzzing 1,000 Programs...\n");
+void TestParallelDifferentialRunner() {
+	std::printf("  [Validation Test 3] Testing Multi-Threaded Parallel Execution Across CPU Cores...\n");
 
-	DifferentialVerifierEngine engine(1024 * 1024);
-	RandomProgramGenerator gen(1337);
+	ValidationStats stats = ParallelDifferentialRunner::RunParallelVerification(10000, 0);
+	Check(stats.total_instructions_tested >= 10000, "Parallel runner must reach or exceed target instruction count");
+	Check(stats.total_failed == 0, "All random instruction streams must pass differential verification with zero failures");
 
-	const size_t PROGRAM_COUNT = 1000;
-	for (size_t i = 0; i < PROGRAM_COUNT; ++i) {
-		std::vector<uint8_t> prog = gen.GenerateProgram(10);
-		GuestCpuContext ctx;
-		ctx.rip = 0x140001000ULL + i * 16;
-		ctx.rsp = 0x7FFFFFFF0000ULL;
+	std::printf("  [OK] Validation Test 3: Parallel Runner passed (%llu instructions tested)\n",
+	           static_cast<unsigned long long>(stats.total_instructions_tested));
+}
 
-		StateDifferentialResult diff = engine.VerifyStream(prog.data(), prog.size(), ctx);
-		Check(diff.overall_passed, "All random test programs must pass verification");
-	}
+void TestTestCaseMinimizerAndHtmlReport() {
+	std::printf("  [Validation Test 4] Testing Test Case Minimizer & HTML Report Generator...\n");
 
-	const auto& stats = engine.GetStats();
-	Check(stats.total_programs_tested == PROGRAM_COUNT, "Total programs count mismatch");
-	Check(stats.total_passed == PROGRAM_COUNT, "All programs must pass validation");
+	DifferentialVerifierEngine engine;
+	GuestCpuContext ctx;
+	ctx.rsp = 0x7FFFFFFF0000ULL;
+	ctx.rip = 0x140001000ULL;
 
-	ValidationDashboardGenerator::PrintTerminalDashboard(stats);
-	bool saved = ValidationDashboardGenerator::GenerateReport(stats, "ARM64_JIT_VALIDATION_REPORT.md");
-	Check(saved, "Validation report export failed");
+	std::vector<uint8_t> code = { 0x90, 0x48, 0x01, 0xC0, 0xC3 }; // NOP, ADD RAX, RAX, RET
+	auto minimized = TestCaseMinimizer::MinimizeFailingSequence(code, engine, ctx);
+	Check(!minimized.empty(), "Minimized sequence must not be empty");
 
-	std::printf("  [OK] Validation Test 3: Differential Verifier & Dashboard passed\n");
+	StateDifferentialResult diff;
+	diff.overall_passed = false;
+	diff.gpr_diff_hex = "RAX diff";
+
+	bool repro_ok = TestCaseMinimizer::GenerateReproducerCpp(minimized, diff, "ReproducerTest.cpp");
+	Check(repro_ok, "GenerateReproducerCpp must succeed");
+	Check(std::filesystem::exists("ReproducerTest.cpp"), "ReproducerTest.cpp file must exist");
+
+	bool html_ok = DifferentialHtmlReportGenerator::GenerateReport(engine.GetStats(), "DifferentialValidationReport.html");
+	Check(html_ok, "DifferentialHtmlReportGenerator must succeed");
+	Check(std::filesystem::exists("DifferentialValidationReport.html"), "DifferentialValidationReport.html file must exist");
+
+	std::printf("  [OK] Validation Test 4: Minimizer & HTML Report Generator passed\n");
 }
 
 } // namespace
@@ -86,8 +103,9 @@ int main() {
 	std::printf("====================================================\n");
 
 	TestRandomProgramGenerator();
-	TestStateDifferentialComparator();
-	TestDifferentialVerifierEngineAndDashboard();
+	TestByteLevelStateComparator();
+	TestParallelDifferentialRunner();
+	TestTestCaseMinimizerAndHtmlReport();
 
 	std::printf("\nALL ARM64 JIT VALIDATION TESTS PASSED!\n");
 	return 0;

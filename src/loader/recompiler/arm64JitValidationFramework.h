@@ -1,6 +1,6 @@
 // arm64JitValidationFramework.h
 //
-// Complete ARM64 JIT Validation Framework & Differential Execution Comparator.
+// Complete ARM64 JIT Validation Framework & High-Scale Differential Execution Comparator.
 
 #ifndef LOADER_RECOMPILER_ARM64_JIT_VALIDATION_FRAMEWORK_H
 #define LOADER_RECOMPILER_ARM64_JIT_VALIDATION_FRAMEWORK_H
@@ -11,6 +11,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,10 @@ struct StateDifferentialResult {
 	bool overall_passed   = true;
 
 	std::string mismatch_reason;
+	std::string gpr_diff_hex;
+	std::string simd_diff_hex;
+	std::string memory_diff_hex;
+	uint32_t    first_mismatch_byte_offset = 0;
 };
 
 struct ValidationStats {
@@ -38,6 +43,7 @@ struct ValidationStats {
 
 	std::array<bool, 256>     opcode_coverage{};
 	std::array<uint64_t, 256> opcode_test_counts{};
+	std::array<uint64_t, 256> opcode_fail_counts{};
 };
 
 class RandomProgramGenerator {
@@ -49,6 +55,16 @@ public:
 private:
 	uint32_t m_rng_state;
 	uint32_t NextRandom() noexcept;
+};
+
+class ByteLevelStateComparator {
+public:
+	[[nodiscard]] static StateDifferentialResult CompareStates(
+		const GuestCpuContext& actual,
+		const GuestCpuContext& expected,
+		const uint8_t* stack_actual = nullptr,
+		const uint8_t* stack_expected = nullptr,
+		size_t stack_size = 0) noexcept;
 };
 
 class StateDifferentialComparator {
@@ -65,12 +81,38 @@ public:
 
 	StateDifferentialResult VerifyStream(const uint8_t* code_ptr, size_t size_bytes, GuestCpuContext& ctx);
 
-	void RecordOpcodeTested(uint8_t opcode) noexcept;
+	void RecordOpcodeTested(uint8_t opcode, bool passed) noexcept;
 	[[nodiscard]] const ValidationStats& GetStats() const noexcept { return m_stats; }
+	void MergeStats(const ValidationStats& other) noexcept;
 
 private:
 	X86RuntimeBridge m_bridge;
 	ValidationStats  m_stats{};
+};
+
+class TestCaseMinimizer {
+public:
+	static std::vector<uint8_t> MinimizeFailingSequence(
+		const std::vector<uint8_t>& code_bytes,
+		DifferentialVerifierEngine& engine,
+		GuestCpuContext& initial_ctx);
+
+	static bool GenerateReproducerCpp(
+		const std::vector<uint8_t>& minimized_bytes,
+		const StateDifferentialResult& result,
+		const std::string& filepath);
+};
+
+class ParallelDifferentialRunner {
+public:
+	static ValidationStats RunParallelVerification(
+		uint64_t target_instructions,
+		size_t thread_count = 0);
+};
+
+class DifferentialHtmlReportGenerator {
+public:
+	static bool GenerateReport(const ValidationStats& stats, const std::string& filepath);
 };
 
 class ValidationDashboardGenerator {
