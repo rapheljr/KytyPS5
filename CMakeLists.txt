@@ -825,6 +825,21 @@ if(APPLE)
 	target_link_options(ps5_vfs_complete_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(ps5_audio_subsystem_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Ps5AudioSubsystemTests.cpp"
+	"${KYTY_SOURCE_DIR}/audio/audioEngine.cpp"
+	"${KYTY_SOURCE_DIR}/audio/audioVoiceMixer.cpp"
+	"${KYTY_SOURCE_DIR}/audio/audio3DEngine.cpp"
+	"${KYTY_SOURCE_DIR}/audio/coreAudioBackend.mm"
+)
+target_link_libraries(ps5_audio_subsystem_tests common ${kyty_emulator_link_libraries})
+target_include_directories(ps5_audio_subsystem_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(ps5_audio_subsystem_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+	target_link_libraries(ps5_audio_subsystem_tests "-framework AudioToolbox" "-framework CoreAudio")
+endif()
+
 add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/EmulatorIntegrationTests.cpp"
 	"${KYTY_SOURCE_DIR}/emulator/emulatorIntegration.cpp"
