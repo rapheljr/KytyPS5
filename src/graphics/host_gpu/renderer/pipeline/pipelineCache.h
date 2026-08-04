@@ -10,6 +10,7 @@
 #include "graphics/shader/shader.h"
 
 #include <cstddef>
+#include <cstring>
 #include <memory>
 #include <span>
 #include <type_traits>
@@ -69,7 +70,9 @@ struct PipelineStaticParameters {
 	float                      blend_color_blue                                   = 0.0f;
 	float                      blend_color_alpha                                  = 0.0f;
 
-	bool operator==(const PipelineStaticParameters& other) const noexcept;
+	inline bool operator==(const PipelineStaticParameters& other) const noexcept {
+		return std::memcmp(this, &other, sizeof(*this)) == 0;
+	}
 };
 
 #pragma pack(pop)
