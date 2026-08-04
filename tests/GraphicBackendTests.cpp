@@ -6,6 +6,7 @@
 
 #include "graphics/host_gpu/renderer/backend/graphicBackend.h"
 #include "graphics/host_gpu/renderer/backend/graphicBackendFactory.h"
+#include "graphics/host_gpu/renderer/backend/metalArgumentBuffer.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandBuffer.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
 #include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
@@ -216,7 +217,6 @@ void TestPhaseC_WaitAllCompleted() {
 		auto buf = queue->CreateCommandBuffer();
 		Check(buf != nullptr, "Batch command buffer must not be null");
 		buf->Commit();
-		// Buffer destructor calls WaitUntilCompleted() automatically for Committed+not-waited
 	}
 	Check(queue->GetTotalCommandBuffersCreated() == static_cast<uint64_t>(N),
 	      "Total created buffers must match submission count");
@@ -523,13 +523,11 @@ void TestPhaseE_ComputePipelineCacheReuse() {
 
 void TestPhaseE_LRUEviction() {
 #if defined(__APPLE__)
-	// Create cache with capacity of 3
 	Libs::Graphics::MetalGraphicBackend backend;
 	Check(backend.Initialize(), "Backend init failed");
 
 	Libs::Graphics::MetalPipelineCache cache(backend.GetMTLDevice(), 3, 3);
 
-	// Insert 4 distinct keys
 	for (uint32_t i = 1; i <= 4; ++i) {
 		Libs::Graphics::MetalComputePipelineKey key {};
 		key.cs_shader_id = Libs::Graphics::ShaderId{i, i * 10, {i}};
@@ -569,7 +567,6 @@ void BenchmarkPhaseE_PipelineCreationAndLookup() {
 		keys.push_back(key);
 	}
 
-	// 1. Measure initial creation / compilation phase
 	const auto t_create_start = std::chrono::high_resolution_clock::now();
 	for (const auto& key : keys) {
 		auto* p = cache->GetOrCreateGraphicsPipeline(key);
@@ -580,7 +577,6 @@ void BenchmarkPhaseE_PipelineCreationAndLookup() {
 	double create_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t_create_end - t_create_start).count()) / 1000.0;
 	double avg_create_ms = create_ms / static_cast<double>(NUM_PIPELINES);
 
-	// 2. Measure high-frequency cache lookup phase (10,000 lookups across 50 keys)
 	const auto t_lookup_start = std::chrono::high_resolution_clock::now();
 	for (size_t iter = 0; iter < LOOKUP_ITERS; ++iter) {
 		const auto& key = keys[iter % NUM_PIPELINES];
@@ -600,6 +596,180 @@ void BenchmarkPhaseE_PipelineCreationAndLookup() {
 	backend.Shutdown();
 #else
 	std::printf("  [SKIP] BenchmarkPhaseE_PipelineCreationAndLookup (non-Apple)\n");
+#endif
+}
+
+// ─── Phase F: Metal Resource Binding & Argument Buffers ─────────────────────
+
+void TestPhaseF_DescriptorTranslationAndResourceUpdates() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for Phase F");
+
+	Libs::Graphics::MetalArgumentBufferCache* arg_cache = backend.GetArgumentBufferCache();
+	Check(arg_cache != nullptr, "GetArgumentBufferCache() must not be null");
+
+	// Create mock Vulkan/engine NativeDescriptors
+	Libs::Graphics::DescriptorCache::NativeDescriptors native;
+
+	auto mock_owner1 = std::make_shared<int>(42);
+	auto mock_owner2 = std::make_shared<double>(3.14);
+
+	Libs::Graphics::BufferView bv1;
+	bv1.owner  = mock_owner1;
+	bv1.buffer = static_cast<vk::Buffer>(VkBuffer(0x1000));
+	bv1.offset = 64;
+	bv1.range  = 1024;
+
+	Libs::Graphics::BufferView bv2;
+	bv2.owner  = mock_owner2;
+	bv2.buffer = static_cast<vk::Buffer>(VkBuffer(0x2000));
+	bv2.offset = 128;
+	bv2.range  = 2048;
+
+	native.buffers.push_back(bv1);
+	native.buffers.push_back(bv2);
+
+	Libs::Graphics::DescriptorCache::TextureBinding tex1;
+	tex1.image_view = static_cast<vk::ImageView>(VkImageView(0x3000));
+	native.images.push_back(tex1);
+
+	native.samplers.push_back(static_cast<vk::Sampler>(VkSampler(0x4000)));
+
+	// Translate with dynamic offsets
+	std::vector<uint32_t> dynamic_offsets = {128, 256};
+	Libs::Graphics::MetalResourceSet res_set = arg_cache->TranslateNativeDescriptors(native, dynamic_offsets);
+
+	Check(res_set.buffers.size() == 2, "Translated buffer count must be 2");
+	Check(res_set.textures.size() == 1, "Translated texture count must be 1");
+	Check(res_set.samplers.size() == 1, "Translated sampler count must be 1");
+	Check(res_set.lifetime_owners.size() == 2, "Lifetime owners count must be 2 (mock_owner1 & 2)");
+
+	// Verify dynamic offsets applied: 64 + 128 = 192, 128 + 256 = 384
+	Check(res_set.buffers[0].offset == 192, "Buffer 0 offset must be base + dynamic offset (64 + 128 = 192)");
+	Check(res_set.buffers[1].offset == 384, "Buffer 1 offset must be base + dynamic offset (128 + 256 = 384)");
+
+	backend.Shutdown();
+	std::printf("  [OK] Phase F: Descriptor Translation & Dynamic Resource Updates\n");
+#else
+	std::printf("  [SKIP] Phase F: TestPhaseF_DescriptorTranslationAndResourceUpdates (non-Apple)\n");
+#endif
+}
+
+void TestPhaseF_DynamicOffsetsAndLifetime() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed");
+
+	Libs::Graphics::MetalArgumentBuffer arg_buf(backend.GetMTLDevice(), 4096);
+	Check(arg_buf.IsValid(), "MetalArgumentBuffer must be valid");
+
+	Libs::Graphics::MetalResourceSet res_set;
+	Libs::Graphics::MetalBufferBinding b;
+	b.buffer = (void*)0x5000;
+	b.offset = 100;
+	b.range  = 512;
+	b.slot   = 0;
+	res_set.buffers.push_back(b);
+
+	auto lifetime_token = std::make_shared<std::string>("GPU_IN_FLIGHT_RESOURCE");
+	res_set.lifetime_owners.push_back(lifetime_token);
+
+	Check(arg_buf.EncodeResourceSet(res_set), "EncodeResourceSet failed");
+	Check(lifetime_token.use_count() >= 2, "Lifetime owner shared_ptr use_count must increase during buffer binding");
+
+	// Update dynamic offset for slot 0
+	Check(arg_buf.UpdateDynamicOffset(0, 1024), "UpdateDynamicOffset failed");
+	Check(arg_buf.GetEncodedResourceSet().buffers[0].offset == 1024, "Offset must be updated to 1024");
+
+	backend.Shutdown();
+	std::printf("  [OK] Phase F: Dynamic Offsets & Resource Lifetime Retention\n");
+#else
+	std::printf("  [SKIP] Phase F: TestPhaseF_DynamicOffsetsAndLifetime (non-Apple)\n");
+#endif
+}
+
+void TestPhaseF_MultipleDescriptorLayoutsAndArgumentBufferPooling() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed");
+
+	Libs::Graphics::MetalArgumentBufferCache* arg_cache = backend.GetArgumentBufferCache();
+
+	Libs::Graphics::MetalArgumentBufferLayout layout1 {2, 2, 1};
+	Libs::Graphics::MetalArgumentBufferLayout layout2 {4, 4, 2};
+
+	Libs::Graphics::MetalResourceSet set1;
+	set1.buffers.push_back({(void*)0x1000, 0, 256, 0});
+	set1.textures.push_back({(void*)0x2000, 0});
+
+	// Request Layout 1 — Miss & Pool Creation
+	auto* buf1 = arg_cache->GetOrCreateArgumentBuffer(layout1, set1);
+	Check(buf1 != nullptr, "Argument buffer allocation failed");
+	Check(arg_cache->GetMisses() == 1, "Miss count must be 1");
+
+	// Request Layout 1 with same resource set — Hit & Pool Reuse
+	auto* buf2 = arg_cache->GetOrCreateArgumentBuffer(layout1, set1);
+	Check(buf2 == buf1, "Must reuse pooled argument buffer for identical layout & resources");
+	Check(arg_cache->GetHits() == 1, "Hit count must be 1");
+
+	// Request Layout 2 — Distinct layout miss
+	auto* buf3 = arg_cache->GetOrCreateArgumentBuffer(layout2, set1);
+	Check(buf3 != nullptr && buf3 != buf1, "Distinct layout must create a separate argument buffer");
+	Check(arg_cache->GetMisses() == 2, "Miss count must be 2");
+
+	backend.Shutdown();
+	std::printf("  [OK] Phase F: Multiple Descriptor Layouts & Argument Buffer Pooling\n");
+#else
+	std::printf("  [SKIP] Phase F: TestPhaseF_MultipleDescriptorLayoutsAndArgumentBufferPooling (non-Apple)\n");
+#endif
+}
+
+void BenchmarkPhaseF_DescriptorBindingPerformance() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for bench");
+
+	Libs::Graphics::MetalArgumentBufferCache* arg_cache = backend.GetArgumentBufferCache();
+
+	Libs::Graphics::DescriptorCache::NativeDescriptors native;
+	for (size_t i = 0; i < 4; ++i) {
+		Libs::Graphics::BufferView bv;
+		bv.buffer = static_cast<vk::Buffer>(VkBuffer(0x1000 + i * 0x100));
+		bv.offset = i * 64;
+		bv.range  = 512;
+		native.buffers.push_back(bv);
+	}
+	for (size_t i = 0; i < 4; ++i) {
+		Libs::Graphics::DescriptorCache::TextureBinding tex;
+		tex.image_view = static_cast<vk::ImageView>(VkImageView(0x5000 + i * 0x100));
+		native.images.push_back(tex);
+	}
+	native.samplers.push_back(static_cast<vk::Sampler>(VkSampler(0x9000)));
+
+	Libs::Graphics::MetalArgumentBufferLayout layout {4, 4, 1};
+	static constexpr size_t ITERS = 10000;
+
+	const auto t0 = std::chrono::high_resolution_clock::now();
+	for (size_t iter = 0; iter < ITERS; ++iter) {
+		std::vector<uint32_t> dyn_offsets = {static_cast<uint32_t>(iter * 16), static_cast<uint32_t>(iter * 32)};
+		auto set = arg_cache->TranslateNativeDescriptors(native, dyn_offsets);
+		auto* arg_buf = arg_cache->GetOrCreateArgumentBuffer(layout, set);
+		Check(arg_buf != nullptr, "Argument buffer lookup failed in bench");
+	}
+	const auto t1 = std::chrono::high_resolution_clock::now();
+
+	double total_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count()) / 1000.0;
+	double binding_ns_per_op = (total_ms * 1e6) / static_cast<double>(ITERS);
+
+	std::printf("  [Bench] Metal Descriptor Translation & Binding Latency: %.2f ns/binding (Total: %.2f ms over %zu iterations)\n",
+	            binding_ns_per_op, total_ms, ITERS);
+	std::printf("  [Bench] Argument Buffer Pool Hit Rate: %.2f%% (Hits: %llu, Misses: %llu)\n",
+	            arg_cache->GetHitRate(), static_cast<unsigned long long>(arg_cache->GetHits()), static_cast<unsigned long long>(arg_cache->GetMisses()));
+
+	backend.Shutdown();
+#else
+	std::printf("  [SKIP] BenchmarkPhaseF_DescriptorBindingPerformance (non-Apple)\n");
 #endif
 }
 
@@ -656,9 +826,18 @@ int main() {
 	std::printf("\n");
 	BenchmarkPhaseE_PipelineCreationAndLookup();
 
+	std::printf("\n--- Phase F: Metal Resource Binding & Argument Buffers ---\n\n");
+
+	// Phase F
+	TestPhaseF_DescriptorTranslationAndResourceUpdates();
+	TestPhaseF_DynamicOffsetsAndLifetime();
+	TestPhaseF_MultipleDescriptorLayoutsAndArgumentBufferPooling();
+
+	std::printf("\n");
+	BenchmarkPhaseF_DescriptorBindingPerformance();
+
 	std::printf("\nGraphicBackendTests: PASSED\n");
 
 	SDL_Quit();
 	return 0;
 }
-
