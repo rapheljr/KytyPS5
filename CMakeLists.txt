@@ -799,6 +799,40 @@ if(APPLE)
 	target_link_options(ps5_kernel_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/EmulatorIntegrationTests.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/emulatorIntegration.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/frameScheduler.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/saveStateEngine.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RecompilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Parser.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Disassembler.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4CommandList.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Translator.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPipeline.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPasses.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
+	${METAL_BACKEND_SRC}
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
+)
+target_link_libraries(emulator_integration_tests common ${kyty_emulator_link_libraries})
+target_include_directories(emulator_integration_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(emulator_integration_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+
 
 
 
