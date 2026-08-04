@@ -48,10 +48,6 @@ PipelineCache::~PipelineCache() {
 	destroy(m_compute_pipelines);
 }
 
-bool PipelineStaticParameters::operator==(const PipelineStaticParameters& other) const noexcept {
-	return std::memcmp(this, &other, sizeof(*this)) == 0;
-}
-
 PipelineCache::GraphicsPipeline& PipelineCache::CreateGraphicsPipeline(
     RenderColorInfo* colors, uint32_t color_count, RenderDepthInfo& depth,
     ShaderVertexInputInfo& vs_input_info, RenderCommandBuffer& command,

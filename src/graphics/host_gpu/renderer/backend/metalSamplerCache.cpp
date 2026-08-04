@@ -1,5 +1,7 @@
 #include "graphics/host_gpu/renderer/backend/metalSamplerCache.h"
 
+#if !defined(__APPLE__)
+
 #include <cstring>
 
 namespace Libs::Graphics {
@@ -43,8 +45,6 @@ bool MetalSamplerDescriptor::operator==(const MetalSamplerDescriptor& other) con
 	       normalized_coords == other.normalized_coords;
 }
 
-#if !defined(__APPLE__)
-
 MetalSamplerCache::~MetalSamplerCache() {
 	Shutdown();
 }
@@ -69,6 +69,6 @@ void MetalSamplerCache::Clear() {
 	m_sampler_map.clear();
 }
 
-#endif // !defined(__APPLE__)
-
 } // namespace Libs::Graphics
+
+#endif // !defined(__APPLE__)

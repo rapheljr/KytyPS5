@@ -1,5 +1,7 @@
 #include "graphics/host_gpu/renderer/backend/metalSync.h"
 
+#if !defined(__APPLE__)
+
 namespace Libs::Graphics::HostGpu::Metal {
 
 MetalFence::MetalFence()  = default;
@@ -42,3 +44,5 @@ void MetalFrameSync::EndFrame(void* /*command_buffer_handle*/) {
 }
 
 } // namespace Libs::Graphics::HostGpu::Metal
+
+#endif // !defined(__APPLE__)

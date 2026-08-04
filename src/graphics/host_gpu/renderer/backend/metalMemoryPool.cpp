@@ -1,49 +1,10 @@
 #include "graphics/host_gpu/renderer/backend/metalMemoryPool.h"
 
+#if !defined(__APPLE__)
+
 #include <algorithm>
 
 namespace Libs::Graphics {
-
-void MetalGpuMemoryStats::RecordAllocation(uint64_t size_bytes, bool is_texture) {
-	allocated_bytes.fetch_add(size_bytes, std::memory_order_relaxed);
-	used_bytes.fetch_add(size_bytes, std::memory_order_relaxed);
-
-	uint64_t current_used = used_bytes.load(std::memory_order_relaxed);
-	uint64_t current_peak = peak_bytes.load(std::memory_order_relaxed);
-	while (current_used > current_peak && !peak_bytes.compare_exchange_weak(current_peak, current_used, std::memory_order_relaxed)) {}
-
-	if (is_texture) {
-		texture_count.fetch_add(1, std::memory_order_relaxed);
-	} else {
-		buffer_count.fetch_add(1, std::memory_order_relaxed);
-	}
-}
-
-void MetalGpuMemoryStats::RecordDeallocation(uint64_t size_bytes, bool is_texture) {
-	if (used_bytes.load(std::memory_order_relaxed) >= size_bytes) {
-		used_bytes.fetch_sub(size_bytes, std::memory_order_relaxed);
-	}
-	if (is_texture) {
-		if (texture_count.load(std::memory_order_relaxed) > 0) {
-			texture_count.fetch_sub(1, std::memory_order_relaxed);
-		}
-	} else {
-		if (buffer_count.load(std::memory_order_relaxed) > 0) {
-			buffer_count.fetch_sub(1, std::memory_order_relaxed);
-		}
-	}
-}
-
-void MetalGpuMemoryStats::Reset() {
-	allocated_bytes = 0;
-	used_bytes = 0;
-	peak_bytes = 0;
-	buffer_count = 0;
-	texture_count = 0;
-	heap_count = 0;
-}
-
-#if !defined(__APPLE__)
 
 MetalGpuHeapAllocator::~MetalGpuHeapAllocator() {
 	Shutdown();
@@ -138,6 +99,6 @@ void MetalReadbackStaging::ResetPool() {
 	m_head = 0;
 }
 
-#endif // !defined(__APPLE__)
-
 } // namespace Libs::Graphics
+
+#endif // !defined(__APPLE__)

@@ -3,6 +3,12 @@
 
 #include "common/abi.h"
 #include "common/common.h"
+#include "common/subsystems.h"
+
+namespace Libs::Input {
+class InputManager;
+}
+
 namespace Libs::Controller {
 
 void Initialize();

@@ -1,5 +1,7 @@
 #include "graphics/host_gpu/renderer/backend/metalSwapchain.h"
 
+#if !defined(__APPLE__)
+
 namespace Libs::Graphics {
 
 MetalSwapchain::~MetalSwapchain() = default;
@@ -47,3 +49,5 @@ double MetalSwapchain::GetGpuUtilizationPercent() const noexcept {
 }
 
 } // namespace Libs::Graphics
+
+#endif // !defined(__APPLE__)

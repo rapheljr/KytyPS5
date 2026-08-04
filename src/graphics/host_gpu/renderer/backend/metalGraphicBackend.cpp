@@ -1,5 +1,7 @@
 #include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
 
+#if !defined(__APPLE__)
+
 namespace Libs::Graphics {
 
 MetalGraphicBackend::MetalGraphicBackend() = default;
@@ -11,34 +13,17 @@ MetalGraphicBackend::~MetalGraphicBackend() {
 }
 
 bool MetalGraphicBackend::IsSupported() const noexcept {
-#if defined(__APPLE__)
-	return true;
-#else
 	return false;
-#endif
 }
 
 bool MetalGraphicBackend::Initialize() {
-	if (!IsSupported()) {
-		return false;
-	}
-	if (m_initialized) {
-		return true;
-	}
-	m_initialized = true;
-	return true;
+	return false;
 }
 
-void MetalGraphicBackend::Shutdown() {
-	if (!m_initialized) {
-		return;
-	}
-	WaitIdle();
-	m_initialized = false;
-}
+void MetalGraphicBackend::Shutdown() {}
 
-void MetalGraphicBackend::WaitIdle() {
-	// Stub for Phase B Metal device waitIdle synchronization
-}
+void MetalGraphicBackend::WaitIdle() {}
 
 } // namespace Libs::Graphics
+
+#endif // !defined(__APPLE__)
