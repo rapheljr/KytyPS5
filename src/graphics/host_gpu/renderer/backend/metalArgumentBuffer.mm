@@ -10,10 +10,6 @@
 
 namespace Libs::Graphics {
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MetalArgumentBuffer Implementation
-// ─────────────────────────────────────────────────────────────────────────────
-
 MetalArgumentBuffer::MetalArgumentBuffer(void* mtl_device, size_t size_bytes)
     : m_device(mtl_device), m_size_bytes(size_bytes) {
 #if defined(__APPLE__)
@@ -49,12 +45,6 @@ bool MetalArgumentBuffer::EncodeResourceSet(const MetalResourceSet& resources) {
 	if (ptr == nullptr) {
 		return false;
 	}
-
-	// Layout packing in argument buffer memory:
-	// Header: [uint32_t num_buffers][uint32_t num_textures][uint32_t num_samplers]
-	// Buffer descriptors: array of {uint64_t handle, uint64_t offset, uint64_t range}
-	// Texture descriptors: array of {uint64_t handle}
-	// Sampler descriptors: array of {uint64_t handle}
 
 	struct Header {
 		uint32_t num_buffers;
@@ -144,10 +134,6 @@ bool MetalArgumentBuffer::UpdateDynamicOffset(uint32_t slot, uint64_t new_offset
 	return EncodeResourceSet(m_encoded_set);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MetalArgumentBufferCache Implementation
-// ─────────────────────────────────────────────────────────────────────────────
-
 MetalArgumentBufferCache::MetalArgumentBufferCache(void* mtl_device, size_t pool_capacity)
     : m_device(mtl_device), m_pool_capacity(pool_capacity) {}
 
@@ -161,7 +147,6 @@ MetalResourceSet MetalArgumentBufferCache::TranslateNativeDescriptors(
 
 	MetalResourceSet set;
 
-	// 1. Translate Buffer Views
 	set.buffers.reserve(native.buffers.size() + native.addresses.size());
 	for (size_t i = 0; i < native.buffers.size(); ++i) {
 		const auto& view = native.buffers[i];
@@ -192,7 +177,6 @@ MetalResourceSet MetalArgumentBufferCache::TranslateNativeDescriptors(
 		}
 	}
 
-	// 2. Translate Texture Views
 	set.textures.reserve(native.images.size());
 	for (size_t i = 0; i < native.images.size(); ++i) {
 		const auto& tex = native.images[i];
@@ -202,7 +186,6 @@ MetalResourceSet MetalArgumentBufferCache::TranslateNativeDescriptors(
 		set.textures.push_back(binding);
 	}
 
-	// 3. Translate Samplers
 	set.samplers.reserve(native.samplers.size());
 	for (size_t i = 0; i < native.samplers.size(); ++i) {
 		MetalSamplerBinding binding;
@@ -220,17 +203,43 @@ MetalArgumentBuffer* MetalArgumentBufferCache::GetOrCreateArgumentBuffer(
 
 	Common::LockGuard lock(m_mutex);
 
-	auto& pool = m_buffers[layout];
+	const uint64_t layout_hash = (static_cast<uint64_t>(layout.buffer_count) << 32) ^
+	                             (static_cast<uint64_t>(layout.texture_count) << 16) ^
+	                             static_cast<uint64_t>(layout.sampler_count);
 
-	// Search for existing pooled argument buffer with matching encoded resources
-	for (auto& buf : pool) {
-		if (buf->GetEncodedResourceSet() == resources) {
-			++m_hits;
-			return buf.get();
+	// 1. Fast O(1) exact hash match
+	const uint64_t exact_hash = layout_hash ^ resources.ComputeHash();
+	auto it = m_hash_index.find(exact_hash);
+	if (it != m_hash_index.end()) {
+		for (auto& buf : it->second) {
+			if (buf->GetEncodedResourceSet() == resources) {
+				++m_hits;
+				return buf.get();
+			}
 		}
 	}
 
-	// Cache Miss: allocate new argument buffer
+	// 2. Secondary O(1) base hash match for in-place dynamic offset reuse
+	const uint64_t base_hash = layout_hash ^ resources.ComputeBaseHash();
+	auto base_it = m_base_hash_index.find(base_hash);
+	if (base_it != m_base_hash_index.end()) {
+		MetalArgumentBuffer* existing = base_it->second;
+		if (existing != nullptr) {
+			bool all_updated = true;
+			for (const auto& b : resources.buffers) {
+				if (!existing->UpdateDynamicOffset(b.slot, b.offset)) {
+					all_updated = false;
+					break;
+				}
+			}
+			if (all_updated) {
+				++m_hits;
+				return existing;
+			}
+		}
+	}
+
+	// 3. Cache Miss: allocate new argument buffer
 	++m_misses;
 	auto new_buf = std::make_unique<MetalArgumentBuffer>(m_device, 4096);
 	if (!new_buf->EncodeResourceSet(resources)) {
@@ -239,13 +248,15 @@ MetalArgumentBuffer* MetalArgumentBufferCache::GetOrCreateArgumentBuffer(
 
 	++m_total_buffers_created;
 	MetalArgumentBuffer* ptr = new_buf.get();
-	pool.push_back(std::move(new_buf));
+	m_hash_index[exact_hash].push_back(std::move(new_buf));
+	m_base_hash_index[base_hash] = ptr;
 	return ptr;
 }
 
 void MetalArgumentBufferCache::Clear() {
 	Common::LockGuard lock(m_mutex);
-	m_buffers.clear();
+	m_hash_index.clear();
+	m_base_hash_index.clear();
 	m_total_buffers_created = 0;
 }
 

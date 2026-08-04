@@ -1,17 +1,17 @@
 #ifndef EMULATOR_INCLUDE_EMULATOR_GRAPHICS_RENDERER_BACKEND_METALARGUMENTBUFFER_H_
 #define EMULATOR_INCLUDE_EMULATOR_GRAPHICS_RENDERER_BACKEND_METALARGUMENTBUFFER_H_
 
-// MetalArgumentBuffer — Phase F
+// MetalArgumentBuffer — Apple Silicon Performance Optimized
 //
 // Encapsulates Apple Metal Argument Buffers (MTLArgumentBuffer) and resource binding translation.
 //
 // Features:
+//   - O(1) FNV-1a Hash Map indexing over MetalResourceSets
+//   - Base resource hash matching & dynamic offset in-place update reuse
 //   - Argument Buffer allocation & encoding via MTLArgumentEncoder / MTLBuffer
-//   - Texture binding (id<MTLTexture>), Sampler binding (id<MTLSamplerState>), Buffer binding (id<MTLBuffer> + dynamic offsets)
-//   - Descriptor Translation: converts engine/Vulkan NativeDescriptors into Metal ResourceSets without duplicating Vulkan resource logic
-//   - Dynamic Offsets: updates buffer offsets dynamically without full argument re-encoding
+//   - Texture, Sampler, and Buffer binding (+ dynamic offsets)
+//   - Descriptor Translation: converts engine/Vulkan NativeDescriptors into Metal ResourceSets
 //   - Resource Lifetime Management: preserves C++ resource owner shared_ptrs until GPU completes work
-//   - Caching & Metrics: Argument Buffer pooling, hit/miss counters, and binding latency profiling under Common::Mutex
 
 #include "common/common.h"
 #include "common/threads.h"
@@ -24,10 +24,6 @@
 #include <vector>
 
 namespace Libs::Graphics {
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Metal Resource Binding Structures
-// ─────────────────────────────────────────────────────────────────────────────
 
 enum class MetalResourceType : uint8_t {
 	Buffer,
@@ -66,6 +62,51 @@ struct MetalResourceSet {
 		lifetime_owners.clear();
 	}
 
+	[[nodiscard]] uint64_t ComputeHash() const noexcept {
+		uint64_t hash = 14695981039346656037ull;
+		auto add_word = [&hash](uint64_t val) {
+			hash ^= val;
+			hash *= 1099511628211ull;
+		};
+		for (const auto& b : buffers) {
+			add_word(reinterpret_cast<uint64_t>(b.buffer));
+			add_word(b.offset);
+			add_word(b.range);
+			add_word(static_cast<uint64_t>(b.slot));
+		}
+		for (const auto& t : textures) {
+			add_word(reinterpret_cast<uint64_t>(t.texture));
+			add_word(static_cast<uint64_t>(t.slot));
+		}
+		for (const auto& s : samplers) {
+			add_word(reinterpret_cast<uint64_t>(s.sampler));
+			add_word(static_cast<uint64_t>(s.slot));
+		}
+		return hash;
+	}
+
+	[[nodiscard]] uint64_t ComputeBaseHash() const noexcept {
+		uint64_t hash = 14695981039346656037ull;
+		auto add_word = [&hash](uint64_t val) {
+			hash ^= val;
+			hash *= 1099511628211ull;
+		};
+		for (const auto& b : buffers) {
+			add_word(reinterpret_cast<uint64_t>(b.buffer));
+			add_word(b.range);
+			add_word(static_cast<uint64_t>(b.slot));
+		}
+		for (const auto& t : textures) {
+			add_word(reinterpret_cast<uint64_t>(t.texture));
+			add_word(static_cast<uint64_t>(t.slot));
+		}
+		for (const auto& s : samplers) {
+			add_word(reinterpret_cast<uint64_t>(s.sampler));
+			add_word(static_cast<uint64_t>(s.slot));
+		}
+		return hash;
+	}
+
 	bool operator==(const MetalResourceSet& other) const noexcept {
 		if (buffers.size() != other.buffers.size() ||
 		    textures.size() != other.textures.size() ||
@@ -96,10 +137,6 @@ struct MetalResourceSet {
 	}
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Metal Argument Buffer Layout Descriptor
-// ─────────────────────────────────────────────────────────────────────────────
-
 struct MetalArgumentBufferLayout {
 	uint32_t buffer_count  = 0;
 	uint32_t texture_count = 0;
@@ -122,10 +159,6 @@ struct MetalArgumentBufferLayoutHash {
 	}
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MetalArgumentBuffer Class
-// ─────────────────────────────────────────────────────────────────────────────
-
 class MetalArgumentBuffer final {
 public:
 	explicit MetalArgumentBuffer(void* mtl_device, size_t size_bytes = 4096);
@@ -137,10 +170,7 @@ public:
 	[[nodiscard]] void* GetMTLBuffer() const noexcept { return m_buffer; }
 	[[nodiscard]] size_t GetSizeBytes() const noexcept { return m_size_bytes; }
 
-	/// Encode a resource set into this argument buffer
 	bool EncodeResourceSet(const MetalResourceSet& resources);
-
-	/// Update dynamic offset for a specific buffer slot without re-encoding full buffer
 	bool UpdateDynamicOffset(uint32_t slot, uint64_t new_offset);
 
 	[[nodiscard]] const MetalResourceSet& GetEncodedResourceSet() const noexcept {
@@ -148,15 +178,11 @@ public:
 	}
 
 private:
-	void*            m_device     = nullptr; // id<MTLDevice>
-	void*            m_buffer     = nullptr; // id<MTLBuffer>
+	void*            m_device     = nullptr;
+	void*            m_buffer     = nullptr;
 	size_t           m_size_bytes = 0;
 	MetalResourceSet m_encoded_set;
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MetalArgumentBufferCache Class
-// ─────────────────────────────────────────────────────────────────────────────
 
 class MetalArgumentBufferCache final {
 public:
@@ -165,34 +191,32 @@ public:
 
 	KYTY_CLASS_NO_COPY(MetalArgumentBufferCache);
 
-	/// Translate Vulkan/engine NativeDescriptors into MetalResourceSet
 	[[nodiscard]] MetalResourceSet TranslateNativeDescriptors(
 	    const DescriptorCache::NativeDescriptors& native,
 	    const std::vector<uint32_t>& dynamic_offsets = {});
 
-	/// Get or allocate an Argument Buffer matching the resource set
 	MetalArgumentBuffer* GetOrCreateArgumentBuffer(const MetalArgumentBufferLayout& layout,
 	                                               const MetalResourceSet&           resources);
 
-	/// Clear cached argument buffers
 	void Clear();
 
-	// Diagnostics
 	[[nodiscard]] size_t GetCacheSize() const noexcept { return m_total_buffers_created; }
 	[[nodiscard]] uint64_t GetHits() const noexcept { return m_hits; }
 	[[nodiscard]] uint64_t GetMisses() const noexcept { return m_misses; }
+	[[nodiscard]] size_t GetPoolCapacity() const noexcept { return m_pool_capacity; }
 	[[nodiscard]] double GetHitRate() const noexcept {
 		const uint64_t total = m_hits + m_misses;
 		return (total > 0) ? (static_cast<double>(m_hits) / static_cast<double>(total)) * 100.0 : 0.0;
 	}
 
 private:
-	void*  m_device                = nullptr; // id<MTLDevice>
+	void*  m_device                = nullptr;
 	size_t m_pool_capacity        = 256;
 	size_t m_total_buffers_created = 0;
 
-	std::unordered_map<MetalArgumentBufferLayout, std::vector<std::unique_ptr<MetalArgumentBuffer>>, MetalArgumentBufferLayoutHash>
-	    m_buffers;
+	// O(1) Hash Map indices: exact match & base resource match for dynamic offset updates
+	std::unordered_map<uint64_t, std::vector<std::unique_ptr<MetalArgumentBuffer>>> m_hash_index;
+	std::unordered_map<uint64_t, MetalArgumentBuffer*>                             m_base_hash_index;
 
 	uint64_t m_hits   = 0;
 	uint64_t m_misses = 0;

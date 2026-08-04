@@ -1,4 +1,4 @@
-// metalArgumentBuffer_stub.cpp
+// metalArgumentBuffer.cpp
 // Non-Apple stub — safe fallback implementations for non-macOS builds.
 
 #include "graphics/host_gpu/renderer/backend/metalArgumentBuffer.h"
@@ -96,12 +96,37 @@ MetalArgumentBuffer* MetalArgumentBufferCache::GetOrCreateArgumentBuffer(
 
 	Common::LockGuard lock(m_mutex);
 
-	auto& pool = m_buffers[layout];
+	const uint64_t layout_hash = (static_cast<uint64_t>(layout.buffer_count) << 32) ^
+	                             (static_cast<uint64_t>(layout.texture_count) << 16) ^
+	                             static_cast<uint64_t>(layout.sampler_count);
 
-	for (auto& buf : pool) {
-		if (buf->GetEncodedResourceSet() == resources) {
-			++m_hits;
-			return buf.get();
+	const uint64_t exact_hash = layout_hash ^ resources.ComputeHash();
+	auto it = m_hash_index.find(exact_hash);
+	if (it != m_hash_index.end()) {
+		for (auto& buf : it->second) {
+			if (buf->GetEncodedResourceSet() == resources) {
+				++m_hits;
+				return buf.get();
+			}
+		}
+	}
+
+	const uint64_t base_hash = layout_hash ^ resources.ComputeBaseHash();
+	auto base_it = m_base_hash_index.find(base_hash);
+	if (base_it != m_base_hash_index.end()) {
+		MetalArgumentBuffer* existing = base_it->second;
+		if (existing != nullptr) {
+			bool all_updated = true;
+			for (const auto& b : resources.buffers) {
+				if (!existing->UpdateDynamicOffset(b.slot, b.offset)) {
+					all_updated = false;
+					break;
+				}
+			}
+			if (all_updated) {
+				++m_hits;
+				return existing;
+			}
 		}
 	}
 
@@ -113,13 +138,15 @@ MetalArgumentBuffer* MetalArgumentBufferCache::GetOrCreateArgumentBuffer(
 
 	++m_total_buffers_created;
 	MetalArgumentBuffer* ptr = new_buf.get();
-	pool.push_back(std::move(new_buf));
+	m_hash_index[exact_hash].push_back(std::move(new_buf));
+	m_base_hash_index[base_hash] = ptr;
 	return ptr;
 }
 
 void MetalArgumentBufferCache::Clear() {
 	Common::LockGuard lock(m_mutex);
-	m_buffers.clear();
+	m_hash_index.clear();
+	m_base_hash_index.clear();
 	m_total_buffers_created = 0;
 }
 

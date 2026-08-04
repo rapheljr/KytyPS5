@@ -34,7 +34,7 @@
 
 namespace Common {
 
-static pthread_mutex_t              g_virtual_mutex {};
+static pthread_rwlock_t            g_virtual_rwlock = PTHREAD_RWLOCK_INITIALIZER;
 static std::map<uintptr_t, size_t>* g_allocs   = nullptr;
 static std::map<uintptr_t, int>*    g_protects = nullptr;
 
@@ -50,16 +50,7 @@ void SysVirtualInit() {
 	if (g_allocs != nullptr) {
 		return;
 	}
-	pthread_mutexattr_t attr {};
-
-	pthread_mutexattr_init(&attr);
-#if KYTY_PLATFORM == KYTY_PLATFORM_LINUX && !defined(__APPLE__)
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_FAST_NP); // glibc-only fast mutex
-#else
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-#endif
-	pthread_mutex_init(&g_virtual_mutex, &attr);
-	pthread_mutexattr_destroy(&attr);
+	pthread_rwlock_init(&g_virtual_rwlock, nullptr);
 
 	g_allocs   = new std::map<uintptr_t, size_t>;
 	g_protects = new std::map<uintptr_t, int>;
@@ -185,14 +176,14 @@ uint64_t SysVirtualAlloc(uint64_t address, uint64_t size, VirtualMemory::Mode mo
 	auto ret_addr = reinterpret_cast<uintptr_t>(ptr);
 
 	if (ptr != MAP_FAILED) {
-		pthread_mutex_lock(&g_virtual_mutex);
+		pthread_rwlock_wrlock(&g_virtual_rwlock);
 		record_alloc(ret_addr, size);
 		uintptr_t page_start = ret_addr >> 12u;
 		uintptr_t page_end   = (ret_addr + size - 1) >> 12u;
 		for (uintptr_t page = page_start; page <= page_end; page++) {
 			(*g_protects)[page] = protect;
 		}
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 	}
 
 	return ret_addr;
@@ -210,62 +201,57 @@ uint64_t SysVirtualAllocAligned(uint64_t address, uint64_t size, VirtualMemory::
 
 	EnsureVirtualInit();
 
-	auto addr    = static_cast<uintptr_t>(address);
-	int  protect = get_protection_flag(mode);
+	auto addr = static_cast<uintptr_t>(address);
 
-	void* ptr = map_anonymous(addr, size, protect, MAP_PRIVATE | MAP_ANON);
+	int protect = get_protection_flag(mode);
 
-	auto ret_addr = reinterpret_cast<uintptr_t>(ptr);
+	void*     ptr      = MAP_FAILED;
+	uintptr_t ret_addr = 0;
 
-	if (ptr != MAP_FAILED && ((ret_addr & (alignment - 1)) != 0)) {
-		munmap(ptr, size);
-
-		ptr =
-		    map_anonymous(addr, size + alignment, protect, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE);
+	if (addr != 0) {
+		ptr      = map_anonymous(addr, size, protect, MAP_PRIVATE | MAP_ANON);
 		ret_addr = reinterpret_cast<uintptr_t>(ptr);
-		if (ptr != MAP_FAILED) {
+		if (ptr != MAP_FAILED && ret_addr != addr) {
+			munmap(ptr, size);
+			ptr      = MAP_FAILED;
+			ret_addr = 0;
+		}
+	}
+
+	if (ptr == MAP_FAILED) {
+		const size_t over_size = size + alignment;
+		void*        over_ptr  = map_anonymous(0, over_size, protect, MAP_PRIVATE | MAP_ANON);
+		if (over_ptr != MAP_FAILED) {
+			const auto base        = reinterpret_cast<uintptr_t>(over_ptr);
+			const auto aligned_base = align_up(base, alignment);
+			const auto head_size    = aligned_base - base;
+			const auto tail_size    = over_size - head_size - size;
+
 #if defined(__APPLE__)
-			// Carve the aligned subrange out of the live mapping with MAP_FIXED (in-place
-			// replacement) and trim the slack; never munmap the whole range first, or a
-			// concurrent host mapping (dyld, Rosetta, Metal) could claim the hole and be
-			// destroyed by the MAP_FIXED. Other platforms keep the original path below.
-			auto aligned_addr = align_up(ret_addr, alignment);
-			// NOLINTNEXTLINE
-			void* fixed = mmap(reinterpret_cast<void*>(aligned_addr), size, protect,
-			                   MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0);
-			if (fixed == MAP_FAILED) {
-				munmap(ptr, size + alignment);
-				ret_addr = 0;
-				ptr      = MAP_FAILED;
+			void* fixed_ptr = mmap(reinterpret_cast<void*>(aligned_base), size, protect,
+			                       MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0);
+
+			if (fixed_ptr == reinterpret_cast<void*>(aligned_base)) {
+				ptr      = fixed_ptr;
+				ret_addr = aligned_base;
+				if (head_size > 0) {
+					munmap(reinterpret_cast<void*>(base), head_size);
+				}
+				if (tail_size > 0) {
+					munmap(reinterpret_cast<void*>(aligned_base + size), tail_size);
+				}
 			} else {
-				if (aligned_addr > ret_addr) {
-					munmap(reinterpret_cast<void*>(ret_addr), aligned_addr - ret_addr);
-				}
-				const uintptr_t tail_start = aligned_addr + size;
-				const uintptr_t resv_end   = ret_addr + size + alignment;
-				if (resv_end > tail_start) {
-					munmap(reinterpret_cast<void*>(tail_start), resv_end - tail_start);
-				}
-				ptr      = fixed;
-				ret_addr = aligned_addr;
+				munmap(over_ptr, over_size);
+				ptr = MAP_FAILED;
 			}
 #else
-			munmap(ptr, size + alignment);
-			auto aligned_addr = align_up(ret_addr, alignment);
-#ifdef KYTY_FIXED_NOREPLACE
-			// NOLINTNEXTLINE
-			ptr = mmap(reinterpret_cast<void*>(aligned_addr), size, protect,
-			           MAP_FIXED_NOREPLACE | MAP_PRIVATE | MAP_ANON, -1, 0);
-#else
-			// NOLINTNEXTLINE
-			ptr = mmap(reinterpret_cast<void*>(aligned_addr), size, protect,
-			           MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0);
-#endif
-			ret_addr = reinterpret_cast<uintptr_t>(ptr);
-			if (ptr != MAP_FAILED && ((ret_addr & (alignment - 1)) != 0)) {
-				munmap(ptr, size);
-				ret_addr = 0;
-				ptr      = MAP_FAILED;
+			ptr      = reinterpret_cast<void*>(aligned_base);
+			ret_addr = aligned_base;
+			if (head_size > 0) {
+				munmap(reinterpret_cast<void*>(base), head_size);
+			}
+			if (tail_size > 0) {
+				munmap(reinterpret_cast<void*>(aligned_base + size), tail_size);
 			}
 #endif
 		}
@@ -275,14 +261,14 @@ uint64_t SysVirtualAllocAligned(uint64_t address, uint64_t size, VirtualMemory::
 		return SysVirtualAllocAligned(address, size, mode, alignment << 1u);
 	}
 
-	pthread_mutex_lock(&g_virtual_mutex);
+	pthread_rwlock_wrlock(&g_virtual_rwlock);
 	record_alloc(ret_addr, size);
 	uintptr_t page_start = ret_addr >> 12u;
 	uintptr_t page_end   = (ret_addr + size - 1) >> 12u;
 	for (uintptr_t page = page_start; page <= page_end; page++) {
 		(*g_protects)[page] = protect;
 	}
-	pthread_mutex_unlock(&g_virtual_mutex);
+	pthread_rwlock_unlock(&g_virtual_rwlock);
 
 	return ret_addr;
 }
@@ -364,14 +350,14 @@ bool SysVirtualAllocFixed(uint64_t address, uint64_t size, VirtualMemory::Mode m
 	}
 
 	if (ptr != MAP_FAILED) {
-		pthread_mutex_lock(&g_virtual_mutex);
+		pthread_rwlock_wrlock(&g_virtual_rwlock);
 		record_alloc(ret_addr, size);
 		uintptr_t page_start = ret_addr >> 12u;
 		uintptr_t page_end   = (ret_addr + size - 1) >> 12u;
 		for (uintptr_t page = page_start; page <= page_end; page++) {
 			(*g_protects)[page] = protect;
 		}
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 
 		return true;
 	}
@@ -384,7 +370,21 @@ bool SysVirtualCommit(uint64_t address, uint64_t size, VirtualMemory::Mode mode)
 }
 
 uint64_t SysVirtualReserve(uint64_t address, uint64_t size) {
-	return SysVirtualReserveAligned(address, size, 1);
+	EnsureVirtualInit();
+
+	auto addr = static_cast<uintptr_t>(address);
+
+	void* ptr = map_anonymous(addr, size, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE);
+
+	auto ret_addr = reinterpret_cast<uintptr_t>(ptr);
+
+	if (ptr != MAP_FAILED) {
+		pthread_rwlock_wrlock(&g_virtual_rwlock);
+		record_alloc(ret_addr, size);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
+	}
+
+	return ret_addr;
 }
 
 uint64_t SysVirtualReserveAligned(uint64_t address, uint64_t size, uint64_t alignment) {
@@ -396,60 +396,53 @@ uint64_t SysVirtualReserveAligned(uint64_t address, uint64_t size, uint64_t alig
 
 	auto addr = static_cast<uintptr_t>(address);
 
-	void* ptr = map_anonymous(addr, size, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE);
+	void*     ptr      = MAP_FAILED;
+	uintptr_t ret_addr = 0;
 
-	auto ret_addr = reinterpret_cast<uintptr_t>(ptr);
-
-	if (ptr != MAP_FAILED && ((ret_addr & (alignment - 1)) != 0)) {
-		munmap(ptr, size);
-
-		ptr      = map_anonymous(addr, size + alignment, PROT_NONE,
-		                         MAP_PRIVATE | MAP_ANON | MAP_NORESERVE);
+	if (addr != 0) {
+		ptr      = map_anonymous(addr, size, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE);
 		ret_addr = reinterpret_cast<uintptr_t>(ptr);
-		if (ptr != MAP_FAILED) {
+		if (ptr != MAP_FAILED && ret_addr != addr) {
+			munmap(ptr, size);
+			ptr      = MAP_FAILED;
+			ret_addr = 0;
+		}
+	}
+
+	if (ptr == MAP_FAILED) {
+		const size_t over_size = size + alignment;
+		void*        over_ptr  = map_anonymous(0, over_size, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE);
+		if (over_ptr != MAP_FAILED) {
+			const auto base        = reinterpret_cast<uintptr_t>(over_ptr);
+			const auto aligned_base = align_up(base, alignment);
+			const auto head_size    = aligned_base - base;
+			const auto tail_size    = over_size - head_size - size;
+
 #if defined(__APPLE__)
-			// Carve the aligned subrange out of the live reservation with MAP_FIXED (an
-			// in-place replacement), then trim the slack. The range must never be
-			// returned to the OS in between: another thread (dyld, Rosetta, Metal,
-			// malloc) could claim the hole, and the subsequent MAP_FIXED would silently
-			// destroy its mapping. Other platforms keep the original path below.
-			auto aligned_addr = align_up(ret_addr, alignment);
-			// NOLINTNEXTLINE
-			void* fixed = mmap(reinterpret_cast<void*>(aligned_addr), size, PROT_NONE,
-			                   MAP_FIXED | MAP_PRIVATE | MAP_ANON | MAP_NORESERVE, -1, 0);
-			if (fixed == MAP_FAILED) {
-				munmap(ptr, size + alignment);
-				ret_addr = 0;
-				ptr      = MAP_FAILED;
+			void* fixed_ptr = mmap(reinterpret_cast<void*>(aligned_base), size, PROT_NONE,
+			                       MAP_FIXED | MAP_PRIVATE | MAP_ANON | MAP_NORESERVE, -1, 0);
+
+			if (fixed_ptr == reinterpret_cast<void*>(aligned_base)) {
+				ptr      = fixed_ptr;
+				ret_addr = aligned_base;
+				if (head_size > 0) {
+					munmap(reinterpret_cast<void*>(base), head_size);
+				}
+				if (tail_size > 0) {
+					munmap(reinterpret_cast<void*>(aligned_base + size), tail_size);
+				}
 			} else {
-				if (aligned_addr > ret_addr) {
-					munmap(reinterpret_cast<void*>(ret_addr), aligned_addr - ret_addr);
-				}
-				const uintptr_t tail_start = aligned_addr + size;
-				const uintptr_t resv_end   = ret_addr + size + alignment;
-				if (resv_end > tail_start) {
-					munmap(reinterpret_cast<void*>(tail_start), resv_end - tail_start);
-				}
-				ptr      = fixed;
-				ret_addr = aligned_addr;
+				munmap(over_ptr, over_size);
+				ptr = MAP_FAILED;
 			}
 #else
-			munmap(ptr, size + alignment);
-			auto aligned_addr = align_up(ret_addr, alignment);
-#ifdef KYTY_FIXED_NOREPLACE
-			// NOLINTNEXTLINE
-			ptr = mmap(reinterpret_cast<void*>(aligned_addr), size, PROT_NONE,
-			           MAP_FIXED_NOREPLACE | MAP_PRIVATE | MAP_ANON | MAP_NORESERVE, -1, 0);
-#else
-			// NOLINTNEXTLINE
-			ptr = mmap(reinterpret_cast<void*>(aligned_addr), size, PROT_NONE,
-			           MAP_FIXED | MAP_PRIVATE | MAP_ANON | MAP_NORESERVE, -1, 0);
-#endif
-			ret_addr = reinterpret_cast<uintptr_t>(ptr);
-			if (ptr != MAP_FAILED && ((ret_addr & (alignment - 1)) != 0)) {
-				munmap(ptr, size);
-				ret_addr = 0;
-				ptr      = MAP_FAILED;
+			ptr      = reinterpret_cast<void*>(aligned_base);
+			ret_addr = aligned_base;
+			if (head_size > 0) {
+				munmap(reinterpret_cast<void*>(base), head_size);
+			}
+			if (tail_size > 0) {
+				munmap(reinterpret_cast<void*>(aligned_base + size), tail_size);
 			}
 #endif
 		}
@@ -459,9 +452,9 @@ uint64_t SysVirtualReserveAligned(uint64_t address, uint64_t size, uint64_t alig
 		return SysVirtualReserveAligned(address, size, alignment << 1u);
 	}
 
-	pthread_mutex_lock(&g_virtual_mutex);
+	pthread_rwlock_wrlock(&g_virtual_rwlock);
 	record_alloc(ret_addr, size);
-	pthread_mutex_unlock(&g_virtual_mutex);
+	pthread_rwlock_unlock(&g_virtual_rwlock);
 
 	return ret_addr;
 }
@@ -492,9 +485,9 @@ bool SysVirtualReserveFixed(uint64_t address, uint64_t size) {
 	}
 
 	if (ptr != MAP_FAILED) {
-		pthread_mutex_lock(&g_virtual_mutex);
+		pthread_rwlock_wrlock(&g_virtual_rwlock);
 		record_alloc(ret_addr, size);
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 
 		return true;
 	}
@@ -534,12 +527,12 @@ bool SysVirtualFree(uint64_t address) {
 
 	auto addr = static_cast<uintptr_t>(address & ~static_cast<uint64_t>(0xfffu));
 
-	pthread_mutex_lock(&g_virtual_mutex);
+	pthread_rwlock_wrlock(&g_virtual_rwlock);
 	if (auto s = g_allocs->find(addr); s != g_allocs->end()) {
 		size = s->second;
 		g_allocs->erase(s);
 	}
-	pthread_mutex_unlock(&g_virtual_mutex);
+	pthread_rwlock_unlock(&g_virtual_rwlock);
 
 	if (size == 0) {
 		return false;
@@ -548,11 +541,11 @@ bool SysVirtualFree(uint64_t address) {
 	if (munmap(reinterpret_cast<void*>(addr), size) == 0) {
 		uintptr_t page_start = addr >> 12u;
 		uintptr_t page_end   = (addr + size - 1) >> 12u;
-		pthread_mutex_lock(&g_virtual_mutex);
+		pthread_rwlock_wrlock(&g_virtual_rwlock);
 		for (uintptr_t page = page_start; page <= page_end; page++) {
 			g_protects->erase(page);
 		}
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 		return true;
 	}
 
@@ -571,10 +564,10 @@ bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
 		return false;
 	}
 
-	pthread_mutex_lock(&g_virtual_mutex);
+	pthread_rwlock_wrlock(&g_virtual_rwlock);
 	auto next = g_allocs->upper_bound(addr);
 	if (next == g_allocs->begin()) {
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 		return false;
 	}
 
@@ -582,7 +575,7 @@ bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
 	auto       first      = std::prev(next);
 	const auto alloc_addr = first->first;
 	if (addr < alloc_addr || alloc_addr + first->second <= addr) {
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 		return false;
 	}
 
@@ -591,7 +584,7 @@ bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
 	while (cursor < end) {
 		auto following = std::next(last);
 		if (following == g_allocs->end() || following->first != cursor) {
-			pthread_mutex_unlock(&g_virtual_mutex);
+			pthread_rwlock_unlock(&g_virtual_rwlock);
 			return false;
 		}
 		last   = following;
@@ -600,7 +593,7 @@ bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
 	const auto alloc_end = cursor;
 
 	if (munmap(reinterpret_cast<void*>(addr), size) != 0) {
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 		return false;
 	}
 
@@ -614,7 +607,7 @@ bool SysVirtualFreeRange(uint64_t address, uint64_t size) {
 	for (uintptr_t page = addr >> 12u; page <= (end - 1u) >> 12u; page++) {
 		g_protects->erase(page);
 	}
-	pthread_mutex_unlock(&g_virtual_mutex);
+	pthread_rwlock_unlock(&g_virtual_rwlock);
 	return true;
 }
 
@@ -623,15 +616,15 @@ bool SysVirtualProtect(uint64_t address, uint64_t size, VirtualMemory::Mode mode
 	EnsureVirtualInit();
 	auto addr = static_cast<uintptr_t>(address);
 
-	pthread_mutex_lock(&g_virtual_mutex);
 	if (old_mode != nullptr) {
+		pthread_rwlock_rdlock(&g_virtual_rwlock);
 		if (auto s = g_protects->find(addr >> 12u); s != g_protects->end()) {
 			*old_mode = get_protection_flag(s->second);
 		} else {
 			*old_mode = VirtualMemory::Mode::NoAccess;
 		}
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 	}
-	pthread_mutex_unlock(&g_virtual_mutex);
 
 	const uintptr_t host_page_size = GetHostPageSize();
 	const uintptr_t mprotect_start = addr & ~(host_page_size - 1);
@@ -642,11 +635,11 @@ bool SysVirtualProtect(uint64_t address, uint64_t size, VirtualMemory::Mode mode
 	             get_protection_flag(mode)) == 0) {
 		uintptr_t page_start = addr >> 12u;
 		uintptr_t page_end   = (addr + size - 1) >> 12u;
-		pthread_mutex_lock(&g_virtual_mutex);
+		pthread_rwlock_wrlock(&g_virtual_rwlock);
 		for (uintptr_t page = page_start; page <= page_end; page++) {
 			(*g_protects)[page] = get_protection_flag(mode);
 		}
-		pthread_mutex_unlock(&g_virtual_mutex);
+		pthread_rwlock_unlock(&g_virtual_rwlock);
 		return true;
 	}
 
