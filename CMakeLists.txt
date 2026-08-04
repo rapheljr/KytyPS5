@@ -844,6 +844,25 @@ if(APPLE)
 	target_link_options(compatibility_framework_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(arm64_guest_jit_backend_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Arm64GuestJitBackendTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/jitBackend.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64FpSimdEmitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RecompilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+)
+target_link_libraries(arm64_guest_jit_backend_tests common ${kyty_emulator_link_libraries})
+target_include_directories(arm64_guest_jit_backend_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(arm64_guest_jit_backend_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+
 
 
 
