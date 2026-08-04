@@ -69,6 +69,10 @@ public:
 	/// not yet waited on.
 	void WaitUntilCompleted();
 
+	/// Raw handle accessors
+	[[nodiscard]] void* GetNativeCommandBuffer() const noexcept { return m_command_buffer; }
+	[[nodiscard]] void* GetNativeComputeEncoder() const noexcept { return m_compute_encoder; }
+
 	// ── Diagnostics ──────────────────────────────────────────────────────────
 
 	/// Time in nanoseconds between commit and GPU completion (0 if not complete).

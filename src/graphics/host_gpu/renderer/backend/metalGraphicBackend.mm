@@ -2,6 +2,7 @@
 #include "graphics/host_gpu/renderer/backend/metalArgumentBuffer.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
 #include "graphics/host_gpu/renderer/backend/metalPipelineCache.h"
+#include "graphics/host_gpu/renderer/backend/metalSync.h"
 #include "common/timer.h"
 
 #include <chrono>
@@ -67,6 +68,10 @@ bool MetalGraphicBackend::Initialize() {
 
 	// Phase F: construct the Metal argument buffer cache C++ wrapper
 	m_argument_buffer_cache = std::make_unique<MetalArgumentBufferCache>(m_device);
+
+	// Phase H: construct Metal frame sync and hazard tracker
+	m_frame_sync     = std::make_unique<HostGpu::Metal::MetalFrameSync>(3);
+	m_hazard_tracker = std::make_unique<HostGpu::Metal::MetalResourceHazardTracker>();
 
 	QueryCapabilities();
 
@@ -159,6 +164,8 @@ void MetalGraphicBackend::Shutdown() {
 	}
 #endif
 
+	m_hazard_tracker.reset();
+	m_frame_sync.reset();
 	m_argument_buffer_cache.reset();
 	m_pipeline_cache.reset();
 	m_metal_queue.reset();

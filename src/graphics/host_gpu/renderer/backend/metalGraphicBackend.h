@@ -3,6 +3,7 @@
 
 #include "graphics/host_gpu/renderer/backend/graphicBackend.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
+#include "graphics/host_gpu/renderer/backend/metalSync.h"
 #include <cstdint>
 #include <memory>
 
@@ -49,6 +50,12 @@ public:
 	/// Returns the Phase F Metal argument buffer cache. Null before Initialize().
 	[[nodiscard]] MetalArgumentBufferCache*   GetArgumentBufferCache() noexcept { return m_argument_buffer_cache.get(); }
 
+	/// Returns the Phase H Metal frame sync pacing manager.
+	[[nodiscard]] HostGpu::Metal::MetalFrameSync* GetFrameSync() noexcept { return m_frame_sync.get(); }
+
+	/// Returns the Phase H Metal resource hazard tracker.
+	[[nodiscard]] HostGpu::Metal::MetalResourceHazardTracker* GetHazardTracker() noexcept { return m_hazard_tracker.get(); }
+
 private:
 	bool                                m_initialized   = false;
 	void*                               m_device        = nullptr; // id<MTLDevice>
@@ -56,6 +63,8 @@ private:
 	std::unique_ptr<MetalCommandQueue>         m_metal_queue;
 	std::unique_ptr<MetalPipelineCache>        m_pipeline_cache;
 	std::unique_ptr<MetalArgumentBufferCache>  m_argument_buffer_cache;
+	std::unique_ptr<HostGpu::Metal::MetalFrameSync>            m_frame_sync;
+	std::unique_ptr<HostGpu::Metal::MetalResourceHazardTracker> m_hazard_tracker;
 	MetalCapabilities                   m_capabilities {};
 	uint64_t                            m_init_time_ns  = 0;
 

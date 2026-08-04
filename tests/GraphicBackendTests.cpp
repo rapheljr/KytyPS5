@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -773,6 +774,207 @@ void BenchmarkPhaseF_DescriptorBindingPerformance() {
 #endif
 }
 
+// ─── Phase H: Metal Synchronization (Fences, Events, Hazards & Frame Pacing) ───
+
+void TestPhaseH_MTLFenceIntraQueueSync() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for Phase H Fence test");
+
+	Libs::Graphics::HostGpu::Metal::MetalFence fence;
+	Check(fence.Initialize(backend.GetMTLDevice()), "MetalFence init failed");
+	Check(fence.IsValid(), "MetalFence must be valid");
+
+	Libs::Graphics::MetalCommandBuffer cmd_buf(backend.GetMTLCommandQueue());
+	Check(cmd_buf.OpenComputeEncoder() != nullptr, "OpenComputeEncoder 1 failed");
+	fence.UpdateInComputeEncoder(cmd_buf.GetNativeComputeEncoder());
+	cmd_buf.CloseComputeEncoder();
+
+	Check(cmd_buf.OpenComputeEncoder() != nullptr, "OpenComputeEncoder 2 failed");
+	fence.WaitForInComputeEncoder(cmd_buf.GetNativeComputeEncoder());
+	cmd_buf.CloseComputeEncoder();
+
+	cmd_buf.Commit();
+	cmd_buf.WaitUntilCompleted();
+
+	fence.Reset();
+	Check(!fence.IsValid(), "MetalFence must be invalid after Reset()");
+
+	backend.Shutdown();
+	std::printf("  [OK] Phase H: MTLFence Intra-Queue Synchronization & Encoder Barriers\n");
+#else
+	std::printf("  [SKIP] Phase H: TestPhaseH_MTLFenceIntraQueueSync (non-Apple)\n");
+#endif
+}
+
+void TestPhaseH_MTLEventInterQueueSync() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for Phase H Event test");
+
+	Libs::Graphics::HostGpu::Metal::MetalEvent event;
+	Check(event.Initialize(backend.GetMTLDevice(), true), "MetalSharedEvent init failed");
+	Check(event.IsValid(), "MetalEvent must be valid");
+	Check(event.IsShared(), "MetalEvent must be shared");
+
+	Libs::Graphics::MetalCommandBuffer buf_a(backend.GetMTLCommandQueue());
+	event.SignalOnCommandBuffer(buf_a.GetNativeCommandBuffer(), 42);
+	buf_a.Commit();
+	buf_a.WaitUntilCompleted();
+
+	Check(event.GetSignaledValue() == 42, "Event signaled value must be 42");
+
+	event.SignalFromHost(100);
+	Check(event.GetSignaledValue() == 100, "Event signaled value after host signal must be 100");
+
+	event.Reset();
+	backend.Shutdown();
+	std::printf("  [OK] Phase H: MTLEvent / MTLSharedEvent Inter-Queue Synchronization\n");
+#else
+	std::printf("  [SKIP] Phase H: TestPhaseH_MTLEventInterQueueSync (non-Apple)\n");
+#endif
+}
+
+void TestPhaseH_ResourceHazardTracking() {
+	Libs::Graphics::HostGpu::Metal::MetalResourceHazardTracker tracker;
+
+	bool raw = false, war = false, waw = false;
+
+	// Initial Write — No hazards
+	tracker.TrackResourceAccess(1001, Libs::Graphics::HostGpu::Metal::MetalResourceAccess::Write, raw, war, waw);
+	Check(!raw && !war && !waw, "Initial Write must produce no hazards");
+
+	// Read after Write — RAW hazard
+	tracker.TrackResourceAccess(1001, Libs::Graphics::HostGpu::Metal::MetalResourceAccess::Read, raw, war, waw);
+	Check(raw && !war && !waw, "Read after Write must produce RAW hazard");
+
+	// Write after Read — WAR hazard
+	tracker.TrackResourceAccess(1001, Libs::Graphics::HostGpu::Metal::MetalResourceAccess::Write, raw, war, waw);
+	Check(!raw && war && !waw, "Write after Read must produce WAR hazard");
+
+	// Write after Write — WAW hazard
+	tracker.TrackResourceAccess(1001, Libs::Graphics::HostGpu::Metal::MetalResourceAccess::Write, raw, war, waw);
+	Check(!raw && !war && waw, "Write after Write must produce WAW hazard");
+
+	tracker.Reset();
+	std::printf("  [OK] Phase H: Resource Hazard Resolution (RAW / WAR / WAW)\n");
+}
+
+void TestPhaseH_FramePacingAndInFlightThrottling() {
+	Libs::Graphics::HostGpu::Metal::MetalFrameSync frame_sync(2);
+	Check(frame_sync.GetMaxFramesInFlight() == 2, "Max frames in flight must be 2");
+
+	frame_sync.BeginFrame();
+	frame_sync.EndFrame(nullptr);
+
+	frame_sync.BeginFrame();
+	frame_sync.EndFrame(nullptr);
+
+	Check(frame_sync.GetTotalFramesPresented() == 2, "Total frames presented must be 2");
+	std::printf("  [OK] Phase H: Frame Pacing & In-Flight Frame Semaphore Throttling\n");
+}
+
+void TestPhaseH_MultiQueueParallelEncodingStress() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for multi-queue stress test");
+
+	static constexpr size_t NUM_THREADS = 4;
+	static constexpr size_t ENCODES_PER_THREAD = 10;
+
+	std::vector<std::thread> workers;
+	workers.reserve(NUM_THREADS);
+
+	for (size_t t = 0; t < NUM_THREADS; ++t) {
+		workers.emplace_back([&backend]() {
+			for (size_t i = 0; i < ENCODES_PER_THREAD; ++i) {
+				Libs::Graphics::MetalCommandBuffer buf(backend.GetMTLCommandQueue());
+				if (buf.OpenComputeEncoder() != nullptr) {
+					buf.CloseComputeEncoder();
+				}
+				buf.Commit();
+				buf.WaitUntilCompleted();
+			}
+		});
+	}
+
+	for (auto& w : workers) {
+		w.join();
+	}
+
+	backend.WaitIdle();
+	backend.Shutdown();
+	std::printf("  [OK] Phase H: Multi-Queue Parallel Command Encoding Stress Test (%zu threads x %zu passes)\n", NUM_THREADS, ENCODES_PER_THREAD);
+#else
+	std::printf("  [SKIP] Phase H: TestPhaseH_MultiQueueParallelEncodingStress (non-Apple)\n");
+#endif
+}
+
+void BenchmarkPhaseH_SynchronizationOverhead() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for sync benchmark");
+
+	static constexpr size_t ITERS = 1000;
+
+	// 1. MTLFence Latency
+	Libs::Graphics::HostGpu::Metal::MetalFence fence;
+	Check(fence.Initialize(backend.GetMTLDevice()), "Fence init failed");
+
+	const auto t_fence_start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < ITERS; ++i) {
+		Libs::Graphics::MetalCommandBuffer buf(backend.GetMTLCommandQueue());
+		if (buf.OpenComputeEncoder() != nullptr) {
+			fence.UpdateInComputeEncoder(buf.GetNativeComputeEncoder());
+			fence.WaitForInComputeEncoder(buf.GetNativeComputeEncoder());
+			buf.CloseComputeEncoder();
+		}
+		buf.Commit();
+	}
+	const auto t_fence_end = std::chrono::high_resolution_clock::now();
+
+	double fence_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t_fence_end - t_fence_start).count()) / 1000.0;
+	double fence_us_per_op = (fence_ms * 1000.0) / static_cast<double>(ITERS);
+
+	// 2. MTLEvent Latency
+	Libs::Graphics::HostGpu::Metal::MetalEvent event;
+	Check(event.Initialize(backend.GetMTLDevice(), true), "Event init failed");
+
+	const auto t_event_start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < ITERS; ++i) {
+		Libs::Graphics::MetalCommandBuffer buf(backend.GetMTLCommandQueue());
+		event.SignalOnCommandBuffer(buf.GetNativeCommandBuffer(), i + 1);
+		buf.Commit();
+	}
+	const auto t_event_end = std::chrono::high_resolution_clock::now();
+
+	double event_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t_event_end - t_event_start).count()) / 1000.0;
+	double event_us_per_op = (event_ms * 1000.0) / static_cast<double>(ITERS);
+
+	// 3. Frame Sync Semaphore Latency
+	Libs::Graphics::HostGpu::Metal::MetalFrameSync frame_sync(3);
+	const auto t_frame_start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < ITERS; ++i) {
+		frame_sync.BeginFrame();
+		frame_sync.EndFrame(nullptr);
+	}
+	const auto t_frame_end = std::chrono::high_resolution_clock::now();
+
+	double frame_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t_frame_end - t_frame_start).count()) / 1000.0;
+	double frame_ns_per_op = (frame_ms * 1e6) / static_cast<double>(ITERS);
+
+	std::printf("  [Bench] MTLFence Encoder Synchronization Latency: %.2f µs/barrier (Total: %.2f ms over %zu iterations)\n", fence_us_per_op, fence_ms, ITERS);
+	std::printf("  [Bench] MTLEvent Signal/Wait Latency: %.2f µs/event (Total: %.2f ms over %zu iterations)\n", event_us_per_op, event_ms, ITERS);
+	std::printf("  [Bench] Frame Pacing Semaphore Acquisition Latency: %.2f ns/frame (Total: %.2f ms over %zu iterations)\n", frame_ns_per_op, frame_ms, ITERS);
+
+	fence.Reset();
+	event.Reset();
+	backend.Shutdown();
+#else
+	std::printf("  [SKIP] BenchmarkPhaseH_SynchronizationOverhead (non-Apple)\n");
+#endif
+}
+
 } // namespace
 
 int main() {
@@ -835,6 +1037,18 @@ int main() {
 
 	std::printf("\n");
 	BenchmarkPhaseF_DescriptorBindingPerformance();
+
+	std::printf("\n--- Phase H: Metal Synchronization (Fences, Events, Hazards & Frame Pacing) ---\n\n");
+
+	// Phase H
+	TestPhaseH_MTLFenceIntraQueueSync();
+	TestPhaseH_MTLEventInterQueueSync();
+	TestPhaseH_ResourceHazardTracking();
+	TestPhaseH_FramePacingAndInFlightThrottling();
+	TestPhaseH_MultiQueueParallelEncodingStress();
+
+	std::printf("\n");
+	BenchmarkPhaseH_SynchronizationOverhead();
 
 	std::printf("\nGraphicBackendTests: PASSED\n");
 
