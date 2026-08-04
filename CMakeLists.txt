@@ -785,6 +785,21 @@ if(APPLE)
 	target_link_options(x86_to_arm64_recompiler_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
+add_executable(ps5_kernel_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Ps5KernelTests.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
+)
+target_link_libraries(ps5_kernel_tests common ${kyty_emulator_link_libraries})
+target_include_directories(ps5_kernel_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(ps5_kernel_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+
 
 
 
