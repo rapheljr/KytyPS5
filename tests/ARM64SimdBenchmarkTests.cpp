@@ -96,6 +96,29 @@ void TestSimdInstructionBenchmarks() {
 	std::printf("  [OK] SIMD Test 2: 1M Operation Benchmark passed\n");
 }
 
+void TestSimdOptimizationAnalyzer() {
+	std::printf("  [SIMD Test 3] Testing SimdOptimizationAnalyzer (Cycles, Latency & Auto Suggester)...\n");
+
+	auto bench_sse = SimdOptimizationAnalyzer::BenchmarkOpcode(SimdInstructionSet::SSE, "ADDPS", 100000);
+	Check(bench_sse.throughput_m_ops_sec > 0.0, "Throughput must be positive");
+	std::printf("    [Benchmark] ADDPS Latency: %.2f ns | Throughput: %.2f M ops/sec | Cycles: %llu\n",
+	            bench_sse.latency_ns, bench_sse.throughput_m_ops_sec, static_cast<unsigned long long>(bench_sse.cpu_cycles));
+
+	auto bench_avx = SimdOptimizationAnalyzer::BenchmarkOpcode(SimdInstructionSet::AVX, "VADDPS", 100000);
+	Check(bench_avx.throughput_m_ops_sec > 0.0, "AVX Throughput must be positive");
+	std::printf("    [Benchmark] VADDPS Latency: %.2f ns | Throughput: %.2f M ops/sec | Cycles: %llu\n",
+	            bench_avx.latency_ns, bench_avx.throughput_m_ops_sec, static_cast<unsigned long long>(bench_avx.cpu_cycles));
+
+	auto suggestions = SimdOptimizationAnalyzer::GenerateOptimizationSuggestions();
+	Check(!suggestions.empty(), "Optimization suggestions must not be empty");
+	for (const auto& sug : suggestions) {
+		std::printf("    [Auto-Optimization Suggestion] %s -> %s (%s)\n",
+		            sug.opcode.c_str(), sug.recommended_neon_pattern.c_str(), sug.estimated_speedup.c_str());
+	}
+
+	std::printf("  [OK] SIMD Test 3: SimdOptimizationAnalyzer passed\n");
+}
+
 } // namespace
 
 int main() {
@@ -105,6 +128,7 @@ int main() {
 
 	TestDifferentialExecutionAgainstX86();
 	TestSimdInstructionBenchmarks();
+	TestSimdOptimizationAnalyzer();
 
 	std::printf("\nALL SIMD BENCHMARK & DIFFERENTIAL TESTS PASSED!\n");
 	return 0;
