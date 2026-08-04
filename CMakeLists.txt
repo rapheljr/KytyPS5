@@ -301,6 +301,61 @@ endif()
 set(kyty_emulator_link_libraries common Vulkan::Headers spirv-tools-opt spirv-tools SDL2-static imgui xxhash FFmpeg::ffmpeg fmt::fmt nlohmann_json::nlohmann_json LibAtrac9 kyty_git_version Zydis::Zydis xbyak::xbyak)
 
 # Linux system libraries required by the static FFmpeg archive.
+if(APPLE)
+	find_library(KYTY_METAL_LIB Metal)
+	find_library(KYTY_FOUNDATION_LIB Foundation)
+	find_library(KYTY_COCOA_LIB Cocoa)
+	find_library(KYTY_QUARTZCORE_LIB QuartzCore)
+	find_library(KYTY_IOKIT_LIB IOKit)
+	find_library(KYTY_COREVIDEO_LIB CoreVideo)
+	find_library(KYTY_COREAUDIO_LIB CoreAudio)
+	find_library(KYTY_AUDIOTOOLBOX_LIB AudioToolbox)
+	find_library(KYTY_FORCEFEEDBACK_LIB ForceFeedback)
+	find_library(KYTY_CARBON_LIB Carbon)
+	find_library(KYTY_GAMECONTROLLER_LIB GameController)
+	find_library(KYTY_COREHAPTICS_LIB CoreHaptics)
+
+	if(KYTY_METAL_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_METAL_LIB})
+	endif()
+	if(KYTY_FOUNDATION_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_FOUNDATION_LIB})
+	endif()
+	if(KYTY_COCOA_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_COCOA_LIB})
+	endif()
+	if(KYTY_QUARTZCORE_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_QUARTZCORE_LIB})
+	endif()
+	if(KYTY_IOKIT_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_IOKIT_LIB})
+	endif()
+	if(KYTY_COREVIDEO_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_COREVIDEO_LIB})
+	endif()
+	if(KYTY_COREAUDIO_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_COREAUDIO_LIB})
+	endif()
+	if(KYTY_AUDIOTOOLBOX_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_AUDIOTOOLBOX_LIB})
+	endif()
+	if(KYTY_FORCEFEEDBACK_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_FORCEFEEDBACK_LIB})
+	endif()
+	if(KYTY_CARBON_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_CARBON_LIB})
+	endif()
+	if(KYTY_GAMECONTROLLER_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_GAMECONTROLLER_LIB})
+	endif()
+	if(KYTY_COREHAPTICS_LIB)
+		list(APPEND kyty_emulator_link_libraries ${KYTY_COREHAPTICS_LIB})
+	endif()
+endif()
+
+
+
+>>>>>>> 9e9724d (feat(recompiler): implement Phase M Native x86-64 to ARM64 Dynamic Recompiler)
 if(LINUX)
 	find_package(Threads REQUIRED)
 	list(APPEND kyty_emulator_link_libraries m ${CMAKE_DL_LIBS} Threads::Threads)
@@ -636,6 +691,10 @@ if(APPLE)
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalPipelineCache.mm"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalArgumentBuffer.mm"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSync.mm"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalBuffer.mm"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalTexture.mm"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSamplerCache.mm"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalMemoryPool.mm"
 	)
 else()
 	set(METAL_BACKEND_SRC
@@ -645,6 +704,10 @@ else()
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalPipelineCache.cpp"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalArgumentBuffer.cpp"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSync.cpp"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalBuffer.cpp"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalTexture.cpp"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSamplerCache.cpp"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalMemoryPool.cpp"
 	)
 endif()
 
@@ -658,6 +721,80 @@ add_executable(graphic_backend_tests EXCLUDE_FROM_ALL
 )
 target_link_libraries(graphic_backend_tests common ${kyty_emulator_link_libraries})
 target_include_directories(graphic_backend_tests PRIVATE ${inc_headers})
+
+add_executable(metal_resource_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/MetalResourceTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
+	${METAL_BACKEND_SRC}
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
+)
+target_link_libraries(metal_resource_tests common ${kyty_emulator_link_libraries})
+target_include_directories(metal_resource_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(graphic_backend_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+	target_link_options(metal_resource_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+add_executable(pm4_command_processor_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Pm4CommandProcessorTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Parser.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Disassembler.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4CommandList.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Translator.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
+	${METAL_BACKEND_SRC}
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
+)
+target_link_libraries(pm4_command_processor_tests common ${kyty_emulator_link_libraries})
+target_include_directories(pm4_command_processor_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(pm4_command_processor_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+add_executable(shader_opt_pipeline_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ShaderOptPipelineTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPipeline.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPasses.cpp"
+)
+target_link_libraries(shader_opt_pipeline_tests common ${kyty_emulator_link_libraries})
+target_include_directories(shader_opt_pipeline_tests PRIVATE ${inc_headers})
+
+
+if(APPLE)
+	target_link_options(shader_opt_pipeline_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+add_executable(x86_to_arm64_recompiler_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/X86ToArm64RecompilerTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RecompilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+)
+target_link_libraries(x86_to_arm64_recompiler_tests common ${kyty_emulator_link_libraries})
+target_include_directories(x86_to_arm64_recompiler_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(x86_to_arm64_recompiler_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+
+
+
+
+
+
+
+
+
+
 
 add_kyty_full_emulator_test(shader_cfg_tests "${KYTY_TESTS_DIR}/shaderCfgTests.cpp")
 
@@ -884,6 +1021,7 @@ if(BUILD_TESTING)
 		master_validation_suite_tests
 		graphic_backend_tests
 		ime_dialog_tests
+		metal_resource_tests
 		shader_cfg_tests
 		scalar_provenance_tests
 		image_page_table_tests
@@ -900,6 +1038,8 @@ if(BUILD_TESTING)
 		bit_array_tests
 		arm64_backend_tests
 	)
+
+	add_custom_target(kyty_tests DEPENDS build_tests)
 endif()
 
 
