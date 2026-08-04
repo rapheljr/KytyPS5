@@ -659,6 +659,18 @@ target_include_directories(graphic_backend_tests PRIVATE ${inc_headers})
 
 add_kyty_full_emulator_test(shader_cfg_tests "${KYTY_TESTS_DIR}/shaderCfgTests.cpp")
 
+add_executable(msl_emitter_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/MslEmitterTests.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/MslEmitter.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterModule.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterAluOps.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterControlFlow.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterImageOps.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterMemory.cpp"
+)
+target_link_libraries(msl_emitter_tests fmt::fmt common)
+target_include_directories(msl_emitter_tests PRIVATE ${inc_headers})
+
 add_executable(scalar_provenance_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ScalarProvenanceTests.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
