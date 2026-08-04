@@ -90,6 +90,12 @@ enum class X86Opcode : uint16_t {
 	Pblendvb,
 	Pcmpestri,
 	Pcmpistri,
+	// SSE2 Packed Compare & Convert
+	Pcmpeqd,
+	Pcmpgtd,
+	Cvtsi2ss,
+	Cvtps2pd,
+	Cvtpd2ps,
 	// VEX / AVX Opcodes
 	Vaddps,
 	Vsubps,

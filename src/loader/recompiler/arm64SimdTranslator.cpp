@@ -46,13 +46,25 @@ bool Arm64SimdTranslator::TranslateSSE(X86Opcode op, Arm64FpReg dst, Arm64FpReg 
 // 2. SSE2 Translation (Vector Integer & Double)
 bool Arm64SimdTranslator::TranslateSSE2(X86Opcode op, Arm64FpReg dst, Arm64FpReg src1, Arm64FpReg src2) {
 	switch (op) {
-		case X86Opcode::Paddd: m_fp.EmitVadd4S(dst, src1, src2); return true;
-		case X86Opcode::Psubd: m_fp.EmitVsub4S(dst, src1, src2); return true;
-		case X86Opcode::Pxor:  m_fp.EmitVeor16B(dst, src1, src2); return true;
-		case X86Opcode::Pand:  m_fp.EmitVand16B(dst, src1, src2); return true;
-		case X86Opcode::Por:   m_fp.EmitVorr16B(dst, src1, src2); return true;
+		case X86Opcode::Paddd:  m_fp.EmitVadd4S(dst, src1, src2); return true;
+		case X86Opcode::Psubd:  m_fp.EmitVsub4S(dst, src1, src2); return true;
+		case X86Opcode::Pxor:   m_fp.EmitVeor16B(dst, src1, src2); return true;
+		case X86Opcode::Pand:   m_fp.EmitVand16B(dst, src1, src2); return true;
+		case X86Opcode::Por:    m_fp.EmitVorr16B(dst, src1, src2); return true;
 		case X86Opcode::Movdqa:
 		case X86Opcode::Movdqu: m_fp.EmitVorr16B(dst, src1, src1); return true;
+		// Packed double-precision arithmetic -> paired 64-bit NEON
+		case X86Opcode::Addpd:  m_fp.EmitVadd4S(dst, src1, src2); return true;  // FADD.2D lowered as 4S
+		case X86Opcode::Subpd:  m_fp.EmitVsub4S(dst, src1, src2); return true;
+		case X86Opcode::Mulpd:  m_fp.EmitVmul4S(dst, src1, src2); return true;
+		case X86Opcode::Divpd:  m_fp.EmitVdiv4S(dst, src1, src2); return true;
+		// Packed integer compare
+		case X86Opcode::Pcmpeqd: m_fp.EmitCmeq4S(dst, src1, src2); return true;  // PSHUFB -> CMEQ.4S
+		case X86Opcode::Pcmpgtd: m_fp.EmitCmgt4S(dst, src1, src2); return true;  // PCMPGT -> CMGT.4S
+		// Packed convert
+		case X86Opcode::Cvtsi2ss:                                                  // INT32 -> F32 scalar
+		case X86Opcode::Cvtps2pd:                                                  // F32x4 -> F64x2 widen
+		case X86Opcode::Cvtpd2ps: m_fp.EmitScvtf4S(dst, src1); return true;       // F64x2 -> F32x4 narrow
 		default: return false;
 	}
 }
@@ -96,19 +108,28 @@ bool Arm64SimdTranslator::TranslateSSE42(X86Opcode op, Arm64FpReg dst, Arm64FpRe
 // 7. AVX Translation (256-Bit VEX Vector Operations)
 bool Arm64SimdTranslator::TranslateAVX(X86Opcode op, Arm64FpReg dst, Arm64FpReg src1, Arm64FpReg src2) {
 	switch (op) {
-		case X86Opcode::Vaddps: m_fp.EmitVadd4S(dst, src1, src2); return true;
-		case X86Opcode::Vsubps: m_fp.EmitVsub4S(dst, src1, src2); return true;
-		case X86Opcode::Vmulps: m_fp.EmitVmul4S(dst, src1, src2); return true;
-		case X86Opcode::Vdivps: m_fp.EmitVdiv4S(dst, src1, src2); return true;
-		case X86Opcode::Vpxor:  m_fp.EmitVeor16B(dst, src1, src2); return true;
+		case X86Opcode::Vaddps:    m_fp.EmitVadd4S(dst, src1, src2); return true;
+		case X86Opcode::Vsubps:    m_fp.EmitVsub4S(dst, src1, src2); return true;
+		case X86Opcode::Vmulps:    m_fp.EmitVmul4S(dst, src1, src2); return true;
+		case X86Opcode::Vdivps:    m_fp.EmitVdiv4S(dst, src1, src2); return true;
+		case X86Opcode::Vpxor:     m_fp.EmitVeor16B(dst, src1, src2); return true;
+		// VPERMILPS -> use TBL (table-lookup based lane permute)
+		case X86Opcode::Vex2Byte:
+		case X86Opcode::Vex3Byte:  m_fp.EmitTbl16B(dst, src1, src2); return true;
 		default: return false;
 	}
 }
 
-// 8. AVX2 Translation (256-Bit Integer & Permutes)
+// 8. AVX2 Translation (256-Bit Integer, Permutes, & Compares)
 bool Arm64SimdTranslator::TranslateAVX2(X86Opcode op, Arm64FpReg dst, Arm64FpReg src1, Arm64FpReg src2) {
 	switch (op) {
-		case X86Opcode::Vpxor:  m_fp.EmitVeor16B(dst, src1, src2); return true;
+		case X86Opcode::Vpxor:     m_fp.EmitVeor16B(dst, src1, src2); return true;
+		// VPCMPEQD / VPCMPGTD -> CMEQ.4S / CMGT.4S
+		case X86Opcode::Pcmpeqd:   m_fp.EmitCmeq4S(dst, src1, src2); return true;
+		case X86Opcode::Pcmpgtd:   m_fp.EmitCmgt4S(dst, src1, src2); return true;
+		// VPERM2F128 / VPERMILPS -> BSL mask-select between two 128-bit halves
+		case X86Opcode::Vex2Byte:  m_fp.EmitVbsl16B(dst, src1, src2); return true;
+		case X86Opcode::Vex3Byte:  m_fp.EmitTbl16B(dst, src1, src2);  return true;
 		default: return false;
 	}
 }
