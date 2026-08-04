@@ -665,6 +665,162 @@ add_executable(run_on_guest_stack_arm64_tests EXCLUDE_FROM_ALL
 target_link_libraries(run_on_guest_stack_arm64_tests common)
 target_include_directories(run_on_guest_stack_arm64_tests PRIVATE ${inc_headers})
 
+add_executable(x86_decoder_complete_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/X86DecoderCompleteTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+)
+target_link_libraries(x86_decoder_complete_tests common)
+target_include_directories(x86_decoder_complete_tests PRIVATE ${inc_headers})
+
+add_executable(compiler_ir_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/CompilerIRTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+)
+target_link_libraries(compiler_ir_tests common)
+target_include_directories(compiler_ir_tests PRIVATE ${inc_headers})
+
+add_executable(arm64_register_allocator_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ARM64RegisterAllocatorTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+)
+target_link_libraries(arm64_register_allocator_tests common)
+target_include_directories(arm64_register_allocator_tests PRIVATE ${inc_headers})
+
+add_executable(arm64_instruction_selector_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ARM64InstructionSelectorTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64InstructionSelector.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+)
+target_link_libraries(arm64_instruction_selector_tests common)
+target_include_directories(arm64_instruction_selector_tests PRIVATE ${inc_headers})
+
+add_executable(arm64_simd_benchmark_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ARM64SimdBenchmarkTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64SimdTranslator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64FpSimdEmitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+)
+target_link_libraries(arm64_simd_benchmark_tests common)
+target_include_directories(arm64_simd_benchmark_tests PRIVATE ${inc_headers})
+
+add_executable(runtime_optimization_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/RuntimeOptimizationTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+)
+target_link_libraries(runtime_optimization_tests common)
+target_include_directories(runtime_optimization_tests PRIVATE ${inc_headers})
+
+add_executable(block_linking_benchmark_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/BlockLinkingBenchmarkTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+)
+target_link_libraries(block_linking_benchmark_tests common)
+target_include_directories(block_linking_benchmark_tests PRIVATE ${inc_headers})
+
+add_executable(code_cache_benchmark_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/CodeCacheBenchmarkTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/radixCodeCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+)
+target_link_libraries(code_cache_benchmark_tests common)
+target_include_directories(code_cache_benchmark_tests PRIVATE ${inc_headers})
+
+add_executable(runtime_bridge_exhaustive_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/RuntimeBridgeExhaustiveTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+)
+target_link_libraries(runtime_bridge_exhaustive_tests common)
+target_include_directories(runtime_bridge_exhaustive_tests PRIVATE ${inc_headers})
+
+add_executable(arm64_jit_validation_framework_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Arm64JitValidationFrameworkTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64JitValidationFramework.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+)
+target_link_libraries(arm64_jit_validation_framework_tests common)
+target_include_directories(arm64_jit_validation_framework_tests PRIVATE ${inc_headers})
+
 add_executable(arm64_backend_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ARM64BackendTests.cpp"
 	"${KYTY_SOURCE_DIR}/emulator/arm64Emitter.cpp"

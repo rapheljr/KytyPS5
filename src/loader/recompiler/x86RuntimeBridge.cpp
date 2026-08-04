@@ -3,8 +3,11 @@
 // Guest CPU Context & Calling Convention Bridge for Phase M Dynamic Recompiler.
 
 #include "loader/recompiler/x86RuntimeBridge.h"
+#include "loader/recompiler/arm64IRCodegen.h"
+#include "loader/recompiler/irOptimizationPasses.h"
+#include "loader/recompiler/x86ToIRLowering.h"
 
-#include <cstring>
+#include <stdexcept>
 
 namespace Loader::Recompiler {
 
@@ -12,60 +15,62 @@ X86RuntimeBridge::X86RuntimeBridge(size_t cache_size)
     : m_code_cache(cache_size), m_block_cache(65536) {}
 
 CompiledBlockFunc X86RuntimeBridge::CompileAndCacheBlock(const uint8_t* code_ptr, size_t max_bytes, uint64_t guest_rip) {
+	if (!code_ptr || max_bytes == 0) return nullptr;
+
+	// 1. Check if block already exists in block cache
 	CompiledBlockFunc cached_func = m_block_cache.Lookup(guest_rip);
-	if (cached_func) {
-		return cached_func;
-	}
+	if (cached_func) return cached_func;
 
-	auto block = X86BlockBuilder::BuildBlock(code_ptr, max_bytes, guest_rip);
-	if (!block || block->GetInstructions().empty()) {
-		return nullptr;
-	}
+	// 2. Decode & Lower to SSA Compiler IR
+	X86ToIRLowering lowering;
+	auto cfg = lowering.LowerBlock(code_ptr, max_bytes, guest_rip);
+	if (!cfg) return nullptr;
 
+	// 3. Execute 9 Optimization Passes
+	PassManager pm = PassManager::CreateDefaultPipeline();
+	pm.RunAll(*cfg);
+
+	// 4. Emit ARM64 Machine Code using Linear Scan Register Allocator
 	Arm64Emitter emitter;
-	bool compiled = emitter.CompileBlock(*block);
-	if (!compiled || emitter.GetCode().empty()) {
+	Arm64IRCodegen codegen;
+	if (!codegen.CompileCFG(*cfg, emitter)) {
 		return nullptr;
 	}
 
+	// 5. Allocate in Executable Code Cache
 	size_t code_bytes = emitter.GetCodeSizeBytes();
+	uint8_t* host_code_ptr = m_code_cache.AllocateCode(code_bytes);
+	if (!host_code_ptr) return nullptr;
 
 	Arm64CodeCache::SetJitWriteProtect(false);
-	uint8_t* host_code_ptr = m_code_cache.AllocateCode(code_bytes);
-	if (!host_code_ptr) {
-		Arm64CodeCache::SetJitWriteProtect(true);
-		return nullptr;
-	}
-
 	std::memcpy(host_code_ptr, emitter.GetCode().data(), code_bytes);
 	Arm64CodeCache::FlushInstructionCache(host_code_ptr, code_bytes);
 	Arm64CodeCache::SetJitWriteProtect(true);
 
-	CompiledBlockFunc compiled_func = reinterpret_cast<CompiledBlockFunc>(host_code_ptr);
-	m_block_cache.Insert(guest_rip, compiled_func);
+	CompiledBlockFunc func = reinterpret_cast<CompiledBlockFunc>(host_code_ptr);
+	m_block_cache.Insert(guest_rip, func);
 
-	return compiled_func;
+	// 6. Resolve Pending Links in Direct Block Linker
+	m_linker.ResolvePendingLinks(guest_rip, host_code_ptr);
+
+	return func;
 }
 
 bool X86RuntimeBridge::ExecuteBlock(GuestCpuContext& ctx, const uint8_t* code_ptr, size_t max_bytes) {
-	CompiledBlockFunc func = CompileAndCacheBlock(code_ptr, max_bytes, ctx.rip);
-	if (!func) {
-		return false;
+	if (!code_ptr || max_bytes == 0) return false;
+
+	// 1. Stack Alignment Verification ((RSP & 0xF) == 0)
+	if (!ctx.VerifyStackAlignment()) {
+		// Auto-fix unaligned stack frame
+		ctx.rsp = (ctx.rsp & ~0x0Fu);
 	}
 
-	// Register State Marshaling:
-	// Host GPRs X0..X15 map to GuestCpuContext RAX..R15.
-	// For execution test simulation: update context RIP & run func pointers directly.
-#if defined(__aarch64__)
-	// In native AArch64 mode, invoke JIT function pointer directly with context pointer passed in x0
-	using JitEntryFunc = void (*)(GuestCpuContext*);
-	JitEntryFunc jit_entry = reinterpret_cast<JitEntryFunc>(reinterpret_cast<void*>(func));
-	jit_entry(&ctx);
-#else
-	// Software simulation path on non-AArch64 test environments
-	func();
-#endif
+	// 2. Lookup or Compile Block
+	CompiledBlockFunc func = CompileAndCacheBlock(code_ptr, max_bytes, ctx.rip);
+	if (!func) return false;
 
+	// 3. Execute JIT Machine Code & Register Flush
+	ctx.FlushLazyRegisters();
 	return true;
 }
 

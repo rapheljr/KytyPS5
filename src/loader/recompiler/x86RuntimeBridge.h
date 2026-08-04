@@ -7,13 +7,17 @@
 
 #include "common/common.h"
 #include "loader/recompiler/arm64Emitter.h"
+#include "loader/recompiler/blockLinker.h"
+#include "loader/recompiler/runtimeOptimizationEngine.h"
 #include "loader/recompiler/x86BlockCache.h"
 
 #include <cstdint>
+#include <exception>
 
 namespace Loader::Recompiler {
 
 struct alignas(16) GuestCpuContext {
+	// 1. General Purpose Registers (GPRs)
 	uint64_t rax = 0; // X0
 	uint64_t rcx = 0; // X1
 	uint64_t rdx = 0; // X2
@@ -31,8 +35,27 @@ struct alignas(16) GuestCpuContext {
 	uint64_t r14 = 0; // X14
 	uint64_t r15 = 0; // X15
 
-	uint64_t rip    = 0;
-	uint64_t rflags = 0;
+	// 2. Vector SIMD Registers (128-Bit XMM & 256-Bit YMM High)
+	alignas(16) uint64_t xmm[16][2]{};    // XMM0..XMM15 (128-bit)
+	alignas(16) uint64_t ymm_hi[16][2]{}; // YMM0_hi..YMM15_hi (high 128-bit for 256-bit AVX)
+
+	// 3. Status & Control State
+	bool     avx_state_active = false;
+	uint32_t mxcsr            = 0x1F80; // Default IEEE-754 control/status mask
+	uint64_t rflags           = 0x02;   // x86 CPU Flags
+	uint64_t rip              = 0;      // Instruction Pointer
+
+	// 4. Lazy Register Synchronization Masks
+	uint32_t dirty_gpr_mask = 0;
+	uint32_t dirty_xmm_mask = 0;
+
+	void SetGprDirty(uint8_t reg_idx) noexcept { dirty_gpr_mask |= (1u << reg_idx); }
+	void SetXmmDirty(uint8_t reg_idx) noexcept { dirty_xmm_mask |= (1u << reg_idx); }
+	void FlushLazyRegisters() noexcept { dirty_gpr_mask = 0; dirty_xmm_mask = 0; }
+
+	[[nodiscard]] bool VerifyStackAlignment() const noexcept {
+		return (rsp & 0x0Fu) == 0;
+	}
 };
 
 class X86RuntimeBridge {
@@ -44,14 +67,19 @@ public:
 
 	CompiledBlockFunc CompileAndCacheBlock(const uint8_t* code_ptr, size_t max_bytes, uint64_t guest_rip);
 
+	// Fast ABI Transition Trampoline & Exception-Safe Frame Execution
 	bool ExecuteBlock(GuestCpuContext& ctx, const uint8_t* code_ptr, size_t max_bytes);
 
 	[[nodiscard]] Arm64CodeCache& GetCodeCache() noexcept { return m_code_cache; }
 	[[nodiscard]] X86BlockCache& GetBlockCache() noexcept { return m_block_cache; }
+	[[nodiscard]] RuntimeOptimizationEngine& GetOptimizer() noexcept { return m_optimizer; }
+	[[nodiscard]] BlockLinker& GetLinker() noexcept { return m_linker; }
 
 private:
-	Arm64CodeCache m_code_cache;
-	X86BlockCache  m_block_cache;
+	Arm64CodeCache            m_code_cache;
+	X86BlockCache             m_block_cache;
+	RuntimeOptimizationEngine m_optimizer;
+	BlockLinker               m_linker;
 };
 
 } // namespace Loader::Recompiler

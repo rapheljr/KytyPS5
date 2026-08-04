@@ -17,20 +17,75 @@ enum class X86Opcode : uint16_t {
 	Invalid = 0,
 	Nop,
 	Mov,
+	Movsx,
+	Movzx,
+	Lea,
 	Add,
+	Adc,
 	Sub,
+	Sbb,
+	Inc,
+	Dec,
 	Imul,
+	Mul,
+	Idiv,
+	Div,
 	And,
 	Or,
 	Xor,
+	Not,
+	Neg,
 	Cmp,
 	Test,
+	Shl,
+	Shr,
+	Sar,
+	Rol,
+	Ror,
 	Jmp,
 	Jcc,
 	Call,
 	Ret,
 	Push,
-	Pop
+	Pop,
+	Cmov,
+	Setcc,
+	// SSE2 Vector & Scalar Opcodes
+	Movaps,
+	Movups,
+	Movdqa,
+	Movdqu,
+	Addps,
+	Addpd,
+	Subps,
+	Subpd,
+	Mulps,
+	Mulpd,
+	Divps,
+	Divpd,
+	Paddd,
+	Psubd,
+	Pxor,
+	Pand,
+	Por,
+	// SSE3 / SSSE3 / SSE4.1 / SSE4.2 Vector Opcodes
+	Haddps,
+	Pshufb,
+	Pabsd,
+	Pmaxsd,
+	Pminsd,
+	Pblendvb,
+	Pcmpestri,
+	Pcmpistri,
+	// VEX / AVX Opcodes
+	Vaddps,
+	Vsubps,
+	Vmulps,
+	Vdivps,
+	Vpxor,
+	Vex2Byte,
+	Vex3Byte,
+	Unsupported
 };
 
 enum class X86Condition : uint8_t {
@@ -59,18 +114,39 @@ struct X86Operand {
 	int32_t  disp            = 0;
 	int64_t  imm             = 0;
 	uint8_t  size_bytes      = 8;
+	bool     is_rip_relative = false;
 
 	bool operator==(const X86Operand& other) const = default;
 };
 
 struct DecodedX86Instruction {
-	X86Opcode    opcode      = X86Opcode::Invalid;
-	X86Condition cond        = X86Condition::Equal;
-	bool         cond_invert = false;
+	X86Opcode    opcode                 = X86Opcode::Invalid;
+	X86Condition cond                   = X86Condition::Equal;
+	bool         cond_invert            = false;
 	X86Operand   dst;
 	X86Operand   src;
-	uint32_t     length      = 0;
-	uint64_t     guest_rip   = 0;
+	X86Operand   src2;
+	uint32_t     length                 = 0;
+	uint64_t     guest_rip              = 0;
+
+	// Prefix & Operand Metadata
+	bool         operand_size_override  = false; // 0x66
+	bool         address_size_override  = false; // 0x67
+	bool         has_rex                = false;
+	bool         rex_w                  = false;
+	bool         rex_r                  = false;
+	bool         rex_x                  = false;
+	bool         rex_b                  = false;
+
+	// VEX / AVX Metadata
+	bool         has_vex                = false;
+	uint8_t      vex_l                  = 0;     // Vector length (0 = 128-bit, 1 = 256-bit)
+	uint8_t      vex_w                  = 0;
+	uint8_t      vex_vvvv               = 0;     // 4-bit inverted register specifier
+	uint8_t      vex_m_mmmm             = 0;     // Opcode map selector
+	uint8_t      vex_pp                 = 0;     // Mandatory prefix encoding (00=none, 01=66, 10=F3, 11=F2)
+
+	bool         is_unsupported         = false; // Marked true if opcode or VEX sequence is unsupported
 };
 
 class X86Decoder {

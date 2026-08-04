@@ -3,8 +3,11 @@
 // ARM64 Backend Code Emitter & Instruction Encoder for Phase M Dynamic Recompiler.
 
 #include "loader/recompiler/arm64Emitter.h"
+#include "loader/recompiler/arm64EncoderHelpers.h"
 
 namespace Loader::Recompiler {
+
+using namespace Arm64EncoderHelper;
 
 Arm64Reg Arm64Emitter::MapX86ToArm64Reg(X86Reg reg) noexcept {
 	switch (reg) {
@@ -33,91 +36,180 @@ void Arm64Emitter::Emit32(uint32_t inst) {
 }
 
 void Arm64Emitter::EmitNop() {
-	Emit32(0xD503201F);
+	Emit32(0xD503201Fu);
 }
 
-void Arm64Emitter::EmitRet() {
-	Emit32(0xD65F03C0);
+// 1. Integer Instructions
+void Arm64Emitter::EmitAndReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(LogicReg(sf, 0, false, Reg(src2), 0, Reg(src1), Reg(dst)));
 }
 
-void Arm64Emitter::EmitMovReg(Arm64Reg dst, Arm64Reg src) {
-	if (dst == src) return;
-	// ORR Xdst, XZR, Xsrc -> 0xAA0003E0 | (src << 16) | dst
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t s = static_cast<uint32_t>(src);
-	Emit32(0xAA0003E0u | (s << 16u) | d);
+void Arm64Emitter::EmitOrrReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(LogicReg(sf, 1, false, Reg(src2), 0, Reg(src1), Reg(dst)));
+}
+
+void Arm64Emitter::EmitEorReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(LogicReg(sf, 2, false, Reg(src2), 0, Reg(src1), Reg(dst)));
+}
+
+void Arm64Emitter::EmitMovReg(Arm64Reg dst, Arm64Reg src, bool sf) {
+	if (dst == src) return; // Redundant move elimination
+	EmitOrrReg(dst, Arm64Reg::XZR, src, sf);
+}
+
+void Arm64Emitter::EmitMovz(Arm64Reg dst, uint16_t imm16, uint8_t shift_hw, bool sf) {
+	Emit32(MoveWide(sf, 2, shift_hw, imm16, Reg(dst)));
+}
+
+void Arm64Emitter::EmitMovk(Arm64Reg dst, uint16_t imm16, uint8_t shift_hw, bool sf) {
+	Emit32(MoveWide(sf, 3, shift_hw, imm16, Reg(dst)));
+}
+
+void Arm64Emitter::EmitMovn(Arm64Reg dst, uint16_t imm16, uint8_t shift_hw, bool sf) {
+	Emit32(MoveWide(sf, 0, shift_hw, imm16, Reg(dst)));
 }
 
 void Arm64Emitter::EmitMovImm64(Arm64Reg dst, uint64_t imm) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	// MOVZ Xd, imm[0:15]
-	Emit32(0xD2800000u | ((imm & 0xFFFFu) << 5u) | d);
-	// MOVK Xd, imm[16:31], LSL #16
-	Emit32(0xF2A00000u | (((imm >> 16u) & 0xFFFFu) << 5u) | d);
-	// MOVK Xd, imm[32:47], LSL #32
-	Emit32(0xF2C00000u | (((imm >> 32u) & 0xFFFFu) << 5u) | d);
-	// MOVK Xd, imm[48:63], LSL #48
-	Emit32(0xF2E00000u | (((imm >> 48u) & 0xFFFFu) << 5u) | d);
+	// Optimized immediate sequence (skip zero half-words)
+	uint16_t h0 = imm & 0xFFFFu;
+	uint16_t h1 = (imm >> 16u) & 0xFFFFu;
+	uint16_t h2 = (imm >> 32u) & 0xFFFFu;
+	uint16_t h3 = (imm >> 48u) & 0xFFFFu;
+
+	if (imm == ~0ULL) {
+		EmitMovn(dst, 0, 0, true);
+		return;
+	}
+
+	bool initialized = false;
+	if (h0 != 0 || (h1 == 0 && h2 == 0 && h3 == 0)) {
+		EmitMovz(dst, h0, 0, true);
+		initialized = true;
+	}
+	if (h1 != 0) {
+		if (!initialized) { EmitMovz(dst, h1, 1, true); initialized = true; }
+		else EmitMovk(dst, h1, 1, true);
+	}
+	if (h2 != 0) {
+		if (!initialized) { EmitMovz(dst, h2, 2, true); initialized = true; }
+		else EmitMovk(dst, h2, 2, true);
+	}
+	if (h3 != 0) {
+		if (!initialized) { EmitMovz(dst, h3, 3, true); initialized = true; }
+		else EmitMovk(dst, h3, 3, true);
+	}
 }
 
-void Arm64Emitter::EmitAddReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t s1 = static_cast<uint32_t>(src1);
-	uint32_t s2 = static_cast<uint32_t>(src2);
-	// ADD Xd, Xs1, Xs2 -> 0x8B000000 | (s2 << 16) | (s1 << 5) | d
-	Emit32(0x8B000000u | (s2 << 16u) | (s1 << 5u) | d);
+void Arm64Emitter::EmitAddReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(AddSubReg(sf, false, false, Reg(src2), Reg(src1), Reg(dst)));
 }
 
-void Arm64Emitter::EmitAddImm(Arm64Reg dst, Arm64Reg src, uint32_t imm) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t s = static_cast<uint32_t>(src);
-	uint32_t imm12 = imm & 0xFFFu;
-	// ADD Xd, Xs, #imm12 -> 0x91000000 | (imm12 << 10) | (s << 5) | d
-	Emit32(0x91000000u | (imm12 << 10u) | (s << 5u) | d);
+void Arm64Emitter::EmitAddImm(Arm64Reg dst, Arm64Reg src, uint32_t imm, bool sf) {
+	if (imm == 0 && dst == src) return; // Redundant add 0 elimination
+	Emit32(AddSubImm(sf, false, false, imm, Reg(src), Reg(dst)));
 }
 
-void Arm64Emitter::EmitSubReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t s1 = static_cast<uint32_t>(src1);
-	uint32_t s2 = static_cast<uint32_t>(src2);
-	// SUB Xd, Xs1, Xs2 -> 0xCB000000 | (s2 << 16) | (s1 << 5) | d
-	Emit32(0xCB000000u | (s2 << 16u) | (s1 << 5u) | d);
+void Arm64Emitter::EmitSubReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(AddSubReg(sf, true, false, Reg(src2), Reg(src1), Reg(dst)));
 }
 
-void Arm64Emitter::EmitSubImm(Arm64Reg dst, Arm64Reg src, uint32_t imm) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t s = static_cast<uint32_t>(src);
-	uint32_t imm12 = imm & 0xFFFu;
-	// SUB Xd, Xs, #imm12 -> 0xD1000000 | (imm12 << 10) | (s << 5) | d
-	Emit32(0xD1000000u | (imm12 << 10u) | (s << 5u) | d);
+void Arm64Emitter::EmitSubImm(Arm64Reg dst, Arm64Reg src, uint32_t imm, bool sf) {
+	if (imm == 0 && dst == src) return;
+	Emit32(AddSubImm(sf, true, false, imm, Reg(src), Reg(dst)));
 }
 
-void Arm64Emitter::EmitMulReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t s1 = static_cast<uint32_t>(src1);
-	uint32_t s2 = static_cast<uint32_t>(src2);
-	// MUL Xd, Xs1, Xs2 -> MADD Xd, Xs1, Xs2, XZR -> 0x9B007C00 | (s2 << 16) | (s1 << 5) | d
-	Emit32(0x9B007C00u | (s2 << 16u) | (s1 << 5u) | d);
+void Arm64Emitter::EmitAdc(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(AddSubCarry(sf, false, false, Reg(src2), Reg(src1), Reg(dst)));
 }
 
-void Arm64Emitter::EmitCmpReg(Arm64Reg src1, Arm64Reg src2) {
-	uint32_t s1 = static_cast<uint32_t>(src1);
-	uint32_t s2 = static_cast<uint32_t>(src2);
-	// SUBS XZR, Xs1, Xs2 -> 0xEB00001F | (s2 << 16) | (s1 << 5)
-	Emit32(0xEB00001Fu | (s2 << 16u) | (s1 << 5u));
+void Arm64Emitter::EmitSbc(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(AddSubCarry(sf, true, false, Reg(src2), Reg(src1), Reg(dst)));
 }
 
-void Arm64Emitter::EmitCmpImm(Arm64Reg src, uint32_t imm) {
-	uint32_t s = static_cast<uint32_t>(src);
-	uint32_t imm12 = imm & 0xFFFu;
-	// SUBS XZR, Xs, #imm12 -> 0xF100001F | (imm12 << 10) | (s << 5)
-	Emit32(0xF100001Fu | (imm12 << 10u) | (s << 5u));
+void Arm64Emitter::EmitCmpReg(Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(AddSubReg(sf, true, true, Reg(src2), Reg(src1), 31)); // SUBS XZR, Xn, Xm
 }
 
+void Arm64Emitter::EmitCmpImm(Arm64Reg src, uint32_t imm, bool sf) {
+	Emit32(AddSubImm(sf, true, true, imm, Reg(src), 31)); // SUBS XZR, Xn, #imm
+}
+
+void Arm64Emitter::EmitTstReg(Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(LogicReg(sf, 3, false, Reg(src2), 0, Reg(src1), 31)); // ANDS XZR, Xn, Xm
+}
+
+// 2. Memory Instructions
+void Arm64Emitter::EmitLdr64(Arm64Reg dst, Arm64Reg base, int32_t offset) {
+	if (offset < 0 || (offset % 8 != 0)) {
+		EmitLdur64(dst, base, offset);
+		return;
+	}
+	uint32_t imm12 = static_cast<uint32_t>(offset / 8);
+	Emit32(LoadStoreUnsigned(true, true, imm12, Reg(base), Reg(dst)));
+}
+
+void Arm64Emitter::EmitStr64(Arm64Reg src, Arm64Reg base, int32_t offset) {
+	if (offset < 0 || (offset % 8 != 0)) {
+		EmitStur64(src, base, offset);
+		return;
+	}
+	uint32_t imm12 = static_cast<uint32_t>(offset / 8);
+	Emit32(LoadStoreUnsigned(true, false, imm12, Reg(base), Reg(src)));
+}
+
+void Arm64Emitter::EmitLdur64(Arm64Reg dst, Arm64Reg base, int32_t simm9) {
+	Emit32(LoadStoreUnscaled(true, true, simm9, Reg(base), Reg(dst)));
+}
+
+void Arm64Emitter::EmitStur64(Arm64Reg src, Arm64Reg base, int32_t simm9) {
+	Emit32(LoadStoreUnscaled(true, false, simm9, Reg(base), Reg(src)));
+}
+
+void Arm64Emitter::EmitLdp64(Arm64Reg dst1, Arm64Reg dst2, Arm64Reg base, int32_t offset) {
+	int32_t simm7 = offset / 8;
+	Emit32(LoadStorePair(true, true, simm7, Reg(base), Reg(dst1), Reg(dst2)));
+}
+
+void Arm64Emitter::EmitStp64(Arm64Reg src1, Arm64Reg src2, Arm64Reg base, int32_t offset) {
+	int32_t simm7 = offset / 8;
+	Emit32(LoadStorePair(true, false, simm7, Reg(base), Reg(src1), Reg(src2)));
+}
+
+// 3. Branch Instructions
 void Arm64Emitter::EmitB(int32_t offset_words) {
-	uint32_t imm26 = static_cast<uint32_t>(offset_words) & 0x03FFFFFFu;
-	// B offset -> 0x14000000 | imm26
-	Emit32(0x14000000u | imm26);
+	Emit32(BranchUncond(false, offset_words));
+}
+
+void Arm64Emitter::EmitBl(int32_t offset_words) {
+	Emit32(BranchUncond(true, offset_words));
+}
+
+void Arm64Emitter::EmitBr(Arm64Reg reg) {
+	Emit32(0xD61F0000u | (Reg(reg) << 5u));
+}
+
+void Arm64Emitter::EmitBlr(Arm64Reg reg) {
+	Emit32(0xD63F0000u | (Reg(reg) << 5u));
+}
+
+void Arm64Emitter::EmitRet() {
+	Emit32(0xD65F03C0u);
+}
+
+void Arm64Emitter::EmitCbz(Arm64Reg reg, int32_t offset_words, bool sf) {
+	Emit32(CompareBranch(sf, false, offset_words, Reg(reg)));
+}
+
+void Arm64Emitter::EmitCbnz(Arm64Reg reg, int32_t offset_words, bool sf) {
+	Emit32(CompareBranch(sf, true, offset_words, Reg(reg)));
+}
+
+void Arm64Emitter::EmitTbz(Arm64Reg reg, uint8_t bit_num, int32_t offset_words) {
+	Emit32(TestBranch(false, bit_num, offset_words, Reg(reg)));
+}
+
+void Arm64Emitter::EmitTbnz(Arm64Reg reg, uint8_t bit_num, int32_t offset_words) {
+	Emit32(TestBranch(true, bit_num, offset_words, Reg(reg)));
 }
 
 void Arm64Emitter::EmitBcc(X86Condition cond, bool invert, int32_t offset_words) {
@@ -130,49 +222,45 @@ void Arm64Emitter::EmitBcc(X86Condition cond, bool invert, int32_t offset_words)
 		case X86Condition::LessOrEqual:  cond_code = invert ? 0xF : 0xE; break; // LE / GT
 		default:                         cond_code = 0x0; break;
 	}
-	uint32_t imm19 = static_cast<uint32_t>(offset_words) & 0x7FFFFu;
-	// B.cond offset -> 0x54000000 | (imm19 << 5) | cond_code
-	Emit32(0x54000000u | (imm19 << 5u) | cond_code);
+	Emit32(BranchCond(cond_code, offset_words));
 }
 
-void Arm64Emitter::EmitBlr(Arm64Reg reg) {
-	uint32_t r = static_cast<uint32_t>(reg);
-	// BLR Xr -> 0xD63F0000 | (r << 5)
-	Emit32(0xD63F0000u | (r << 5u));
+// 4. Shift Instructions
+void Arm64Emitter::EmitLsl(Arm64Reg dst, Arm64Reg src, Arm64Reg shift, bool sf) {
+	Emit32(ShiftVariable(sf, 0, Reg(shift), Reg(src), Reg(dst)));
 }
 
-void Arm64Emitter::EmitLdr64(Arm64Reg dst, Arm64Reg base, int32_t offset) {
-	uint32_t d = static_cast<uint32_t>(dst);
-	uint32_t b = static_cast<uint32_t>(base);
-	uint32_t imm12 = (static_cast<uint32_t>(offset) / 8u) & 0xFFFu;
-	// LDR Xd, [Xb, #offset] -> 0xF9400000 | (imm12 << 10) | (b << 5) | d
-	Emit32(0xF9400000u | (imm12 << 10u) | (b << 5u) | d);
+void Arm64Emitter::EmitLsr(Arm64Reg dst, Arm64Reg src, Arm64Reg shift, bool sf) {
+	Emit32(ShiftVariable(sf, 1, Reg(shift), Reg(src), Reg(dst)));
 }
 
-void Arm64Emitter::EmitStr64(Arm64Reg src, Arm64Reg base, int32_t offset) {
-	uint32_t s = static_cast<uint32_t>(src);
-	uint32_t b = static_cast<uint32_t>(base);
-	uint32_t imm12 = (static_cast<uint32_t>(offset) / 8u) & 0xFFFu;
-	// STR Xs, [Xb, #offset] -> 0xF9000000 | (imm12 << 10) | (b << 5) | s
-	Emit32(0xF9000000u | (imm12 << 10u) | (b << 5u) | s);
+void Arm64Emitter::EmitAsr(Arm64Reg dst, Arm64Reg src, Arm64Reg shift, bool sf) {
+	Emit32(ShiftVariable(sf, 2, Reg(shift), Reg(src), Reg(dst)));
 }
 
-void Arm64Emitter::EmitStp64(Arm64Reg src1, Arm64Reg src2, Arm64Reg base, int32_t offset) {
-	uint32_t s1 = static_cast<uint32_t>(src1);
-	uint32_t s2 = static_cast<uint32_t>(src2);
-	uint32_t b  = static_cast<uint32_t>(base);
-	uint32_t imm7 = (static_cast<uint32_t>(offset) / 8u) & 0x7Fu;
-	// STP Xs1, Xs2, [Xb, #offset] -> 0xA9000000 | (imm7 << 15) | (s2 << 10) | (b << 5) | s1
-	Emit32(0xA9000000u | (imm7 << 15u) | (s2 << 10u) | (b << 5u) | s1);
+void Arm64Emitter::EmitRor(Arm64Reg dst, Arm64Reg src, Arm64Reg shift, bool sf) {
+	Emit32(ShiftVariable(sf, 3, Reg(shift), Reg(src), Reg(dst)));
 }
 
-void Arm64Emitter::EmitLdp64(Arm64Reg dst1, Arm64Reg dst2, Arm64Reg base, int32_t offset) {
-	uint32_t d1 = static_cast<uint32_t>(dst1);
-	uint32_t d2 = static_cast<uint32_t>(dst2);
-	uint32_t b  = static_cast<uint32_t>(base);
-	uint32_t imm7 = (static_cast<uint32_t>(offset) / 8u) & 0x7Fu;
-	// LDP Xd1, Xd2, [Xb, #offset] -> 0xA9400000 | (imm7 << 15) | (d2 << 10) | (b << 5) | d1
-	Emit32(0xA9400000u | (imm7 << 15u) | (d2 << 10u) | (b << 5u) | d1);
+// 5. Multiply Instructions
+void Arm64Emitter::EmitMulReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	EmitMadd(dst, src1, src2, Arm64Reg::XZR, sf);
+}
+
+void Arm64Emitter::EmitMadd(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, Arm64Reg acc, bool sf) {
+	Emit32(Multiply(sf, false, Reg(src2), Reg(acc), Reg(src1), Reg(dst)));
+}
+
+void Arm64Emitter::EmitMsub(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, Arm64Reg acc, bool sf) {
+	Emit32(Multiply(sf, true, Reg(src2), Reg(acc), Reg(src1), Reg(dst)));
+}
+
+void Arm64Emitter::EmitUmulh(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2) {
+	Emit32(MultiplyHigh(false, Reg(src2), Reg(src1), Reg(dst)));
+}
+
+void Arm64Emitter::EmitSmulh(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2) {
+	Emit32(MultiplyHigh(true, Reg(src2), Reg(src1), Reg(dst)));
 }
 
 bool Arm64Emitter::CompileBlock(const RecompilerBasicBlock& block) {
