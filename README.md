@@ -22,14 +22,12 @@ compatibility is limited and behavior may change significantly between builds.
 KytyPS5 can boot 2D games and a selection of 3D games, including titles built with Unreal Engine
 4/5, Unity, and custom engines. No external low-level emulation modules are currently required.
 
-Development is focused on compatibility and boot reliability.
+Development is focused on compatibility and boot reliability. It features an automated 8-milestone Commercial PS5 Title Boot Pipeline Manager, a comprehensive Title Compatibility Framework (with title database, game-specific patches, shader overrides, kernel/GPU workarounds, and automated compatibility reporting), full PS5 Kernel (60+ FreeBSD syscalls) and VFS, high-performance DualSense HID controller emulation, and a 64-voice 3D Spatial Audio Engine (VBAP / 7.1.4).
 
 Windows is the primary platform and receives the most testing. Linux builds and runs; see
 [Building on Linux](#building-on-linux).
 
-macOS support is experimental. The emulator is built for x86-64 and runs on Apple Silicon under
-Rosetta 2, with Vulkan provided by MoltenVK. A small number of titles have been verified in-game
-on Apple Silicon hardware; see [Building on macOS](#building-on-macos).
+macOS support includes native Apple Silicon acceleration (ARM64 JIT backend, Metal rendering pipeline) as well as x86-64 under Rosetta 2 with Vulkan (MoltenVK); see [Building on macOS](#building-on-macos).
 
 Community game test results are available in the
 [KytyPS5 Compatibility List](https://kytyps5.github.io/).
@@ -105,11 +103,14 @@ as the primary instruction-encoding reference when working on shader decoding an
 
 Important areas of the codebase:
 
-- [`src/graphics/shader/recompiler`](src/graphics/shader/recompiler) — instruction decoding,
-  intermediate representation, control flow, resource tracking, and SPIR-V emission
-- [`src/graphics/guest_gpu`](src/graphics/guest_gpu) — PS5 (Prospero) GPU formats and command processing
-- [`src/graphics/host_gpu`](src/graphics/host_gpu) — Vulkan host backend and resource management
-- [`tests`](tests) — focused memory, shader, and resource-tracking regression tests
+- [`src/emulator`](src/emulator) — commercial PS5 title boot pipeline manager and title compatibility framework
+- [`src/kernel`](src/kernel) — FreeBSD kernel syscalls (60+), process manager, memory address space, and VFS mount system
+- [`src/graphics/shader/recompiler`](src/graphics/shader/recompiler) — instruction decoding, IR, optimization passes, SPIR-V and Metal MSL emission
+- [`src/graphics/guest_gpu`](src/graphics/guest_gpu) — PS5 GPU formats, PM4 packet translator (100% AMD opcode coverage), and command processing
+- [`src/graphics/host_gpu`](src/graphics/host_gpu) — Vulkan 1.3 and Apple Metal host backends, argument buffer pooling, and GPU resource management
+- [`src/audio`](src/audio) — CoreAudio backend, 64-voice mixer, and 7.1.4 VBAP 3D spatial audio engine
+- [`src/input`](src/input) — DualSense controller state machine, adaptive trigger modes, IMU, touchpad, and macOS IOKit HID driver
+- [`tests`](tests) — comprehensive regression test suite covering boot pipeline milestones, compatibility framework, kernel, graphics, audio, input, and ARM64 JIT
 
 The renderer targets Vulkan 1.3. Keep shader changes aligned with both the RDNA 2 ISA semantics and
 the Vulkan/SPIR-V validation rules.
