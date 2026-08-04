@@ -9,6 +9,7 @@
 #include "graphics/host_gpu/renderer/backend/metalCommandBuffer.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
 #include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
+#include "graphics/host_gpu/renderer/backend/metalPipelineCache.h"
 #include "graphics/host_gpu/renderer/backend/metalSwapchain.h"
 #include "graphics/host_gpu/renderer/backend/vulkanGraphicBackend.h"
 
@@ -18,6 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 namespace {
 
@@ -453,6 +455,154 @@ void BenchmarkPhaseD_DrawableAcquisitionLatency() {
 #endif
 }
 
+// ─── Phase E: Metal Pipeline Cache Tests & Benchmarks ──────────────────────────
+
+void TestPhaseE_GraphicsPipelineCacheReuse() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init for Phase E failed");
+
+	Libs::Graphics::MetalPipelineCache* cache = backend.GetPipelineCache();
+	Check(cache != nullptr, "GetPipelineCache() must not be null");
+
+	Libs::Graphics::MetalGraphicsPipelineKey key {};
+	key.vs_shader_id = Libs::Graphics::ShaderId{100, 200, {1, 2}};
+	key.ps_shader_id = Libs::Graphics::ShaderId{300, 400, {3, 4}};
+	key.rendering.color_count = 1;
+	key.rendering.color_formats[0] = vk::Format::eB8G8R8A8Unorm;
+
+	// First creation — Cache Miss & Compile
+	auto* pipeline1 = cache->GetOrCreateGraphicsPipeline(key);
+	Check(pipeline1 != nullptr, "Graphics pipeline compilation failed");
+	Check(pipeline1->render_pipeline_state != nullptr, "MTLRenderPipelineState must not be null");
+	Check(cache->GetGraphicsHits() == 0, "Initial hit count must be 0");
+	Check(cache->GetGraphicsMisses() == 1, "Initial miss count must be 1");
+	Check(cache->GetGraphicsCacheSize() == 1, "Cache size must be 1");
+
+	// Second lookup — Cache Hit & Reuse
+	auto* pipeline2 = cache->GetOrCreateGraphicsPipeline(key);
+	Check(pipeline2 != nullptr, "Graphics pipeline lookup failed");
+	Check(pipeline1 == pipeline2, "Must return exact same cached pipeline pointer (no duplicate compilation)");
+	Check(cache->GetGraphicsHits() == 1, "Hit count must be 1 after reuse");
+	Check(cache->GetGraphicsMisses() == 1, "Miss count must stay 1");
+	Check(cache->GetGraphicsHitRate() == 50.0, "Hit rate must be 50.0%");
+
+	backend.Shutdown();
+	std::printf("  [OK] Phase E: Graphics Pipeline Cache Reuse & Deduplication\n");
+#else
+	std::printf("  [SKIP] Phase E: TestPhaseE_GraphicsPipelineCacheReuse (non-Apple)\n");
+#endif
+}
+
+void TestPhaseE_ComputePipelineCacheReuse() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Metal backend init failed");
+
+	Libs::Graphics::MetalPipelineCache* cache = backend.GetPipelineCache();
+	Check(cache != nullptr, "GetPipelineCache() must not be null");
+
+	Libs::Graphics::MetalComputePipelineKey key {};
+	key.cs_shader_id = Libs::Graphics::ShaderId{500, 600, {5, 6}};
+
+	auto* pipe1 = cache->GetOrCreateComputePipeline(key);
+	Check(pipe1 != nullptr, "Compute pipeline compilation failed");
+	Check(pipe1->compute_pipeline_state != nullptr, "MTLComputePipelineState must not be null");
+	Check(cache->GetComputeMisses() == 1, "Miss count must be 1");
+
+	auto* pipe2 = cache->GetOrCreateComputePipeline(key);
+	Check(pipe2 == pipe1, "Compute pipeline must be reused without duplicate compilation");
+	Check(cache->GetComputeHits() == 1, "Compute hit count must be 1");
+
+	backend.Shutdown();
+	std::printf("  [OK] Phase E: Compute Pipeline Cache Reuse & Deduplication\n");
+#else
+	std::printf("  [SKIP] Phase E: TestPhaseE_ComputePipelineCacheReuse (non-Apple)\n");
+#endif
+}
+
+void TestPhaseE_LRUEviction() {
+#if defined(__APPLE__)
+	// Create cache with capacity of 3
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed");
+
+	Libs::Graphics::MetalPipelineCache cache(backend.GetMTLDevice(), 3, 3);
+
+	// Insert 4 distinct keys
+	for (uint32_t i = 1; i <= 4; ++i) {
+		Libs::Graphics::MetalComputePipelineKey key {};
+		key.cs_shader_id = Libs::Graphics::ShaderId{i, i * 10, {i}};
+		auto* p = cache.GetOrCreateComputePipeline(key);
+		Check(p != nullptr, "Compute pipeline creation failed");
+	}
+
+	Check(cache.GetComputeCacheSize() <= 3, "Compute cache size must be bounded by capacity limit (<= 3)");
+	Check(cache.GetComputeMisses() == 4, "Must have 4 total misses");
+
+	std::printf("  [OK] Phase E: LRU Eviction Bounded Capacity Enforcement\n");
+	backend.Shutdown();
+#else
+	std::printf("  [SKIP] Phase E: TestPhaseE_LRUEviction (non-Apple)\n");
+#endif
+}
+
+void BenchmarkPhaseE_PipelineCreationAndLookup() {
+#if defined(__APPLE__)
+	Libs::Graphics::MetalGraphicBackend backend;
+	Check(backend.Initialize(), "Backend init failed for benchmark");
+
+	Libs::Graphics::MetalPipelineCache* cache = backend.GetPipelineCache();
+
+	static constexpr size_t NUM_PIPELINES = 50;
+	static constexpr size_t LOOKUP_ITERS = 10000;
+
+	std::vector<Libs::Graphics::MetalGraphicsPipelineKey> keys;
+	keys.reserve(NUM_PIPELINES);
+
+	for (size_t i = 0; i < NUM_PIPELINES; ++i) {
+		Libs::Graphics::MetalGraphicsPipelineKey key {};
+		key.vs_shader_id = Libs::Graphics::ShaderId{static_cast<uint32_t>(i + 1), static_cast<uint32_t>(i * 10), {static_cast<uint32_t>(i)}};
+		key.ps_shader_id = Libs::Graphics::ShaderId{static_cast<uint32_t>(i + 100), static_cast<uint32_t>(i * 20), {static_cast<uint32_t>(i)}};
+		key.rendering.color_count = 1;
+		key.rendering.color_formats[0] = vk::Format::eB8G8R8A8Unorm;
+		keys.push_back(key);
+	}
+
+	// 1. Measure initial creation / compilation phase
+	const auto t_create_start = std::chrono::high_resolution_clock::now();
+	for (const auto& key : keys) {
+		auto* p = cache->GetOrCreateGraphicsPipeline(key);
+		Check(p != nullptr, "Pipeline creation failed during bench");
+	}
+	const auto t_create_end = std::chrono::high_resolution_clock::now();
+
+	double create_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t_create_end - t_create_start).count()) / 1000.0;
+	double avg_create_ms = create_ms / static_cast<double>(NUM_PIPELINES);
+
+	// 2. Measure high-frequency cache lookup phase (10,000 lookups across 50 keys)
+	const auto t_lookup_start = std::chrono::high_resolution_clock::now();
+	for (size_t iter = 0; iter < LOOKUP_ITERS; ++iter) {
+		const auto& key = keys[iter % NUM_PIPELINES];
+		auto* p = cache->GetOrCreateGraphicsPipeline(key);
+		Check(p != nullptr, "Lookup failed");
+	}
+	const auto t_lookup_end = std::chrono::high_resolution_clock::now();
+
+	double lookup_ms = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(t_lookup_end - t_lookup_start).count()) / 1000.0;
+	double lookup_ns_per_op = (lookup_ms * 1e6) / static_cast<double>(LOOKUP_ITERS);
+
+	std::printf("  [Bench] Metal Pipeline Creation Latency: %.3f ms/pipeline (%zu unique pipelines)\n", avg_create_ms, NUM_PIPELINES);
+	std::printf("  [Bench] Pipeline Cache Lookup Latency: %.2f ns/lookup (Total: %.2f ms over %zu lookups)\n", lookup_ns_per_op, lookup_ms, LOOKUP_ITERS);
+	std::printf("  [Bench] Cache Hit Rate: %.2f%% (Hits: %llu, Misses: %llu)\n", cache->GetGraphicsHitRate(), static_cast<unsigned long long>(cache->GetGraphicsHits()), static_cast<unsigned long long>(cache->GetGraphicsMisses()));
+	std::printf("  [Bench] Estimated Cache Memory Usage: %zu KB (%zu bytes)\n", cache->GetTotalEstimatedMemoryUsageBytes() / 1024, cache->GetTotalEstimatedMemoryUsageBytes());
+
+	backend.Shutdown();
+#else
+	std::printf("  [SKIP] BenchmarkPhaseE_PipelineCreationAndLookup (non-Apple)\n");
+#endif
+}
+
 } // namespace
 
 int main() {
@@ -496,10 +646,19 @@ int main() {
 	std::printf("\n");
 	BenchmarkPhaseD_DrawableAcquisitionLatency();
 
+	std::printf("\n--- Phase E: Metal Pipeline Cache & Compilation ---\n\n");
+
+	// Phase E
+	TestPhaseE_GraphicsPipelineCacheReuse();
+	TestPhaseE_ComputePipelineCacheReuse();
+	TestPhaseE_LRUEviction();
+
+	std::printf("\n");
+	BenchmarkPhaseE_PipelineCreationAndLookup();
+
 	std::printf("\nGraphicBackendTests: PASSED\n");
 
 	SDL_Quit();
 	return 0;
 }
-
 

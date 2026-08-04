@@ -633,12 +633,14 @@ if(APPLE)
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.mm"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandBuffer.mm"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSwapchain.mm"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalPipelineCache.mm"
 	)
 else()
 	set(METAL_BACKEND_SRC
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.cpp"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandBuffer.cpp"
 		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSwapchain.cpp"
+		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalPipelineCache.cpp"
 	)
 endif()
 
