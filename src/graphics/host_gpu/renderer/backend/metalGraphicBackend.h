@@ -19,6 +19,9 @@ struct MetalCapabilities {
 	char     gpu_name[256] = {};
 };
 
+class MetalCommandQueue;
+class MetalPipelineCache;
+
 class MetalGraphicBackend final : public IGraphicBackend {
 public:
 	MetalGraphicBackend();
@@ -39,11 +42,15 @@ public:
 	/// Returns the Phase C command queue wrapper.  Null before Initialize().
 	[[nodiscard]] MetalCommandQueue*          GetCommandQueue() noexcept { return m_metal_queue.get(); }
 
+	/// Returns the Phase E Metal pipeline cache. Null before Initialize().
+	[[nodiscard]] MetalPipelineCache*         GetPipelineCache() noexcept { return m_pipeline_cache.get(); }
+
 private:
 	bool                             m_initialized   = false;
 	void*                            m_device        = nullptr; // id<MTLDevice>
 	void*                            m_command_queue = nullptr; // id<MTLCommandQueue>
-	std::unique_ptr<MetalCommandQueue> m_metal_queue;
+	std::unique_ptr<MetalCommandQueue>  m_metal_queue;
+	std::unique_ptr<MetalPipelineCache> m_pipeline_cache;
 	MetalCapabilities                m_capabilities {};
 	uint64_t                         m_init_time_ns  = 0;
 

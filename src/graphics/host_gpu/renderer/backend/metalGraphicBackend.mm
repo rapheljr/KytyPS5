@@ -1,5 +1,6 @@
 #include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
 #include "graphics/host_gpu/renderer/backend/metalCommandQueue.h"
+#include "graphics/host_gpu/renderer/backend/metalPipelineCache.h"
 #include "common/timer.h"
 
 #include <chrono>
@@ -59,6 +60,9 @@ bool MetalGraphicBackend::Initialize() {
 
 	// Phase C: construct the command queue C++ wrapper
 	m_metal_queue = std::make_unique<MetalCommandQueue>(m_command_queue);
+
+	// Phase E: construct the Metal pipeline cache C++ wrapper
+	m_pipeline_cache = std::make_unique<MetalPipelineCache>(m_device);
 
 	QueryCapabilities();
 
@@ -150,6 +154,9 @@ void MetalGraphicBackend::Shutdown() {
 		m_device = nullptr;
 	}
 #endif
+
+	m_pipeline_cache.reset();
+	m_metal_queue.reset();
 
 	m_capabilities = MetalCapabilities {};
 	m_initialized  = false;
