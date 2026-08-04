@@ -73,6 +73,8 @@ int KYTY_SYSV_ABI PadSetVibration(int handle, const PadVibrationParam* param);
 int KYTY_SYSV_ABI PadResetLightBar(int handle);
 int KYTY_SYSV_ABI PadSetLightBar(int handle, const PadLightBarParam* param);
 
+Libs::Input::InputManager* GetInputManager();
+
 } // namespace Libs::Controller
 
 #endif /* EMULATOR_INCLUDE_EMULATOR_CONTROLLER_H_ */

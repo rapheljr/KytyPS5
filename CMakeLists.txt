@@ -840,6 +840,19 @@ if(APPLE)
 	target_link_libraries(ps5_audio_subsystem_tests "-framework AudioToolbox" "-framework CoreAudio")
 endif()
 
+add_executable(ps5_dualsense_input_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Ps5DualSenseInputTests.cpp"
+	"${KYTY_SOURCE_DIR}/input/inputEngine.cpp"
+	"${KYTY_SOURCE_DIR}/input/macOsHidBackend.mm"
+)
+target_link_libraries(ps5_dualsense_input_tests common ${kyty_emulator_link_libraries})
+target_include_directories(ps5_dualsense_input_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(ps5_dualsense_input_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+	target_link_libraries(ps5_dualsense_input_tests "-framework IOKit" "-framework CoreFoundation")
+endif()
+
 add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/EmulatorIntegrationTests.cpp"
 	"${KYTY_SOURCE_DIR}/emulator/emulatorIntegration.cpp"

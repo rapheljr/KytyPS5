@@ -5,6 +5,7 @@
 #include "common/logging/log.h"
 #include "common/stringUtils.h"
 #include "common/threads.h"
+#include "input/inputEngine.h"
 #include "kernel/pthread.h"
 #include "libs/errno.h"
 #include "libs/libs.h"
@@ -12,9 +13,20 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include <vector>
 
 namespace Libs::Controller {
+
+static std::unique_ptr<Input::InputManager> g_input_manager;
+
+Input::InputManager* GetInputManager() {
+	if (!g_input_manager) {
+		g_input_manager = std::make_unique<Input::InputManager>();
+		g_input_manager->Initialize();
+	}
+	return g_input_manager.get();
+}
 
 LIB_NAME("Pad", "Pad");
 
