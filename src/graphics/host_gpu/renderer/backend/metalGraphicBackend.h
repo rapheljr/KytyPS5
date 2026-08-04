@@ -21,6 +21,7 @@ struct MetalCapabilities {
 
 class MetalCommandQueue;
 class MetalPipelineCache;
+class MetalArgumentBufferCache;
 
 class MetalGraphicBackend final : public IGraphicBackend {
 public:
@@ -45,14 +46,18 @@ public:
 	/// Returns the Phase E Metal pipeline cache. Null before Initialize().
 	[[nodiscard]] MetalPipelineCache*         GetPipelineCache() noexcept { return m_pipeline_cache.get(); }
 
+	/// Returns the Phase F Metal argument buffer cache. Null before Initialize().
+	[[nodiscard]] MetalArgumentBufferCache*   GetArgumentBufferCache() noexcept { return m_argument_buffer_cache.get(); }
+
 private:
-	bool                             m_initialized   = false;
-	void*                            m_device        = nullptr; // id<MTLDevice>
-	void*                            m_command_queue = nullptr; // id<MTLCommandQueue>
-	std::unique_ptr<MetalCommandQueue>  m_metal_queue;
-	std::unique_ptr<MetalPipelineCache> m_pipeline_cache;
-	MetalCapabilities                m_capabilities {};
-	uint64_t                         m_init_time_ns  = 0;
+	bool                                m_initialized   = false;
+	void*                               m_device        = nullptr; // id<MTLDevice>
+	void*                               m_command_queue = nullptr; // id<MTLCommandQueue>
+	std::unique_ptr<MetalCommandQueue>         m_metal_queue;
+	std::unique_ptr<MetalPipelineCache>        m_pipeline_cache;
+	std::unique_ptr<MetalArgumentBufferCache>  m_argument_buffer_cache;
+	MetalCapabilities                   m_capabilities {};
+	uint64_t                            m_init_time_ns  = 0;
 
 	void QueryCapabilities();
 };

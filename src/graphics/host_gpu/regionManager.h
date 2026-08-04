@@ -97,14 +97,14 @@ public:
 		const auto [start, end] = GetPageRange(vaddr, size);
 		if constexpr (source == DirtySource::Cpu && enable) {
 			for (auto page = start; page < end; page++) {
-				if (m_gpu_dirty.test(page)) {
+				if (m_gpu_dirty.Get(page)) {
 					EXIT("CPU dirty state conflicts with GPU dirty or pending fault state\n");
 				}
 			}
 		}
 		if constexpr (source == DirtySource::Gpu && enable) {
 			for (auto page = start; page < end; page++) {
-				if (m_cpu_dirty.test(page)) {
+				if (m_cpu_dirty.Get(page)) {
 					EXIT("GPU dirty state conflicts with CPU dirty or pending fault state\n");
 				}
 			}
