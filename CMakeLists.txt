@@ -795,6 +795,10 @@ add_executable(ps5_kernel_tests EXCLUDE_FROM_ALL
 	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
@@ -804,6 +808,21 @@ target_include_directories(ps5_kernel_tests PRIVATE ${inc_headers})
 
 if(APPLE)
 	target_link_options(ps5_kernel_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
+endif()
+
+add_executable(ps5_vfs_complete_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Ps5VfsCompleteTests.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
+)
+target_link_libraries(ps5_vfs_complete_tests common ${kyty_emulator_link_libraries})
+target_include_directories(ps5_vfs_complete_tests PRIVATE ${inc_headers})
+
+if(APPLE)
+	target_link_options(ps5_vfs_complete_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
 endif()
 
 add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
@@ -819,6 +838,10 @@ add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
 	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
 	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
