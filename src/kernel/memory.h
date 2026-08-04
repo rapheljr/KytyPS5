@@ -195,6 +195,8 @@ uint64_t TestGuestBackingSize();
 bool     TestGuestFreeRangeBounds();
 #endif
 
+bool IsInitialized();
+
 } // namespace Libs::LibKernel::Memory
 
 #endif /* EMULATOR_INCLUDE_EMULATOR_KERNEL_MEMORY_H_ */

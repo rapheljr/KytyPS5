@@ -996,6 +996,10 @@ void Shutdown() {
 	g_guest_address_space.reset();
 }
 
+bool IsInitialized() {
+	return g_guest_address_space != nullptr;
+}
+
 struct AlignedPos {
 	uint64_t value = 0;
 	bool     valid = false;

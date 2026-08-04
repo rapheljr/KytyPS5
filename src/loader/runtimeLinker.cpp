@@ -2416,7 +2416,7 @@ void RuntimeLinker::ParseProgramDynamicInfo(Program* program) {
 	GetDynValue(elf, &jmprel_type, DT_OS_PLTREL);
 	GetDynValue(elf, &jmprel_type, DT_PLTREL);
 
-	EXIT_NOT_IMPLEMENTED(jmprel_type != DT_RELA);
+	EXIT_NOT_IMPLEMENTED(jmprel_type != 0 && jmprel_type != DT_RELA);
 	if (jmprel_type == DT_RELA) {
 		EXIT_NOT_IMPLEMENTED(elf->HasDynValue(DT_OS_JMPREL) && elf->HasDynValue(DT_JMPREL));
 		EXIT_NOT_IMPLEMENTED(elf->HasDynValue(DT_OS_PLTRELSZ) && elf->HasDynValue(DT_PLTRELSZ));
@@ -2530,7 +2530,11 @@ void RuntimeLinker::Relocate(Program* program) {
 	LOGF_COLOR(Log::Color::White, "--- Relocate program: %s ---\n",
 	           Common::PathToString(program->file_name).c_str());
 
-	EXIT_NOT_IMPLEMENTED(program->dynamic_info->symbol_table_entry_size != sizeof(Elf64_Sym));
+	if (program->dynamic_info->symbol_table == nullptr && program->dynamic_info->rela_table == nullptr &&
+	    program->dynamic_info->jmprela_table == nullptr) {
+		program->relocated = true;
+		return;
+	}
 	EXIT_NOT_IMPLEMENTED(program->dynamic_info->rela_table_entry_size != sizeof(Elf64_Rela));
 	EXIT_NOT_IMPLEMENTED(program->dynamic_info->jmprela_table == nullptr);
 	EXIT_NOT_IMPLEMENTED(program->dynamic_info->rela_table == nullptr);

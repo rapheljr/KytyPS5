@@ -284,7 +284,11 @@ void Elf64::LoadSegment(uint64_t vaddr, uint64_t file_offset, uint64_t size) {
 }
 
 const Elf64_Dyn* Elf64::GetDynValue(Elf64_Sxword tag) const {
-	for (const auto* dyn = GetDynamic(); dyn->d_tag != DT_NULL; dyn++) {
+	const auto* dyn = GetDynamic();
+	if (dyn == nullptr) {
+		return nullptr;
+	}
+	for (; dyn->d_tag != DT_NULL; dyn++) {
 		if (dyn->d_tag == tag) {
 			return dyn;
 		}
@@ -294,7 +298,11 @@ const Elf64_Dyn* Elf64::GetDynValue(Elf64_Sxword tag) const {
 
 std::vector<const Elf64_Dyn*> Elf64::GetDynList(Elf64_Sxword tag) const {
 	std::vector<const Elf64_Dyn*> ret;
-	for (const auto* dyn = GetDynamic(); dyn->d_tag != DT_NULL; dyn++) {
+	const auto* dyn = GetDynamic();
+	if (dyn == nullptr) {
+		return ret;
+	}
+	for (; dyn->d_tag != DT_NULL; dyn++) {
 		if (dyn->d_tag == tag) {
 			ret.push_back(dyn);
 		}

@@ -1160,9 +1160,19 @@ private:
 			flags |= MAP_FIXED_NOREPLACE;
 #endif
 			void* ptr = mmap(reinterpret_cast<void*>(start), end - start, PROT_NONE, flags, -1, 0);
-			if (ptr == MAP_FAILED || reinterpret_cast<uint64_t>(ptr) != start) {
+			if (ptr == MAP_FAILED || (reinterpret_cast<uint64_t>(ptr) != start && (flags & MAP_FIXED) == 0)) {
 				if (ptr != MAP_FAILED) {
-					munmap(ptr, end - start);
+					uint64_t actual_start = reinterpret_cast<uint64_t>(ptr);
+					AddFreeUnlocked(actual_start, end - start);
+					m_owned.emplace_back(actual_start, end - start);
+					continue;
+				}
+				ptr = mmap(nullptr, end - start, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE, -1, 0);
+				if (ptr != MAP_FAILED) {
+					uint64_t actual_start = reinterpret_cast<uint64_t>(ptr);
+					AddFreeUnlocked(actual_start, end - start);
+					m_owned.emplace_back(actual_start, end - start);
+					continue;
 				}
 				EXIT("failed to reserve guest address space at 0x%016" PRIx64
 				     ", size 0x%016" PRIx64 "\n",
