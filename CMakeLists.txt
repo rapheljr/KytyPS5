@@ -10,10 +10,6 @@ if(NOT KYTY_GENERATOR_IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-if(APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
-	set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for macOS")
-endif()
-
 project(Kyty)
 
 set(KYTY_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -187,14 +183,6 @@ add_subdirectory("${KYTY_SOURCE_DIR}/common" "${CMAKE_CURRENT_BINARY_DIR}/common
 file(GLOB kyty_emulator_src CONFIGURE_DEPENDS
 	"${KYTY_SOURCE_DIR}/libs/*.cpp"
 	"${KYTY_SOURCE_DIR}/libs/*.h"
-	"${KYTY_SOURCE_DIR}/audio/*.cpp"
-	"${KYTY_SOURCE_DIR}/audio/*.mm"
-	"${KYTY_SOURCE_DIR}/audio/*.h"
-	"${KYTY_SOURCE_DIR}/input/*.cpp"
-	"${KYTY_SOURCE_DIR}/input/*.mm"
-	"${KYTY_SOURCE_DIR}/input/*.h"
-	"${KYTY_SOURCE_DIR}/compat/*.cpp"
-	"${KYTY_SOURCE_DIR}/compat/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/*.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/*.cpp"
@@ -205,9 +193,6 @@ file(GLOB kyty_emulator_src CONFIGURE_DEPENDS
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/*.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/*.h"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/*.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/*.mm"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/cache/*.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/cache/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/image/*.cpp"
@@ -226,8 +211,6 @@ file(GLOB kyty_emulator_src CONFIGURE_DEPENDS
 	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/*.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/ir/*.h"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/*.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/presentation/*.cpp"
 	"${KYTY_SOURCE_DIR}/graphics/presentation/*.h"
 	"${KYTY_SOURCE_DIR}/graphics/presentation/window/*.cpp"
@@ -236,11 +219,26 @@ file(GLOB kyty_emulator_src CONFIGURE_DEPENDS
 	"${KYTY_SOURCE_DIR}/kernel/*.h"
 	"${KYTY_SOURCE_DIR}/loader/*.cpp"
 	"${KYTY_SOURCE_DIR}/loader/*.h"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/*.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/*.h"
+	"${KYTY_SOURCE_DIR}/compat/*.cpp"
+	"${KYTY_SOURCE_DIR}/compat/*.h"
 	"${KYTY_SOURCE_DIR}/emulator/*.cpp"
 	"${KYTY_SOURCE_DIR}/emulator/*.h"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/*.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/*.h"
+	"${KYTY_SOURCE_DIR}/audio/*.cpp"
+	"${KYTY_SOURCE_DIR}/audio/*.h"
+	"${KYTY_SOURCE_DIR}/input/*.cpp"
+	"${KYTY_SOURCE_DIR}/input/*.h"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/*.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/*.h"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/*.cpp"
+	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/*.h"
 )
+
+if(APPLE)
+	file(GLOB_RECURSE apple_objc_sources CONFIGURE_DEPENDS "${KYTY_SOURCE_DIR}/*.mm")
+	list(APPEND kyty_emulator_src ${apple_objc_sources})
+endif()
 
 find_program(KYTY_GLSLANG_VALIDATOR glslangValidator REQUIRED)
 set(gpu_tiler_shader_dir "${KYTY_SOURCE_DIR}/graphics/host_gpu/shaders")
@@ -313,6 +311,7 @@ if (KYTY_CLANG_CL)
 	set_source_files_properties(${kyty_emulator_src} PROPERTIES COMPILE_FLAGS "-Wno-pragma-pack -Wno-deprecated-declarations -D_TIMESPEC_DEFINED")
 endif()
 
+<<<<<<< HEAD
 set(kyty_emulator_link_libraries common Vulkan::Headers spirv-tools-opt spirv-tools SDL2-static imgui xxhash FFmpeg::ffmpeg fmt::fmt nlohmann_json::nlohmann_json LibAtrac9 kyty_git_version Zydis::Zydis xbyak::xbyak)
 
 # Linux system libraries required by the static FFmpeg archive.
@@ -371,6 +370,11 @@ endif()
 
 
 >>>>>>> 9e9724d (feat(recompiler): implement Phase M Native x86-64 to ARM64 Dynamic Recompiler)
+=======
+set(kyty_emulator_link_libraries common Vulkan::Headers spirv-tools-opt spirv-tools SDL2-static imgui xxhash FFmpeg::ffmpeg fmt::fmt nlohmann_json::nlohmann_json LibAtrac9 kyty_git_version)
+
+# Linux system libraries required by the static FFmpeg archive.
+>>>>>>> 0496914 (feat(compat): Implement Commercial PS5 Subsystem Validator & Multi-Commit Regression Dashboard)
 if(LINUX)
 	find_package(Threads REQUIRED)
 	list(APPEND kyty_emulator_link_libraries m ${CMAKE_DL_LIBS} Threads::Threads)
@@ -390,6 +394,7 @@ if(LINUX)
 	endif()
 endif()
 
+<<<<<<< HEAD
 set(inc_headers
 	${KYTY_SOURCE_DIR}
 	${KYTY_THIRD_PARTY_DIR}/SDL2/include
@@ -575,10 +580,11 @@ if(NOT KYTY_CLANG_CL)
 	endforeach()
 endif()
 
+=======
+>>>>>>> 0496914 (feat(compat): Implement Commercial PS5 Subsystem Validator & Multi-Commit Regression Dashboard)
 set(inc_headers
 	${KYTY_SOURCE_DIR}
 	${KYTY_THIRD_PARTY_DIR}/SDL2/include
-	${KYTY_THIRD_PARTY_DIR}/Vulkan-Headers/include
 	${KYTY_THIRD_PARTY_DIR}/VulkanMemoryAllocator/include
 	${KYTY_THIRD_PARTY_DIR}/SPIRV-Tools/include
 	${KYTY_THIRD_PARTY_DIR}/fmt/include
@@ -615,7 +621,7 @@ function(add_kyty_full_emulator_test target source)
 endfunction()
 
 function(configure_macos_guest_address_space target)
-	if(APPLE AND (CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
+	if(APPLE AND (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR
 			(NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")))
 		target_sources(${target} PRIVATE "${KYTY_SOURCE_DIR}/kernel/macosGuestAddressSpace.cpp")
 		target_compile_definitions(${target} PRIVATE KYTY_LINKED_GUEST_ADDRESS_SPACE=1)
@@ -624,720 +630,7 @@ function(configure_macos_guest_address_space target)
 	endif()
 endfunction()
 
-add_executable(architecture_config_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ArchitectureConfigTests.cpp"
-)
-target_include_directories(architecture_config_tests PRIVATE ${inc_headers})
-
-add_executable(signal_handling_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/SignalHandlingTests.cpp"
-)
-target_link_libraries(signal_handling_tests common)
-target_include_directories(signal_handling_tests PRIVATE ${inc_headers})
-
-add_executable(mach_api_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/MachApiTests.cpp"
-)
-target_link_libraries(mach_api_tests common)
-target_include_directories(mach_api_tests PRIVATE ${inc_headers})
-
-add_executable(thread_identity_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ThreadIdentityTests.cpp"
-)
-target_link_libraries(thread_identity_tests common)
-target_include_directories(thread_identity_tests PRIVATE ${inc_headers})
-
-add_executable(executable_memory_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ExecutableMemoryTests.cpp"
-)
-target_link_libraries(executable_memory_tests common)
-target_include_directories(executable_memory_tests PRIVATE ${inc_headers})
-
-add_executable(rosetta_workaround_matrix_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/RosettaWorkaroundMatrixTests.cpp"
-)
-target_link_libraries(rosetta_workaround_matrix_tests common)
-target_include_directories(rosetta_workaround_matrix_tests PRIVATE ${inc_headers})
-
-add_executable(run_on_guest_stack_arm64_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/RunOnGuestStackARM64Tests.cpp"
-)
-target_link_libraries(run_on_guest_stack_arm64_tests common)
-target_include_directories(run_on_guest_stack_arm64_tests PRIVATE ${inc_headers})
-
-add_executable(x86_decoder_complete_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/X86DecoderCompleteTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-)
-target_link_libraries(x86_decoder_complete_tests common)
-target_include_directories(x86_decoder_complete_tests PRIVATE ${inc_headers})
-
-add_executable(compiler_ir_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/CompilerIRTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-)
-target_link_libraries(compiler_ir_tests common)
-target_include_directories(compiler_ir_tests PRIVATE ${inc_headers})
-
-add_executable(arm64_register_allocator_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ARM64RegisterAllocatorTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-)
-target_link_libraries(arm64_register_allocator_tests common)
-target_include_directories(arm64_register_allocator_tests PRIVATE ${inc_headers})
-
-add_executable(arm64_instruction_selector_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ARM64InstructionSelectorTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64InstructionSelector.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-)
-target_link_libraries(arm64_instruction_selector_tests common)
-target_include_directories(arm64_instruction_selector_tests PRIVATE ${inc_headers})
-
-add_executable(arm64_simd_benchmark_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ARM64SimdBenchmarkTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64SimdTranslator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64FpSimdEmitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-)
-target_link_libraries(arm64_simd_benchmark_tests common)
-target_include_directories(arm64_simd_benchmark_tests PRIVATE ${inc_headers})
-
-add_executable(runtime_optimization_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/RuntimeOptimizationTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-)
-target_link_libraries(runtime_optimization_tests common)
-target_include_directories(runtime_optimization_tests PRIVATE ${inc_headers})
-
-add_executable(arm64_optimization_pipeline_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Arm64OptimizationPipelineTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64OptimizationPipeline.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-)
-target_link_libraries(arm64_optimization_pipeline_tests common)
-target_include_directories(arm64_optimization_pipeline_tests PRIVATE ${inc_headers})
-
-add_executable(real_app_compatibility_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/RealAppCompatibilityTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/realAppCompatibilityEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64OptimizationPipeline.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64JitValidationFramework.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/radixCodeCache.cpp"
-)
-target_link_libraries(real_app_compatibility_tests common)
-target_include_directories(real_app_compatibility_tests PRIVATE ${inc_headers})
-
-add_executable(block_linking_benchmark_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/BlockLinkingBenchmarkTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-)
-target_link_libraries(block_linking_benchmark_tests common)
-target_include_directories(block_linking_benchmark_tests PRIVATE ${inc_headers})
-
-add_executable(code_cache_benchmark_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/CodeCacheBenchmarkTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/radixCodeCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-)
-target_link_libraries(code_cache_benchmark_tests common)
-target_include_directories(code_cache_benchmark_tests PRIVATE ${inc_headers})
-
-add_executable(runtime_bridge_exhaustive_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/RuntimeBridgeExhaustiveTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-)
-target_link_libraries(runtime_bridge_exhaustive_tests common)
-target_include_directories(runtime_bridge_exhaustive_tests PRIVATE ${inc_headers})
-
-add_executable(arm64_jit_validation_framework_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Arm64JitValidationFrameworkTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64JitValidationFramework.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86DecoderTables.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-)
-target_link_libraries(arm64_jit_validation_framework_tests common)
-target_include_directories(arm64_jit_validation_framework_tests PRIVATE ${inc_headers})
-
-add_executable(opcode_coverage_framework_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/OpcodeCoverageFrameworkTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/opcodeCoverageFramework.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64JitValidationFramework.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/runtimeOptimizationEngine.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86DecoderTables.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
-)
-target_link_libraries(opcode_coverage_framework_tests common)
-target_include_directories(opcode_coverage_framework_tests PRIVATE ${inc_headers})
-
-add_executable(arm64_backend_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ARM64BackendTests.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/arm64RegisterAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/arm64Relocation.cpp"
-)
-target_link_libraries(arm64_backend_tests common)
-target_include_directories(arm64_backend_tests PRIVATE ${inc_headers})
-
-add_executable(exception_pipeline_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ExceptionPipelineTests.cpp"
-)
-target_link_libraries(exception_pipeline_tests common)
-target_include_directories(exception_pipeline_tests PRIVATE ${inc_headers})
-
-add_executable(virtual_memory_benchmark_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/VirtualMemoryBenchmarkTests.cpp"
-)
-target_link_libraries(virtual_memory_benchmark_tests common)
-target_include_directories(virtual_memory_benchmark_tests PRIVATE ${inc_headers})
-
-add_executable(renderer_profiling_benchmark_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/RendererProfilingBenchmarkTests.cpp"
-)
-target_link_libraries(renderer_profiling_benchmark_tests common)
-target_include_directories(renderer_profiling_benchmark_tests PRIVATE ${inc_headers})
-
-add_executable(master_validation_suite_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/MasterValidationSuiteTests.cpp"
-)
-target_link_libraries(master_validation_suite_tests common)
-target_include_directories(master_validation_suite_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	set(METAL_BACKEND_SRC
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandBuffer.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSwapchain.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalPipelineCache.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalArgumentBuffer.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSync.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalBuffer.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalTexture.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSamplerCache.mm"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalMemoryPool.mm"
-	)
-else()
-	set(METAL_BACKEND_SRC
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalGraphicBackend.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandBuffer.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSwapchain.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalPipelineCache.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalArgumentBuffer.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSync.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalBuffer.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalTexture.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalSamplerCache.cpp"
-		"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalMemoryPool.cpp"
-	)
-endif()
-
-add_executable(graphic_backend_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/GraphicBackendTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
-	${METAL_BACKEND_SRC}
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
-)
-target_link_libraries(graphic_backend_tests common ${kyty_emulator_link_libraries})
-target_include_directories(graphic_backend_tests PRIVATE ${inc_headers})
-
-add_executable(metal_resource_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/MetalResourceTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
-	${METAL_BACKEND_SRC}
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
-)
-target_link_libraries(metal_resource_tests common ${kyty_emulator_link_libraries})
-target_include_directories(metal_resource_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(graphic_backend_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-	target_link_options(metal_resource_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(pm4_command_processor_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Pm4CommandProcessorTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Parser.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Disassembler.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4CommandList.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Translator.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
-	${METAL_BACKEND_SRC}
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
-)
-target_link_libraries(pm4_command_processor_tests common ${kyty_emulator_link_libraries})
-target_include_directories(pm4_command_processor_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(pm4_command_processor_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(shader_opt_pipeline_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ShaderOptPipelineTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPipeline.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPasses.cpp"
-)
-target_link_libraries(shader_opt_pipeline_tests common ${kyty_emulator_link_libraries})
-target_include_directories(shader_opt_pipeline_tests PRIVATE ${inc_headers})
-
-
-if(APPLE)
-	target_link_options(shader_opt_pipeline_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(x86_to_arm64_recompiler_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/X86ToArm64RecompilerTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RecompilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-)
-target_link_libraries(x86_to_arm64_recompiler_tests common ${kyty_emulator_link_libraries})
-target_include_directories(x86_to_arm64_recompiler_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(x86_to_arm64_recompiler_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(ps5_kernel_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5KernelTests.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelObject.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/processManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelScheduler.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelTimer.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
-)
-target_link_libraries(ps5_kernel_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_kernel_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_kernel_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(ps5_vfs_complete_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5VfsCompleteTests.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
-)
-target_link_libraries(ps5_vfs_complete_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_vfs_complete_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_vfs_complete_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(ps5_audio_subsystem_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5AudioSubsystemTests.cpp"
-	"${KYTY_SOURCE_DIR}/audio/audioEngine.cpp"
-	"${KYTY_SOURCE_DIR}/audio/audioVoiceMixer.cpp"
-	"${KYTY_SOURCE_DIR}/audio/audio3DEngine.cpp"
-	"${KYTY_SOURCE_DIR}/audio/coreAudioBackend.mm"
-)
-target_link_libraries(ps5_audio_subsystem_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_audio_subsystem_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_audio_subsystem_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-	target_link_libraries(ps5_audio_subsystem_tests "-framework AudioToolbox" "-framework CoreAudio")
-endif()
-
-add_executable(ps5_dualsense_input_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5DualSenseInputTests.cpp"
-	"${KYTY_SOURCE_DIR}/input/inputEngine.cpp"
-	"${KYTY_SOURCE_DIR}/input/macOsHidBackend.mm"
-)
-target_link_libraries(ps5_dualsense_input_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_dualsense_input_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_dualsense_input_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-	target_link_libraries(ps5_dualsense_input_tests "-framework IOKit" "-framework CoreFoundation")
-endif()
-
-add_executable(ps5_game_loading_pipeline_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5GameLoadingPipelineTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/gameLoadingPipeline.cpp"
-	"${KYTY_SOURCE_DIR}/loader/moduleDependencyGraph.cpp"
-	"${KYTY_SOURCE_DIR}/loader/selfParser.cpp"
-	"${KYTY_SOURCE_DIR}/loader/elf.cpp"
-	"${KYTY_SOURCE_DIR}/loader/runtimeLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/symbolDatabase.cpp"
-	"${KYTY_SOURCE_DIR}/loader/gamePatch.cpp"
-	"${KYTY_SOURCE_DIR}/loader/systemContent.cpp"
-	"${KYTY_SOURCE_DIR}/loader/timer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/x64InstructionEmulator.cpp"
-	"${KYTY_SOURCE_DIR}/libs/libKernel.cpp"
-	"${KYTY_SOURCE_DIR}/libs/libAmpr.cpp"
-	"${KYTY_SOURCE_DIR}/libs/guestPrintf.cpp"
-	"${KYTY_SOURCE_DIR}/libs/network.cpp"
-	"${KYTY_SOURCE_DIR}/libs/libC.cpp"
-	"${KYTY_SOURCE_DIR}/libs/errno.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/memory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/pthread.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelScheduler.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelTimer.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/semaphore.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/eventFlag.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/eventQueue.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/fileSystem.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/processManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelObject.cpp"
-	"${KYTY_SOURCE_DIR}/compat/titleCompatibility.cpp"
-	"${KYTY_SOURCE_DIR}/compat/versionDetection.cpp"
-	"${KYTY_SOURCE_DIR}/compat/compatibilityReporter.cpp"
-	"${KYTY_SOURCE_DIR}/compat/compatDevTools.cpp"
-)
-target_link_libraries(ps5_game_loading_pipeline_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_game_loading_pipeline_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_game_loading_pipeline_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(ps5_title_compat_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5TitleCompatTests.cpp"
-	"${KYTY_SOURCE_DIR}/compat/titleCompatibility.cpp"
-	"${KYTY_SOURCE_DIR}/compat/versionDetection.cpp"
-	"${KYTY_SOURCE_DIR}/compat/compatibilityReporter.cpp"
-	"${KYTY_SOURCE_DIR}/compat/compatDevTools.cpp"
-	"${KYTY_SOURCE_DIR}/loader/systemContent.cpp"
-)
-target_link_libraries(ps5_title_compat_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_title_compat_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_title_compat_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(ps5_commercial_title_boot_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Ps5CommercialTitleBootTests.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/bootPipelineManager.cpp"
-	"${KYTY_SOURCE_DIR}/compat/titleCompatibility.cpp"
-	"${KYTY_SOURCE_DIR}/compat/versionDetection.cpp"
-	"${KYTY_SOURCE_DIR}/compat/compatibilityReporter.cpp"
-	"${KYTY_SOURCE_DIR}/compat/compatDevTools.cpp"
-	"${KYTY_SOURCE_DIR}/loader/gameLoadingPipeline.cpp"
-	"${KYTY_SOURCE_DIR}/loader/moduleDependencyGraph.cpp"
-	"${KYTY_SOURCE_DIR}/loader/selfParser.cpp"
-	"${KYTY_SOURCE_DIR}/loader/elf.cpp"
-	"${KYTY_SOURCE_DIR}/loader/runtimeLinker.cpp"
-	"${KYTY_SOURCE_DIR}/loader/symbolDatabase.cpp"
-	"${KYTY_SOURCE_DIR}/loader/gamePatch.cpp"
-	"${KYTY_SOURCE_DIR}/loader/systemContent.cpp"
-	"${KYTY_SOURCE_DIR}/loader/timer.cpp"
-	"${KYTY_SOURCE_DIR}/loader/x64InstructionEmulator.cpp"
-	"${KYTY_SOURCE_DIR}/libs/libKernel.cpp"
-	"${KYTY_SOURCE_DIR}/libs/libAmpr.cpp"
-	"${KYTY_SOURCE_DIR}/libs/guestPrintf.cpp"
-	"${KYTY_SOURCE_DIR}/libs/network.cpp"
-	"${KYTY_SOURCE_DIR}/libs/libC.cpp"
-	"${KYTY_SOURCE_DIR}/libs/errno.cpp"
-	"${KYTY_SOURCE_DIR}/audio/audioEngine.cpp"
-	"${KYTY_SOURCE_DIR}/audio/audioVoiceMixer.cpp"
-	"${KYTY_SOURCE_DIR}/audio/audio3DEngine.cpp"
-	"${KYTY_SOURCE_DIR}/audio/coreAudioBackend.mm"
-	"${KYTY_SOURCE_DIR}/input/inputEngine.cpp"
-	"${KYTY_SOURCE_DIR}/input/macOsHidBackend.mm"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
-	${METAL_BACKEND_SRC}
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/hostMemory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/memory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/pthread.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelScheduler.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelTimer.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/semaphore.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/eventFlag.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/eventQueue.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/fileSystem.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/processManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelObject.cpp"
-)
-target_link_libraries(ps5_commercial_title_boot_tests common ${kyty_emulator_link_libraries})
-target_include_directories(ps5_commercial_title_boot_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(ps5_commercial_title_boot_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-	target_link_libraries(ps5_commercial_title_boot_tests "-framework AudioToolbox" "-framework CoreAudio" "-framework IOKit" "-framework CoreFoundation")
-endif()
-
-add_executable(emulator_integration_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/EmulatorIntegrationTests.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/emulatorIntegration.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/frameScheduler.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/saveStateEngine.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Kernel.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelObject.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/processManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelScheduler.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/kernelTimer.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/signalEngine.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Umtx.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ipcSharedMemory.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5PkgParser.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsMountManager.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPermissions.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5VfsPathTranslator.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Sync.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Vfs.cpp"
-	"${KYTY_SOURCE_DIR}/kernel/ps5Network.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RecompilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Parser.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Disassembler.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4CommandList.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Translator.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPipeline.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/opt/ShaderOptPasses.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/vulkanCommon.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/vulkanGraphicBackend.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/metalCommandQueue.cpp"
-	${METAL_BACKEND_SRC}
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/backend/graphicBackendFactory.cpp"
-)
-target_link_libraries(emulator_integration_tests common ${kyty_emulator_link_libraries})
-target_include_directories(emulator_integration_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(emulator_integration_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(compatibility_framework_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/CompatibilityFrameworkTests.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/compat/compatFramework.cpp"
-	"${KYTY_SOURCE_DIR}/emulator/compat/developerTools.cpp"
-)
-target_link_libraries(compatibility_framework_tests common ${kyty_emulator_link_libraries})
-target_include_directories(compatibility_framework_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(compatibility_framework_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(arm64_guest_jit_backend_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Arm64GuestJitBackendTests.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/jitBackend.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64FpSimdEmitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterAllocator.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RecompilerIR.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86BlockCache.cpp"
-	"${KYTY_SOURCE_DIR}/loader/recompiler/x86RuntimeBridge.cpp"
-)
-target_link_libraries(arm64_guest_jit_backend_tests common ${kyty_emulator_link_libraries})
-target_include_directories(arm64_guest_jit_backend_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(arm64_guest_jit_backend_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-add_executable(pm4_complete_translator_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/Pm4CompleteTranslatorTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Parser.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Disassembler.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4CommandList.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/guest_gpu/command_processor/pm4Translator.cpp"
-)
-target_link_libraries(pm4_complete_translator_tests common ${kyty_emulator_link_libraries})
-target_include_directories(pm4_complete_translator_tests PRIVATE ${inc_headers})
-
-if(APPLE)
-	target_link_options(pm4_complete_translator_tests PRIVATE "LINKER:-force_load,$<TARGET_FILE:SDL2-static>")
-endif()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 add_kyty_full_emulator_test(shader_cfg_tests "${KYTY_TESTS_DIR}/shaderCfgTests.cpp")
-
-add_executable(msl_emitter_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/MslEmitterTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/MslEmitter.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterModule.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterAluOps.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterControlFlow.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterImageOps.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/shader/recompiler/emitter/mslEmitterMemory.cpp"
-)
-target_link_libraries(msl_emitter_tests fmt::fmt common)
-target_include_directories(msl_emitter_tests PRIVATE ${inc_headers})
 
 add_executable(scalar_provenance_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ScalarProvenanceTests.cpp"
@@ -1359,6 +652,12 @@ add_executable(bit_array_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/BitArrayTests.cpp"
 )
 target_include_directories(bit_array_tests PRIVATE ${inc_headers})
+
+add_executable(ime_dialog_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/ImeDialogTests.cpp"
+	"${KYTY_SOURCE_DIR}/libs/imeDialog.cpp"
+)
+target_include_directories(ime_dialog_tests PRIVATE ${inc_headers})
 
 add_executable(memory_tracker_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/MemoryTrackerTests.cpp"
@@ -1425,6 +724,13 @@ add_executable(event_queue_lifetime_tests EXCLUDE_FROM_ALL
 target_link_libraries(event_queue_lifetime_tests common fmt::fmt)
 target_include_directories(event_queue_lifetime_tests PRIVATE ${inc_headers})
 
+add_executable(sync_on_address_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/SyncOnAddressTests.cpp"
+	"${KYTY_SOURCE_DIR}/kernel/syncOnAddress.cpp"
+)
+target_link_libraries(sync_on_address_tests common)
+target_include_directories(sync_on_address_tests PRIVATE ${inc_headers})
+
 add_executable(image_page_table_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/ImagePageTableTests.cpp"
 )
@@ -1465,7 +771,6 @@ if(NOT KYTY_CLANG_CL)
 		target_compile_options(${kyty_exception_test} PRIVATE -fexceptions)
 	endforeach()
 endif()
->>>>>>> d65f396 (feat: macOS/Rosetta 2 platform maturation (Phases 1–4))
 
 if(BUILD_TESTING)
 	add_test(NAME ime_dialog COMMAND $<TARGET_FILE:ime_dialog_tests>)
@@ -1477,11 +782,6 @@ if(BUILD_TESTING)
 	add_test(NAME bit_array COMMAND $<TARGET_FILE:bit_array_tests>)
 	add_test(NAME shader_vertex_metadata COMMAND $<TARGET_FILE:shader_vertex_metadata_tests>)
 	add_test(NAME shader_stage_runtime COMMAND $<TARGET_FILE:shader_stage_runtime_tests>)
-	add_test(NAME resource_tracking COMMAND $<TARGET_FILE:resource_tracking_tests>)
-	add_test(NAME event_queue_lifetime COMMAND $<TARGET_FILE:event_queue_lifetime_tests>)
-	add_test(NAME sync_on_address COMMAND $<TARGET_FILE:sync_on_address_tests>)
-	add_test(NAME audio_out2_port COMMAND $<TARGET_FILE:audio_out2_port_tests>)
-	add_test(NAME shader_recompiler_compute COMMAND $<TARGET_FILE:shader_recompiler_compute_tests>)
 	add_test(NAME virtual_memory_allocation
 		COMMAND $<TARGET_FILE:virtual_memory_allocation_tests>)
 	add_test(NAME guest_red_zone_patcher
@@ -1518,6 +818,7 @@ if(BUILD_TESTING)
 			COMMAND $<TARGET_FILE:shader_recompiler_compute_tests> --buffer-cache-range-only)
 	endif()
 
+<<<<<<< HEAD
 	if(APPLE)
 		set(KYTY_VULKAN_TESTS
 			shader_recompiler_compute
@@ -1551,6 +852,10 @@ if(BUILD_TESTING)
 		graphic_backend_tests
 		ime_dialog_tests
 		metal_resource_tests
+=======
+	add_custom_target(kyty_tests DEPENDS
+		ime_dialog_tests
+>>>>>>> 0496914 (feat(compat): Implement Commercial PS5 Subsystem Validator & Multi-Commit Regression Dashboard)
 		shader_cfg_tests
 		scalar_provenance_tests
 		image_page_table_tests
@@ -1564,11 +869,7 @@ if(BUILD_TESTING)
 		sync_on_address_tests
 		shader_recompiler_compute_tests
 		virtual_memory_allocation_tests
-		bit_array_tests
-		arm64_backend_tests
 	)
-
-	add_custom_target(kyty_tests DEPENDS build_tests)
 endif()
 
 
@@ -1639,5 +940,19 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(metal_runtime_integration_tests common ${kyty_emulator_link_libraries})
 	target_include_directories(metal_runtime_integration_tests PRIVATE ${inc_headers})
-endif()
 
+	add_kyty_full_emulator_test(ps5_jit_emulator_integration_tests "${KYTY_TESTS_DIR}/Ps5JitEmulatorIntegrationTests.cpp")
+	add_kyty_full_emulator_test(arm64_guest_jit_backend_tests "${KYTY_TESTS_DIR}/Arm64GuestJitBackendTests.cpp")
+	add_kyty_full_emulator_test(jit_profiler_tests "${KYTY_TESTS_DIR}/JitProfilerTests.cpp")
+	add_kyty_full_emulator_test(commercial_game_validation_tests "${KYTY_TESTS_DIR}/CommercialGameValidationTests.cpp")
+
+	if(APPLE)
+		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests)
+			add_custom_command(TARGET ${jit_test} POST_BUILD
+				COMMAND codesign -s - --force --options runtime
+					--entitlements "${KYTY_SOURCE_DIR}/macos_jit.entitlements"
+					$<TARGET_FILE:${jit_test}>
+				COMMENT "Codesign ${jit_test} with JIT entitlements (macOS)")
+		endforeach()
+	endif()
+endif()

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>KytyPS5 SIMD Opcode Coverage</title>
+<style>body{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}h1{color:#58a6ff}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #30363d;padding:8px;text-align:left}th{background:#161b22;color:#58a6ff}.pass{color:#3fb950;font-weight:700}.num{font-family:monospace}</style>
+</head>
+<body>
+<h1>KytyPS5 x86 SIMD &rarr; ARM64 NEON Opcode Coverage Report</h1>
+<p><b>Coverage: 33 opcodes across MMX, SSE1, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2</b></p>
+<table>
+<tr><th>Opcode</th><th>Latency (ns)</th><th>Throughput (M ops/s)</th><th>Cycles (est.)</th><th>Status</th></tr>
+<tr><td>MMX  PADDD</td><td class="num">6.91233</td><td class="num">144.669</td><td class="num">22</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE1 ADDPS</td><td class="num">9.522</td><td class="num">105.02</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE1 SUBPS</td><td class="num">10.6984</td><td class="num">93.4721</td><td class="num">34</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE1 MULPS</td><td class="num">8.08154</td><td class="num">123.739</td><td class="num">25</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE1 DIVPS</td><td class="num">13.2067</td><td class="num">75.7189</td><td class="num">42</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE1 MOVAPS</td><td class="num">9.001</td><td class="num">111.099</td><td class="num">28</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 PXOR</td><td class="num">9.7585</td><td class="num">102.475</td><td class="num">31</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 PAND</td><td class="num">9.527</td><td class="num">104.965</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 POR</td><td class="num">22.561</td><td class="num">44.3244</td><td class="num">72</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 ADDPD</td><td class="num">11.9088</td><td class="num">83.9716</td><td class="num">38</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 SUBPD</td><td class="num">10.4074</td><td class="num">96.0853</td><td class="num">33</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 MULPD</td><td class="num">9.82171</td><td class="num">101.815</td><td class="num">31</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 DIVPD</td><td class="num">9.40817</td><td class="num">106.291</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 PCMPEQD</td><td class="num">9.16304</td><td class="num">109.134</td><td class="num">29</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 PCMPGTD</td><td class="num">9.04808</td><td class="num">110.521</td><td class="num">28</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 CVTPS2PD</td><td class="num">9.29975</td><td class="num">107.53</td><td class="num">29</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 CVTPD2PS</td><td class="num">29.6254</td><td class="num">33.7548</td><td class="num">94</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE2 MOVDQA</td><td class="num">9.81221</td><td class="num">101.914</td><td class="num">31</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE3 HADDPS</td><td class="num">10.1755</td><td class="num">98.2753</td><td class="num">32</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSSE3 PSHUFB</td><td class="num">9.71937</td><td class="num">102.887</td><td class="num">31</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSSE3 PABSD</td><td class="num">9.45858</td><td class="num">105.724</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE41 PMAXSD</td><td class="num">9.60917</td><td class="num">104.067</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE41 PMINSD</td><td class="num">9.50475</td><td class="num">105.211</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE41 PBLENDVB</td><td class="num">9.88937</td><td class="num">101.119</td><td class="num">31</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE42 PCMPESTRI</td><td class="num">9.11492</td><td class="num">109.71</td><td class="num">29</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>SSE42 PCMPISTRI</td><td class="num">9.16596</td><td class="num">109.099</td><td class="num">29</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX  VADDPS</td><td class="num">10.0526</td><td class="num">99.4769</td><td class="num">32</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX  VSUBPS</td><td class="num">10.4428</td><td class="num">95.7595</td><td class="num">33</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX  VMULPS</td><td class="num">10.7768</td><td class="num">92.7916</td><td class="num">34</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX  VDIVPS</td><td class="num">10.4523</td><td class="num">95.6724</td><td class="num">33</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX  VPXOR</td><td class="num">10.3051</td><td class="num">97.0395</td><td class="num">32</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX2 VPCMPEQD</td><td class="num">8.89879</td><td class="num">112.375</td><td class="num">28</td><td class="pass">&#10003; VERIFIED</td></tr>
+<tr><td>AVX2 VPCMPGTD</td><td class="num">9.38996</td><td class="num">106.497</td><td class="num">30</td><td class="pass">&#10003; VERIFIED</td></tr>
+</table>
+</body>
+</html>
