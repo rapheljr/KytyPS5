@@ -751,6 +751,23 @@ add_executable(runtime_optimization_tests EXCLUDE_FROM_ALL
 target_link_libraries(runtime_optimization_tests common)
 target_include_directories(runtime_optimization_tests PRIVATE ${inc_headers})
 
+add_executable(arm64_optimization_pipeline_tests EXCLUDE_FROM_ALL
+	"${KYTY_TESTS_DIR}/Arm64OptimizationPipelineTests.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64OptimizationPipeline.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64Emitter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64IRCodegen.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64LinearScanAllocator.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/arm64RegisterVisualizer.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/compilerIR.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irDominatorTree.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irOptimizationPasses.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/irPrinter.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86ToIRLowering.cpp"
+	"${KYTY_SOURCE_DIR}/loader/recompiler/x86Decoder.cpp"
+)
+target_link_libraries(arm64_optimization_pipeline_tests common)
+target_include_directories(arm64_optimization_pipeline_tests PRIVATE ${inc_headers})
+
 add_executable(block_linking_benchmark_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/BlockLinkingBenchmarkTests.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/blockLinker.cpp"
