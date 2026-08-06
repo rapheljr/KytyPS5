@@ -33,6 +33,7 @@ public:
 
 	void Insert(uint64_t guest_rip, CompiledBlockFunc host_func) noexcept;
 	[[nodiscard]] CompiledBlockFunc Lookup(uint64_t guest_rip) noexcept;
+	[[nodiscard]] CompiledBlockFunc LookupDirect(uint64_t guest_rip) noexcept;
 	void Invalidate(uint64_t guest_rip) noexcept;
 	void Clear() noexcept;
 

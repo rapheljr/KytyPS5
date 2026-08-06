@@ -73,6 +73,19 @@ CompiledBlockFunc RadixCodeCache::Lookup(uint64_t guest_rip) noexcept {
 	return curr->leaf_func.load(std::memory_order_relaxed);
 }
 
+CompiledBlockFunc RadixCodeCache::LookupDirect(uint64_t guest_rip) noexcept {
+	if (!m_root || guest_rip == 0) return nullptr;
+
+	RadixNode* curr = m_root;
+	for (int level = 3; level >= 0; --level) {
+		uint8_t byte_val = (guest_rip >> (level * 16u)) & 0xFFu;
+		curr = curr->children[byte_val].load(std::memory_order_relaxed);
+		if (!curr) return nullptr;
+	}
+
+	return curr->leaf_func.load(std::memory_order_relaxed);
+}
+
 void RadixCodeCache::Invalidate(uint64_t guest_rip) noexcept {
 	if (!m_root || guest_rip == 0) return;
 
