@@ -31,6 +31,30 @@ PacketHeader Pm4RingBufferParser::DecodeHeader(uint32_t header_dw) noexcept {
 	return header;
 }
 
+bool Pm4RingBufferParser::ParseDrawIndexAuto(const uint32_t* payload, uint32_t payload_dw, DrawPacket& out_draw) {
+	if (!payload || payload_dw < 1) {
+		return false;
+	}
+	out_draw.vertex_count   = payload[0];
+	out_draw.index_count    = payload[0];
+	out_draw.indexed        = false;
+	out_draw.first_vertex   = 0;
+	out_draw.instance_count = 1;
+	return true;
+}
+
+bool Pm4RingBufferParser::ParseDrawIndex(const uint32_t* payload, uint32_t payload_dw, DrawPacket& out_draw) {
+	if (!payload || payload_dw < 3) {
+		return false;
+	}
+	out_draw.index_count    = payload[0];
+	out_draw.vertex_count   = payload[0];
+	out_draw.index_gpu_addr = (static_cast<uint64_t>(payload[2]) << 32u) | payload[1];
+	out_draw.indexed        = true;
+	out_draw.instance_count = 1;
+	return true;
+}
+
 bool Pm4RingBufferParser::ParseStream(const uint32_t* stream_ptr, size_t size_dw, uint32_t max_depth) {
 	if (!stream_ptr || size_dw == 0) {
 		return true;

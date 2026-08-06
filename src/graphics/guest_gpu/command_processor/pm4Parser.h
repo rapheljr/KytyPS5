@@ -394,6 +394,8 @@ public:
 	KYTY_CLASS_NO_COPY(Pm4RingBufferParser);
 
 	static PacketHeader DecodeHeader(uint32_t header_dw) noexcept;
+	static bool ParseDrawIndexAuto(const uint32_t* payload, uint32_t payload_dw, DrawPacket& out_draw);
+	static bool ParseDrawIndex(const uint32_t* payload, uint32_t payload_dw, DrawPacket& out_draw);
 
 	using PacketCallback = std::function<void(const DecodedPacket& packet)>;
 	using ErrorCallback  = std::function<ParserErrorAction(uint32_t raw_header, size_t offset_dw, const char* reason)>;
