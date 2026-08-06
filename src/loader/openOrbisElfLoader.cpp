@@ -165,6 +165,8 @@ OpenOrbisLoadResult OpenOrbisElfLoader::LoadFromMemory(const uint8_t* data, size
         // Non-fatal; static ELFs may have no .dynamic
     }
 
+    ProcessRelocations(data, size, result);
+
     DetectSubsystems(result);
     result.module_name = label;
     result.success     = true;
@@ -177,6 +179,84 @@ OpenOrbisLoadResult OpenOrbisElfLoader::LoadFromMemory(const uint8_t* data, size
 
     m_last_result = result;
     return result;
+}
+
+bool OpenOrbisElfLoader::ProcessRelocations(const uint8_t* data, size_t size,
+                                           OpenOrbisLoadResult& out) {
+    if (!data || size < sizeof(Elf64_Ehdr)) return false;
+
+    const auto* hdr = reinterpret_cast<const Elf64_Ehdr*>(data);
+    uint64_t dyn_offset = 0;
+    uint64_t dyn_size   = 0;
+
+    for (uint16_t i = 0; i < hdr->e_phnum; ++i) {
+        const auto* ph = reinterpret_cast<const Elf64_Phdr*>(
+            data + hdr->e_phoff + i * sizeof(Elf64_Phdr));
+        if (ph->p_type == PT_DYNAMIC) {
+            dyn_offset = ph->p_offset;
+            dyn_size   = ph->p_filesz;
+            break;
+        }
+    }
+
+    if (dyn_offset == 0 || dyn_size == 0 || dyn_offset + dyn_size > size) {
+        return false;
+    }
+
+    uint64_t rela_vaddr   = 0;
+    uint64_t rela_size    = 0;
+    uint64_t jmprel_vaddr = 0;
+    uint64_t pltrel_size  = 0;
+
+    const size_t entry_count = dyn_size / sizeof(Elf64_Dyn);
+    for (size_t i = 0; i < entry_count; ++i) {
+        Elf64_Dyn dyn;
+        std::memcpy(&dyn, data + dyn_offset + i * sizeof(Elf64_Dyn), sizeof(Elf64_Dyn));
+        if (dyn.d_tag == 0x07 /* DT_RELA */ || dyn.d_tag == DT_SCE_RELA) rela_vaddr = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x08 /* DT_RELASZ */ || dyn.d_tag == DT_SCE_RELASZ) rela_size = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x17 /* DT_JMPREL */ || dyn.d_tag == DT_SCE_JMPREL) jmprel_vaddr = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x02 /* DT_PLTRELSZ */ || dyn.d_tag == DT_SCE_PLTRELSZ) pltrel_size = dyn.d_un.d_val;
+    }
+
+    auto patch_reloc_entry = [&](const Elf64_Rela& rela) {
+        uint32_t type = static_cast<uint32_t>(rela.r_info & 0xFFFFFFFF);
+        uint64_t target_vaddr = rela.r_offset;
+
+        if (target_vaddr >= out.base_vaddr && target_vaddr < out.base_vaddr + out.image_size) {
+            uint64_t buf_off = target_vaddr - out.base_vaddr;
+            if (buf_off + sizeof(uint64_t) <= out.image_buffer.size()) {
+                out.reloc_count++;
+                if (type == 8 /* R_X86_64_RELATIVE */ || type == 6 /* R_X86_64_GLOB_DAT */ ||
+                    type == 7 /* R_X86_64_JUMP_SLOT */ || type == 1 /* R_X86_64_64 */) {
+                    uint64_t val = out.base_vaddr + rela.r_addend;
+                    std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                    out.resolved_symbols_count++;
+                }
+            }
+        }
+    };
+
+    auto read_rela_table = [&](uint64_t table_vaddr, uint64_t table_size) {
+        if (table_vaddr == 0 || table_size == 0) return;
+        for (const auto& seg : out.segments) {
+            if (table_vaddr >= seg.guest_vaddr && table_vaddr < seg.guest_vaddr + seg.file_size) {
+                uint64_t file_off = table_vaddr - seg.guest_vaddr + seg.host_offset;
+                size_t num_relas = table_size / sizeof(Elf64_Rela);
+                for (size_t r = 0; r < num_relas; ++r) {
+                    if (file_off + (r + 1) * sizeof(Elf64_Rela) <= size) {
+                        Elf64_Rela rela;
+                        std::memcpy(&rela, data + file_off + r * sizeof(Elf64_Rela), sizeof(Elf64_Rela));
+                        patch_reloc_entry(rela);
+                    }
+                }
+            }
+        }
+    };
+
+    read_rela_table(rela_vaddr, rela_size);
+    read_rela_table(jmprel_vaddr, pltrel_size);
+
+    return true;
 }
 
 // ─── Private helpers ─────────────────────────────────────────────────────────

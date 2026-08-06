@@ -79,11 +79,13 @@ struct OrbisLoadedSegment {
 // ─── Load result ─────────────────────────────────────────────────────────────
 
 struct OpenOrbisLoadResult {
-    bool     success          = false;
-    uint64_t entry_vaddr      = 0;     // _start / e_entry
-    uint64_t proc_param_vaddr = 0;     // DT_SCE_PROC_PARAM
-    uint64_t base_vaddr       = 0;     // Lowest mapped segment address
-    uint64_t image_size       = 0;     // Total mapped byte range
+    bool     success                = false;
+    uint64_t entry_vaddr            = 0;     // _start / e_entry
+    uint64_t proc_param_vaddr       = 0;     // DT_SCE_PROC_PARAM
+    uint64_t base_vaddr             = 0;     // Lowest mapped segment address
+    uint64_t image_size             = 0;     // Total mapped byte range
+    uint32_t reloc_count            = 0;     // Total relocation entries processed
+    uint32_t resolved_symbols_count = 0;     // Dynamic PRX symbols resolved
 
     std::string              title_id;      // From PARAM.SFO if available
     std::string              module_name;   // DT_SCE_MODULE_INFO
@@ -115,6 +117,9 @@ public:
     /// Load from an in-memory ELF image (for tests / inline stubs).
     [[nodiscard]] OpenOrbisLoadResult LoadFromMemory(const uint8_t* data, size_t size,
                                                      const std::string& label = "memory");
+
+    /// Process relocation table entries (R_X86_64_RELATIVE, R_X86_64_JUMP_SLOT, R_X86_64_GLOB_DAT).
+    static bool ProcessRelocations(const uint8_t* data, size_t size, OpenOrbisLoadResult& out);
 
     /// Return the last loaded result (if any).
     [[nodiscard]] const OpenOrbisLoadResult& GetLastResult() const noexcept {
