@@ -56,6 +56,15 @@ struct PkgHeader {
 	uint8_t  header_digest[32] = {0};
 };
 
+struct PfsMountInfo {
+	uint32_t magic        = 0;
+	uint32_t version      = 0;
+	uint32_t block_size   = 0;
+	uint64_t total_blocks = 0;
+	uint64_t root_inode   = 0;
+	bool     mounted      = false;
+};
+
 class PkgParser {
 public:
 	PkgParser() = default;
@@ -65,6 +74,7 @@ public:
 
 	bool Parse(const uint8_t* data, size_t size);
 	bool VerifyIntegrity(const uint8_t* data, size_t size) const;
+	static bool MountPfsImage(const uint8_t* pfs_bytes, size_t size, const uint8_t* key, size_t key_size, PfsMountInfo& out_mount_info);
 
 	[[nodiscard]] const PkgHeader& GetHeader() const noexcept { return m_header; }
 	[[nodiscard]] const std::unordered_map<uint32_t, PkgEntry>& GetEntries() const noexcept { return m_entries; }

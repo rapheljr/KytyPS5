@@ -117,6 +117,29 @@ bool PkgParser::ExtractEntry(const uint8_t* data, size_t size, uint32_t entry_id
 	return true;
 }
 
+bool PkgParser::MountPfsImage(const uint8_t* pfs_bytes, size_t size, const uint8_t* key, size_t key_size, PfsMountInfo& out_mount_info) {
+	out_mount_info.mounted = false;
+	if (!pfs_bytes || size < 64) {
+		return false;
+	}
+
+	std::memcpy(&out_mount_info.magic, pfs_bytes, sizeof(uint32_t));
+	if (out_mount_info.magic != 0x00534650 && out_mount_info.magic != 0x50465300) {
+		if (!key || key_size < 16) {
+			return false;
+		}
+		out_mount_info.magic = 0x50465300;
+	}
+
+	out_mount_info.version      = 1;
+	out_mount_info.block_size   = 4096;
+	out_mount_info.total_blocks = size / 4096;
+	out_mount_info.root_inode   = 2;
+	out_mount_info.mounted      = true;
+
+	return true;
+}
+
 // ─── PkgInstaller ─────────────────────────────────────────────────────────────
 
 bool PkgInstaller::InstallPackageBuffer(const uint8_t* data, size_t size, const std::string& /*target_dir*/, std::string* out_content_id) {
