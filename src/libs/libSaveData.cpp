@@ -247,6 +247,18 @@ static std::string get_title_id() {
 	return title_id;
 }
 
+std::string InitSaveDirectory(const std::string& title_id, const std::string& dir_name) {
+	std::string t_id = title_id.empty() ? get_title_id() : title_id;
+	std::string full_path = Common::FixDirectorySlash(std::string(SAVE_DATA_DIR) + "/" + t_id + "/" + dir_name);
+	Common::File::CreateDirectories(full_path);
+	return full_path;
+}
+
+int AllocateSlot(std::string_view dir_name) {
+	Common::LockGuard lock(g_mount_mutex);
+	return g_mount_slots.FindAvailable(dir_name);
+}
+
 static void queue_save_data_event(uint32_t type, int32_t user_id,
                                   const SceSaveDataTitleId* title_id,
                                   const SceSaveDataDirName* dir_name, int32_t error_code = OK) {

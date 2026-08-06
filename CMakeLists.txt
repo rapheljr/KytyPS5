@@ -949,9 +949,10 @@ if(BUILD_TESTING)
 	add_kyty_full_emulator_test(open_orbis_relocation_tests "${KYTY_TESTS_DIR}/OpenOrbisRelocationTests.cpp")
 	add_kyty_full_emulator_test(ps5_pkg_parser_tests "${KYTY_TESTS_DIR}/Ps5PkgParserTests.cpp")
 	add_kyty_full_emulator_test(radix_code_cache_tests "${KYTY_TESTS_DIR}/RadixCodeCacheTests.cpp")
+	add_kyty_full_emulator_test(save_data_tests "${KYTY_TESTS_DIR}/SaveDataTests.cpp")
 
 	if(APPLE)
-		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests open_orbis_relocation_tests ps5_pkg_parser_tests radix_code_cache_tests)
+		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests open_orbis_relocation_tests ps5_pkg_parser_tests radix_code_cache_tests save_data_tests)
 			add_custom_command(TARGET ${jit_test} POST_BUILD
 				COMMAND codesign -s - --force --options runtime
 					--entitlements "${KYTY_SOURCE_DIR}/macos_jit.entitlements"
