@@ -36,6 +36,8 @@ if(WIN32 AND NOT KYTY_CLANG_CL)
 elseif(LINUX)
 	# Use the same linker as kyty_emulator.
 	set_target_properties(launcher PROPERTIES LINK_FLAGS "${KYTY_LD_OPTIONS}")
+elseif(APPLE)
+	set_target_properties(launcher PROPERTIES OSX_ARCHITECTURES "arm64")
 endif()
 
 add_dependencies(launcher kyty_emulator)
