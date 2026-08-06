@@ -38,9 +38,11 @@ struct SelfSegmentHeader {
 struct SelfInfo {
 	SelfHeader                    header;
 	std::vector<SelfSegmentHeader> segments;
-	bool                          valid = false;
-	size_t                        elf_offset = 0;
-	size_t                        elf_size   = 0;
+	bool                          valid           = false;
+	bool                          decrypted       = false;
+	uint32_t                      encryption_type = 0;
+	size_t                        elf_offset      = 0;
+	size_t                        elf_size        = 0;
 };
 
 class SelfParser {
@@ -52,6 +54,8 @@ public:
 
 	static bool IsSelfBuffer(const uint8_t* buffer, size_t size);
 	static bool Parse(const uint8_t* buffer, size_t size, SelfInfo& out_info);
+	static bool DecryptSelfHeader(const uint8_t* encrypted_header, size_t header_size, const uint8_t* key, size_t key_size, std::vector<uint8_t>& out_decrypted);
+	static bool DecompressSegment(const uint8_t* src, size_t src_size, uint8_t* dst, size_t dst_size);
 	static bool ExtractElf(const uint8_t* self_buffer, size_t self_size, std::vector<uint8_t>& out_elf_buffer);
 };
 

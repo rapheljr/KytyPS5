@@ -945,9 +945,10 @@ if(BUILD_TESTING)
 	add_kyty_full_emulator_test(arm64_guest_jit_backend_tests "${KYTY_TESTS_DIR}/Arm64GuestJitBackendTests.cpp")
 	add_kyty_full_emulator_test(jit_profiler_tests "${KYTY_TESTS_DIR}/JitProfilerTests.cpp")
 	add_kyty_full_emulator_test(commercial_game_validation_tests "${KYTY_TESTS_DIR}/CommercialGameValidationTests.cpp")
+	add_kyty_full_emulator_test(self_parser_tests "${KYTY_TESTS_DIR}/SelfParserTests.cpp")
 
 	if(APPLE)
-		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests)
+		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests)
 			add_custom_command(TARGET ${jit_test} POST_BUILD
 				COMMAND codesign -s - --force --options runtime
 					--entitlements "${KYTY_SOURCE_DIR}/macos_jit.entitlements"
