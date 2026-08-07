@@ -381,6 +381,7 @@ if(LINUX)
 	if(KYTY_LZMA_LIBRARY)
 		list(APPEND kyty_emulator_link_libraries ${KYTY_LZMA_LIBRARY})
 	endif()
+endif()
 set(inc_headers
 	${KYTY_SOURCE_DIR}
 	${KYTY_THIRD_PARTY_DIR}/SDL2/include
