@@ -311,10 +311,8 @@ if (KYTY_CLANG_CL)
 	set_source_files_properties(${kyty_emulator_src} PROPERTIES COMPILE_FLAGS "-Wno-pragma-pack -Wno-deprecated-declarations -D_TIMESPEC_DEFINED")
 endif()
 
-<<<<<<< HEAD
 set(kyty_emulator_link_libraries common Vulkan::Headers spirv-tools-opt spirv-tools SDL2-static imgui xxhash FFmpeg::ffmpeg fmt::fmt nlohmann_json::nlohmann_json LibAtrac9 kyty_git_version Zydis::Zydis xbyak::xbyak)
 
-# Linux system libraries required by the static FFmpeg archive.
 if(APPLE)
 	find_library(KYTY_METAL_LIB Metal)
 	find_library(KYTY_FOUNDATION_LIB Foundation)
@@ -366,15 +364,6 @@ if(APPLE)
 		list(APPEND kyty_emulator_link_libraries ${KYTY_COREHAPTICS_LIB})
 	endif()
 endif()
-
-
-
->>>>>>> 9e9724d (feat(recompiler): implement Phase M Native x86-64 to ARM64 Dynamic Recompiler)
-=======
-set(kyty_emulator_link_libraries common Vulkan::Headers spirv-tools-opt spirv-tools SDL2-static imgui xxhash FFmpeg::ffmpeg fmt::fmt nlohmann_json::nlohmann_json LibAtrac9 kyty_git_version)
-
-# Linux system libraries required by the static FFmpeg archive.
->>>>>>> 0496914 (feat(compat): Implement Commercial PS5 Subsystem Validator & Multi-Commit Regression Dashboard)
 if(LINUX)
 	find_package(Threads REQUIRED)
 	list(APPEND kyty_emulator_link_libraries m ${CMAKE_DL_LIBS} Threads::Threads)
@@ -392,9 +381,6 @@ if(LINUX)
 	if(KYTY_LZMA_LIBRARY)
 		list(APPEND kyty_emulator_link_libraries ${KYTY_LZMA_LIBRARY})
 	endif()
-endif()
-
-<<<<<<< HEAD
 set(inc_headers
 	${KYTY_SOURCE_DIR}
 	${KYTY_THIRD_PARTY_DIR}/SDL2/include
@@ -818,7 +804,6 @@ if(BUILD_TESTING)
 			COMMAND $<TARGET_FILE:shader_recompiler_compute_tests> --buffer-cache-range-only)
 	endif()
 
-<<<<<<< HEAD
 	if(APPLE)
 		set(KYTY_VULKAN_TESTS
 			shader_recompiler_compute
@@ -852,10 +837,6 @@ if(BUILD_TESTING)
 		graphic_backend_tests
 		ime_dialog_tests
 		metal_resource_tests
-=======
-	add_custom_target(kyty_tests DEPENDS
-		ime_dialog_tests
->>>>>>> 0496914 (feat(compat): Implement Commercial PS5 Subsystem Validator & Multi-Commit Regression Dashboard)
 		shader_cfg_tests
 		scalar_provenance_tests
 		image_page_table_tests
