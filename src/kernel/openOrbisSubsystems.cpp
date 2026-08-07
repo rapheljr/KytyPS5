@@ -10,6 +10,8 @@
 #include "kernel/openOrbisSubsystems.h"
 
 #include "common/logging/log.h"
+#include "graphics/presentation/videoOut.h"
+#include "libs/agc.h"
 
 #include <cstring>
 
@@ -339,16 +341,23 @@ int64_t OpenOrbisSubsystemHub::StubVideoOutSubmitFlip(const SubsystemCallCtx& ct
     LOGF("[SubsystemHub] sceVideoOutSubmitFlip(handle=%llu, fb_idx=%llu)\n",
          (unsigned long long)ctx.arg0, (unsigned long long)ctx.arg1);
     m_telemetry.RecordPm4Packet();
-    return SCE_OK;
+    return Libs::VideoOut::VideoOutSubmitFlip(
+        static_cast<int>(ctx.arg0), static_cast<int>(ctx.arg1), 0, 0);
 }
 int64_t OpenOrbisSubsystemHub::StubVideoOutClose(const SubsystemCallCtx& ctx) {
     LOGF("[SubsystemHub] sceVideoOutClose(handle=%llu)\n", (unsigned long long)ctx.arg0);
     return SCE_OK;
 }
 int64_t OpenOrbisSubsystemHub::StubGnmSubmitCommandBuffers(const SubsystemCallCtx& ctx) {
-    LOGF("[SubsystemHub] sceGnmSubmitCommandBuffers(numCBs=%llu)\n",
-         (unsigned long long)ctx.arg0);
+    LOGF("[SubsystemHub] sceGnmSubmitCommandBuffers(numCBs=%llu, dcbGpuAddrs=0x%llx, dcbSizes=0x%llx)\n",
+         (unsigned long long)ctx.arg0, (unsigned long long)ctx.arg1, (unsigned long long)ctx.arg2);
     m_telemetry.RecordPm4Packet();
+    uint32_t count = static_cast<uint32_t>(ctx.arg0);
+    auto* const* dcb_addrs = reinterpret_cast<uint32_t* const*>(ctx.arg1);
+    const auto* dcb_sizes = reinterpret_cast<const uint32_t*>(ctx.arg2);
+    if (count > 0 && dcb_addrs != nullptr && dcb_sizes != nullptr) {
+        Libs::Graphics::Gen5Driver::GraphicsDriverSubmitMultiDcbs(dcb_addrs, dcb_sizes, count);
+    }
     return SCE_OK;
 }
 int64_t OpenOrbisSubsystemHub::StubGnmFlushGarlic(const SubsystemCallCtx& /*ctx*/) {

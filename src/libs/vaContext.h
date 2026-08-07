@@ -2,7 +2,14 @@
 #define EMULATOR_INCLUDE_EMULATOR_LIBS_VACONTEXT_H_
 
 #include <cstddef>
+#include <cstdint>
+
+#if defined(_M_X64) || defined(__x86_64__)
 #include <xmmintrin.h>
+#else
+#include <arm_neon.h>
+typedef float32x4_t __m128;
+#endif
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define VA_ARGS                                                                                    \

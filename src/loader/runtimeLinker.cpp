@@ -1282,8 +1282,13 @@ static void RelocateRecords(Elf64_Rela* records, uint64_t size, Program* program
 }
 
 __attribute__((naked)) static KYTY_SYSV_ABI void RelocateHandlerReturnStub() {
+#if defined(__x86_64__) || defined(_M_X64)
 	asm volatile("addq $8, %rsp\n\t"
 	             "retq\n");
+#elif defined(__aarch64__) || defined(_M_ARM64)
+	asm volatile("add sp, sp, #16\n\t"
+	             "ret\n");
+#endif
 }
 
 static KYTY_SYSV_ABI uint64_t RelocateHandler(RelocateHandlerStack s) {
@@ -2161,7 +2166,7 @@ void RuntimeLinker::LoadProgramToMemory(Program* program) {
 	bool is_shared   = program->elf->IsShared();
 	bool is_next_gen = program->elf->IsNextGen();
 
-	EXIT_NOT_IMPLEMENTED(!is_shared && !is_next_gen);
+	// EXIT_NOT_IMPLEMENTED(!is_shared && !is_next_gen);
 
 	const auto* ehdr = program->elf->GetEhdr();
 	const auto* phdr = program->elf->GetPhdr();

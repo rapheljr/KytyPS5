@@ -465,7 +465,11 @@ static KYTY_SYSV_ABI void stack_chk_fail() {
 	PRINT_NAME();
 
 	uint64_t rsp = 0;
+#if defined(__x86_64__) || defined(_M_X64)
 	asm volatile("movq %%rsp, %0" : "=r"(rsp));
+#elif defined(__aarch64__) || defined(_M_ARM64)
+	asm volatile("mov %0, sp" : "=r"(rsp));
+#endif
 	dump_stack_chk_fail_context(reinterpret_cast<uint64_t>(__builtin_return_address(0)), rsp);
 
 	EXIT("stack fail!!!");
@@ -723,6 +727,7 @@ static SignalUcontext CreateCurrentGuestCallSignalUcontext(uint64_t rip) {
 	uint64_t r13 = 0;
 	uint64_t r14 = 0;
 	uint64_t r15 = 0;
+#if defined(__x86_64__) || defined(_M_X64)
 	asm volatile("movq %%rsp, %0\n\t"
 	             "movq %%rbp, %1\n\t"
 	             "movq %%rbx, %2\n\t"
@@ -733,6 +738,7 @@ static SignalUcontext CreateCurrentGuestCallSignalUcontext(uint64_t rip) {
 	             : "=r"(rsp), "=r"(rbp), "=r"(rbx), "=r"(r12), "=r"(r13), "=r"(r14), "=r"(r15)
 	             :
 	             : "memory");
+#endif
 
 	ctx.uc_mcontext.mc_rax = 0;
 	ctx.uc_mcontext.mc_rcx = 0;

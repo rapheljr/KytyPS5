@@ -834,6 +834,15 @@ static void WindowCreate(WindowContext& context) {
 	if (std::getenv("KYTY_BORDERLESS") != nullptr) {
 		window_flags |= static_cast<uint32_t>(SDL_WINDOW_BORDERLESS);
 	}
+	std::string abs_mvk = (std::filesystem::current_path() / "libMoltenVK.dylib").string();
+	if (std::getenv("SDL_VULKAN_LIBRARY") == nullptr) {
+		setenv("SDL_VULKAN_LIBRARY", abs_mvk.c_str(), 1);
+	}
+	if (SDL_Vulkan_LoadLibrary(abs_mvk.c_str()) != 0 &&
+	    SDL_Vulkan_LoadLibrary("./libMoltenVK.dylib") != 0 &&
+	    SDL_Vulkan_LoadLibrary("/opt/homebrew/lib/libMoltenVK.dylib") != 0) {
+		SDL_Vulkan_LoadLibrary("libMoltenVK.dylib");
+	}
 #endif
 	context.window = SDL_CreateWindow(KYTY_SDL_WINDOW_CAPTION, KYTY_SDL_WINDOWPOS_CENTERED,
 	                                  KYTY_SDL_WINDOWPOS_CENTERED, width, height, window_flags);

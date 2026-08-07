@@ -952,9 +952,10 @@ if(BUILD_TESTING)
 	add_kyty_full_emulator_test(save_data_tests "${KYTY_TESTS_DIR}/SaveDataTests.cpp")
 	add_kyty_full_emulator_test(gnm_pm4_parser_tests "${KYTY_TESTS_DIR}/GnmPm4ParserTests.cpp")
 	add_kyty_full_emulator_test(metal_pipeline_cache_tests "${KYTY_TESTS_DIR}/MetalPipelineCacheTests.cpp")
+	add_kyty_full_emulator_test(metal_runtime_integration_tests "${KYTY_TESTS_DIR}/MetalRuntimeIntegrationTests.cpp")
 
 	if(APPLE)
-		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests open_orbis_relocation_tests ps5_pkg_parser_tests radix_code_cache_tests save_data_tests gnm_pm4_parser_tests metal_pipeline_cache_tests)
+		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests open_orbis_relocation_tests ps5_pkg_parser_tests radix_code_cache_tests save_data_tests gnm_pm4_parser_tests metal_pipeline_cache_tests metal_runtime_integration_tests)
 			add_custom_command(TARGET ${jit_test} POST_BUILD
 				COMMAND codesign -s - --force --options runtime
 					--entitlements "${KYTY_SOURCE_DIR}/macos_jit.entitlements"
