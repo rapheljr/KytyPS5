@@ -566,8 +566,6 @@ if(NOT KYTY_CLANG_CL)
 	endforeach()
 endif()
 
-=======
->>>>>>> 0496914 (feat(compat): Implement Commercial PS5 Subsystem Validator & Multi-Commit Regression Dashboard)
 set(inc_headers
 	${KYTY_SOURCE_DIR}
 	${KYTY_THIRD_PARTY_DIR}/SDL2/include
