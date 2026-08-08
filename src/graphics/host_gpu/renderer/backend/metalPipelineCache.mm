@@ -218,7 +218,12 @@ MetalComputePipelineEntry* MetalPipelineCache::CompileComputePipeline(const Meta
 	if (msl_cs.empty()) {
 		msl_cs = "#include <metal_stdlib>\n"
 		         "using namespace metal;\n"
-		         "kernel void compute_main(uint id [[thread_position_in_grid]]) {}\n";
+		         "kernel void compute_main(uint3 tid [[thread_position_in_threadgroup]],\n"
+		         "                         uint3 gid [[threadgroup_position_in_grid]],\n"
+		         "                         uint  tidx [[thread_index_in_threadgroup]],\n"
+		         "                         threadgroup float* lds [[threadgroup(0)]]) {\n"
+		         "    threadgroup_barrier(mem_flags::mem_threadgroup);\n"
+		         "}\n";
 	}
 
 	NSString* cs_source        = [NSString stringWithUTF8String:msl_cs.c_str()];
