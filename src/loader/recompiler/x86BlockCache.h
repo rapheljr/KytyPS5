@@ -55,12 +55,18 @@ public:
 	void Invalidate(uint64_t guest_rip) noexcept;
 	void Clear() noexcept;
 
+	[[nodiscard]] uint32_t GetExecutionCount(uint64_t guest_rip) const noexcept;
+	[[nodiscard]] bool IsHotBlock(uint64_t guest_rip, uint32_t threshold = 50) const noexcept;
+	bool ChainDirectBranch(uint8_t* patch_site, const void* target_host_addr) noexcept;
+
 	[[nodiscard]] const BlockCacheStats& GetStats() const noexcept { return m_stats; }
 
 private:
 	struct HashEntry {
-		std::atomic<uint64_t>           guest_rip{0};
+		std::atomic<uint64_t>          guest_rip{0};
 		std::atomic<CompiledBlockFunc> host_func{nullptr};
+		std::atomic<uint32_t>          exec_count{0};
+		std::atomic<bool>              is_chained{false};
 	};
 
 	size_t m_capacity_mask = 0;

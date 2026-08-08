@@ -56,8 +56,13 @@ public:
 	/// Returns the Phase H Metal resource hazard tracker.
 	[[nodiscard]] HostGpu::Metal::MetalResourceHazardTracker* GetHazardTracker() noexcept { return m_hazard_tracker.get(); }
 
+	/// MTLCaptureManager GPU frame capture hooks for Xcode GPU Tools and Instruments.
+	bool StartCapture(const char* capture_path = nullptr) noexcept;
+	void StopCapture() noexcept;
+
 private:
 	bool                                m_initialized   = false;
+	bool                                m_capturing     = false;
 	void*                               m_device        = nullptr; // id<MTLDevice>
 	void*                               m_command_queue = nullptr; // id<MTLCommandQueue>
 	std::unique_ptr<MetalCommandQueue>         m_metal_queue;

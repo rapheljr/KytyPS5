@@ -180,4 +180,58 @@ void MetalGraphicBackend::WaitIdle() {
 	}
 }
 
+bool MetalGraphicBackend::StartCapture(const char* capture_path) noexcept {
+#if defined(__APPLE__)
+	if (!m_initialized || m_capturing || m_device == nullptr) {
+		return false;
+	}
+
+	MTLCaptureManager* mgr = [MTLCaptureManager sharedCaptureManager];
+	if (!mgr || ![mgr supportsDestination:MTLCaptureDestinationGPUTraceDocument]) {
+		// Fallback to Xcode/developer tools capture if file destination is unsupported
+		MTLCaptureDescriptor* desc = [[MTLCaptureDescriptor alloc] init];
+		desc.captureObject = (__bridge id<MTLDevice>)m_device;
+		desc.destination   = MTLCaptureDestinationDeveloperTools;
+		NSError* err = nil;
+		if ([mgr startCaptureWithDescriptor:desc error:&err]) {
+			m_capturing = true;
+			return true;
+		}
+		return false;
+	}
+
+	MTLCaptureDescriptor* desc = [[MTLCaptureDescriptor alloc] init];
+	desc.captureObject = (__bridge id<MTLDevice>)m_device;
+	desc.destination   = MTLCaptureDestinationGPUTraceDocument;
+
+	if (capture_path != nullptr) {
+		desc.outputURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:capture_path]];
+	} else {
+		NSString* default_path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"kyty_metal_capture.gputrace"];
+		desc.outputURL = [NSURL fileURLWithPath:default_path];
+	}
+
+	NSError* err = nil;
+	if ([mgr startCaptureWithDescriptor:desc error:&err]) {
+		m_capturing = true;
+		return true;
+	}
+#else
+	(void)capture_path;
+#endif
+	return false;
+}
+
+void MetalGraphicBackend::StopCapture() noexcept {
+#if defined(__APPLE__)
+	if (m_capturing) {
+		MTLCaptureManager* mgr = [MTLCaptureManager sharedCaptureManager];
+		if (mgr) {
+			[mgr stopCapture];
+		}
+		m_capturing = false;
+	}
+#endif
+}
+
 } // namespace Libs::Graphics

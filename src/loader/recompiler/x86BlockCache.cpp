@@ -11,6 +11,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "loader/recompiler/blockLinker.h"
+
 namespace Loader::Recompiler {
 
 Arm64CodeCache::Arm64CodeCache(size_t capacity_bytes) : m_capacity_bytes(capacity_bytes) {
@@ -87,6 +89,8 @@ void X86BlockCache::Insert(uint64_t guest_rip, CompiledBlockFunc host_func) noex
 	size_t slot = (guest_rip ^ (guest_rip >> 12u)) & m_capacity_mask;
 	m_table[slot].guest_rip.store(guest_rip, std::memory_order_release);
 	m_table[slot].host_func.store(host_func, std::memory_order_release);
+	m_table[slot].exec_count.store(1, std::memory_order_release);
+	m_table[slot].is_chained.store(false, std::memory_order_release);
 	m_stats.blocks_compiled.fetch_add(1, std::memory_order_relaxed);
 }
 
@@ -98,6 +102,7 @@ CompiledBlockFunc X86BlockCache::Lookup(uint64_t guest_rip) noexcept {
 
 	if (cached_rip == guest_rip) {
 		m_stats.cache_hits.fetch_add(1, std::memory_order_relaxed);
+		m_table[slot].exec_count.fetch_add(1, std::memory_order_relaxed);
 		return m_table[slot].host_func.load(std::memory_order_relaxed);
 	}
 
@@ -105,6 +110,23 @@ CompiledBlockFunc X86BlockCache::Lookup(uint64_t guest_rip) noexcept {
 	return nullptr;
 }
 
+uint32_t X86BlockCache::GetExecutionCount(uint64_t guest_rip) const noexcept {
+	if (!m_table || guest_rip == 0) return 0;
+	size_t slot = (guest_rip ^ (guest_rip >> 12u)) & m_capacity_mask;
+	if (m_table[slot].guest_rip.load(std::memory_order_relaxed) == guest_rip) {
+		return m_table[slot].exec_count.load(std::memory_order_relaxed);
+	}
+	return 0;
+}
+
+bool X86BlockCache::IsHotBlock(uint64_t guest_rip, uint32_t threshold) const noexcept {
+	return GetExecutionCount(guest_rip) >= threshold;
+}
+
+bool X86BlockCache::ChainDirectBranch(uint8_t* patch_site, const void* target_host_addr) noexcept {
+	if (!patch_site || !target_host_addr) return false;
+	return BlockLinker::PatchBranchTarget(patch_site, target_host_addr, LinkType::DirectJump);
+}
 
 void X86BlockCache::Invalidate(uint64_t guest_rip) noexcept {
 	if (!m_table || guest_rip == 0) return;
@@ -113,6 +135,8 @@ void X86BlockCache::Invalidate(uint64_t guest_rip) noexcept {
 	if (m_table[slot].guest_rip.load(std::memory_order_relaxed) == guest_rip) {
 		m_table[slot].guest_rip.store(0, std::memory_order_release);
 		m_table[slot].host_func.store(nullptr, std::memory_order_release);
+		m_table[slot].exec_count.store(0, std::memory_order_release);
+		m_table[slot].is_chained.store(false, std::memory_order_release);
 	}
 }
 
@@ -122,6 +146,8 @@ void X86BlockCache::Clear() noexcept {
 	for (size_t i = 0; i <= m_capacity_mask; ++i) {
 		m_table[i].guest_rip.store(0, std::memory_order_relaxed);
 		m_table[i].host_func.store(nullptr, std::memory_order_relaxed);
+		m_table[i].exec_count.store(0, std::memory_order_relaxed);
+		m_table[i].is_chained.store(false, std::memory_order_relaxed);
 	}
 }
 
