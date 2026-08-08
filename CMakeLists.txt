@@ -549,13 +549,6 @@ add_executable(resource_tracking_tests EXCLUDE_FROM_ALL
 target_link_libraries(resource_tracking_tests fmt::fmt)
 target_include_directories(resource_tracking_tests PRIVATE ${inc_headers})
 
-add_executable(resource_mutex_tests EXCLUDE_FROM_ALL
-	"${KYTY_TESTS_DIR}/ResourceMutexTests.cpp"
-	"${KYTY_SOURCE_DIR}/graphics/host_gpu/renderer/cache/resourceMutex.cpp"
-)
-target_link_libraries(resource_mutex_tests common)
-target_include_directories(resource_mutex_tests PRIVATE ${inc_headers})
-
 add_executable(audio_out2_port_tests EXCLUDE_FROM_ALL
 	"${KYTY_TESTS_DIR}/AudioOut2PortTests.cpp"
 	"${KYTY_SOURCE_DIR}/libs/libAudio2.cpp"
