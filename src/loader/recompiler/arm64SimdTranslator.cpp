@@ -113,6 +113,10 @@ bool Arm64SimdTranslator::TranslateAVX(X86Opcode op, Arm64FpReg dst, Arm64FpReg 
 		case X86Opcode::Vmulps:    m_fp.EmitVmul4S(dst, src1, src2); return true;
 		case X86Opcode::Vdivps:    m_fp.EmitVdiv4S(dst, src1, src2); return true;
 		case X86Opcode::Vpxor:     m_fp.EmitVeor16B(dst, src1, src2); return true;
+		case X86Opcode::Pand:      m_fp.EmitVand16B(dst, src1, src2); return true;
+		case X86Opcode::Por:       m_fp.EmitVorr16B(dst, src1, src2); return true;
+		case X86Opcode::Pmaxsd:    m_fp.EmitSmax4S(dst, src1, src2); return true;
+		case X86Opcode::Pminsd:    m_fp.EmitSmin4S(dst, src1, src2); return true;
 		// VPERMILPS -> use TBL (table-lookup based lane permute)
 		case X86Opcode::Vex2Byte:
 		case X86Opcode::Vex3Byte:  m_fp.EmitTbl16B(dst, src1, src2); return true;
@@ -124,6 +128,10 @@ bool Arm64SimdTranslator::TranslateAVX(X86Opcode op, Arm64FpReg dst, Arm64FpReg 
 bool Arm64SimdTranslator::TranslateAVX2(X86Opcode op, Arm64FpReg dst, Arm64FpReg src1, Arm64FpReg src2) {
 	switch (op) {
 		case X86Opcode::Vpxor:     m_fp.EmitVeor16B(dst, src1, src2); return true;
+		case X86Opcode::Pand:      m_fp.EmitVand16B(dst, src1, src2); return true;
+		case X86Opcode::Por:       m_fp.EmitVorr16B(dst, src1, src2); return true;
+		case X86Opcode::Paddd:     m_fp.EmitVadd4S(dst, src1, src2); return true;
+		case X86Opcode::Psubd:     m_fp.EmitVsub4S(dst, src1, src2); return true;
 		// VPCMPEQD / VPCMPGTD -> CMEQ.4S / CMGT.4S
 		case X86Opcode::Pcmpeqd:   m_fp.EmitCmeq4S(dst, src1, src2); return true;
 		case X86Opcode::Pcmpgtd:   m_fp.EmitCmgt4S(dst, src1, src2); return true;

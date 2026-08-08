@@ -18,6 +18,7 @@
 #include "kernel/pthread.h"
 #include "loader/elf.h"
 #include "loader/gamePatch.h"
+#include "loader/jit.h"
 #include "loader/ps5JitDispatchLoop.h"
 #include "loader/redZonePatcher.h"
 #include "loader/recompiler/x86RuntimeBridge.h"

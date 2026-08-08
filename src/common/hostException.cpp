@@ -411,31 +411,33 @@ static void SignalHandler(int signal_number, siginfo_t* signal_info, void* nativ
 	FilterScope filter_scope;
 
 	auto* context = static_cast<ucontext_t*>(native_context);
-	auto* gregs   = context->uc_mcontext.gregs;
 
 	ExceptionInfo info {};
+	info.native_code    = static_cast<uint32_t>(signal_number);
+	info.native_context = context;
+
+#if defined(__APPLE__) && (defined(__aarch64__) || defined(__arm64__))
+	auto* mc = context->uc_mcontext;
+	info.exception_address = mc->__ss.__pc;
+	info.rsp = mc->__ss.__sp;
+	info.rbp = mc->__ss.__fp;
+	info.rax = mc->__ss.__x[0];
+	info.rbx = mc->__ss.__x[19];
+	info.rcx = mc->__ss.__x[1];
+	info.rdx = mc->__ss.__x[2];
+	info.rsi = mc->__ss.__x[3];
+	info.rdi = mc->__ss.__x[4];
+	info.r8  = mc->__ss.__x[5];
+	info.r9  = mc->__ss.__x[6];
+	info.r10 = mc->__ss.__x[7];
+	info.r11 = mc->__ss.__x[8];
+	info.r12 = mc->__ss.__x[20];
+	info.r13 = mc->__ss.__x[21];
+	info.r14 = mc->__ss.__x[22];
+	info.r15 = mc->__ss.__x[23];
+#else
+	auto* gregs = context->uc_mcontext.gregs;
 	info.exception_address = static_cast<uint64_t>(gregs[REG_RIP]);
-	info.native_code       = static_cast<uint32_t>(signal_number);
-	info.native_context    = context;
-
-	if (signal_number == SIGSEGV || signal_number == SIGBUS) {
-		info.type             = ExceptionType::AccessViolation;
-		const auto error_code = static_cast<uint64_t>(gregs[REG_ERR]);
-		if ((error_code & PAGE_FAULT_ERROR_INSTRUCTION) != 0) {
-			info.access_violation_type = AccessViolationType::Execute;
-		} else if ((error_code & PAGE_FAULT_ERROR_WRITE) != 0) {
-			info.access_violation_type = AccessViolationType::Write;
-		} else {
-			info.access_violation_type = AccessViolationType::Read;
-		}
-		info.access_violation_vaddr = reinterpret_cast<uint64_t>(signal_info->si_addr);
-	} else if (signal_number == SIGILL) {
-		info.type = ExceptionType::IllegalInstruction;
-	} else {
-		ChainToDefault(signal_number);
-		return;
-	}
-
 	info.rax = static_cast<uint64_t>(gregs[REG_RAX]);
 	info.rbx = static_cast<uint64_t>(gregs[REG_RBX]);
 	info.rcx = static_cast<uint64_t>(gregs[REG_RCX]);
@@ -452,6 +454,18 @@ static void SignalHandler(int signal_number, siginfo_t* signal_info, void* nativ
 	info.r13 = static_cast<uint64_t>(gregs[REG_R13]);
 	info.r14 = static_cast<uint64_t>(gregs[REG_R14]);
 	info.r15 = static_cast<uint64_t>(gregs[REG_R15]);
+#endif
+
+	if (signal_number == SIGSEGV || signal_number == SIGBUS) {
+		info.type = ExceptionType::AccessViolation;
+		info.access_violation_type = AccessViolationType::Read;
+		info.access_violation_vaddr = reinterpret_cast<uint64_t>(signal_info->si_addr);
+	} else if (signal_number == SIGILL) {
+		info.type = ExceptionType::IllegalInstruction;
+	} else {
+		ChainToDefault(signal_number);
+		return;
+	}
 
 	const auto handler = LoadInstalledHandler();
 
