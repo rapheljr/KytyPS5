@@ -18,8 +18,9 @@
 #include "kernel/pthread.h"
 #include "loader/elf.h"
 #include "loader/gamePatch.h"
-#include "loader/jit.h"
+#include "loader/ps5JitDispatchLoop.h"
 #include "loader/redZonePatcher.h"
+#include "loader/recompiler/x86RuntimeBridge.h"
 #include "loader/symbolDatabase.h"
 #include "loader/x64InstructionEmulator.h"
 
@@ -490,6 +491,19 @@ static KYTY_SYSV_ABI void RunEntry(uint64_t addr, EntryParams* params, atexit_fu
 	               "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10",
 	               "xmm11", "xmm12", "xmm13", "xmm14", "xmm15");
 #endif
+#elif defined(__aarch64__) || defined(__arm64__)
+	(void)stack_top;
+	(void)params;
+	(void)atexit_func;
+	Recompiler::X86RuntimeBridge bridge(64 * 1024 * 1024);
+	Recompiler::JitTelemetryCollector telemetry;
+	Ps5JitDispatchLoop dispatch_loop(bridge, telemetry);
+	OpenOrbisLoadResult load_res{};
+	load_res.entry_vaddr = addr;
+	load_res.base_vaddr  = addr & ~0xFFFFFULL;
+	load_res.image_size  = 64 * 1024 * 1024;
+	dispatch_loop.SetupFromLoadResult(load_res);
+	dispatch_loop.RunToCompletion();
 #else
 	(void)stack_top;
 	reinterpret_cast<entry_func_t>(addr)(params, atexit_func);
