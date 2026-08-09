@@ -55,6 +55,8 @@ elseif(CPUINFO_TARGET_PROC MATCHES "^(armv[5-8].*|aarch64|arm64)$")
 			list(APPEND cpuinfo_src src/arm/linux/aarch64-isa.c)
 		endif()
 		
+	elseif(APPLE)
+		list(APPEND cpuinfo_src src/arm/mach/init.c src/mach/topology.c)
 	endif()
 	
 	if(ANDROID)

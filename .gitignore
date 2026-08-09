@@ -4,4 +4,8 @@
 build/
 _Build/vscode-clang/
 _Build/
+_Build_arm64/
 cmake-build-debug/
+test_arm64_jit
+test_relocations
+test_jit_metal

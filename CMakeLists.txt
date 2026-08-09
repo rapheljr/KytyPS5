@@ -176,6 +176,7 @@ endif()
 option(KYTY_BUILD_LAUNCHER "Build Qt launcher" ON)
 
 config_compiler_and_linker()
+add_compile_definitions(JSON_NOEXCEPTION)
 
 add_subdirectory("${KYTY_THIRD_PARTY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/3rdparty")
 add_subdirectory("${KYTY_SOURCE_DIR}/common" "${CMAKE_CURRENT_BINARY_DIR}/common")
@@ -463,10 +464,19 @@ function(add_kyty_full_emulator_test target source)
 		target_link_libraries(${target} onecore)
 		add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${KYTY_THIRD_PARTY_DIR}/winpthread/bin/libwinpthread-1.dll" $<TARGET_FILE_DIR:${target}>/libwinpthread-1.dll)
 	endif()
+	# On Apple, SDL2 uses a dynamic API dispatch table whose bootstrap objects
+	# (CoreAudio, HIDAPI, GL, etc.) are not pulled in by the linker unless the
+	# archive is force-loaded. Without this, tests that don't call SDL directly
+	# will fail to link with "symbol(s) not found for architecture arm64".
+	if (APPLE)
+		target_link_options(${target} PRIVATE
+			-Wl,-force_load,$<TARGET_FILE:SDL2-static>)
+	endif()
 	# The macOS x86_64 guest address space needs its .zerofill segments anchored
 	# by linker flags, or the kernel kills the binary on load (posix_spawn EIO).
 	configure_macos_guest_address_space(${target})
 endfunction()
+
 
 function(configure_macos_guest_address_space target)
 	if(APPLE AND (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR
@@ -785,9 +795,11 @@ if(BUILD_TESTING)
 	add_kyty_full_emulator_test(gnm_pm4_parser_tests "${KYTY_TESTS_DIR}/GnmPm4ParserTests.cpp")
 	add_kyty_full_emulator_test(metal_pipeline_cache_tests "${KYTY_TESTS_DIR}/MetalPipelineCacheTests.cpp")
 	add_kyty_full_emulator_test(metal_runtime_integration_tests "${KYTY_TESTS_DIR}/MetalRuntimeIntegrationTests.cpp")
+	add_kyty_full_emulator_test(jit_execution_verification_tests "${KYTY_TESTS_DIR}/JitExecutionVerificationTests.cpp")
+	add_kyty_full_emulator_test(jit_to_metal_end_to_end_tests "${KYTY_TESTS_DIR}/JitToMetalEndToEndTests.mm")
 
 	if(APPLE)
-		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests open_orbis_relocation_tests ps5_pkg_parser_tests radix_code_cache_tests save_data_tests gnm_pm4_parser_tests metal_pipeline_cache_tests metal_runtime_integration_tests)
+		foreach(jit_test ps5_jit_emulator_integration_tests arm64_guest_jit_backend_tests jit_profiler_tests commercial_game_validation_tests self_parser_tests open_orbis_relocation_tests ps5_pkg_parser_tests radix_code_cache_tests save_data_tests gnm_pm4_parser_tests metal_pipeline_cache_tests metal_runtime_integration_tests jit_execution_verification_tests jit_to_metal_end_to_end_tests)
 			add_custom_command(TARGET ${jit_test} POST_BUILD
 				COMMAND codesign -s - --force --options runtime
 					--entitlements "${KYTY_SOURCE_DIR}/macos_jit.entitlements"
