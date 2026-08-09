@@ -15,11 +15,26 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <set>
 #include <string>
 #include <vector>
 
 namespace Loader {
+
+// ─── Dynamic symbol descriptor ───────────────────────────────────────────────
+
+struct DynamicSymbolInfo {
+    std::string name;
+    uint64_t    value = 0;
+    uint64_t    size  = 0;
+    uint16_t    shndx = 0;
+    uint8_t     type  = 0;
+    uint8_t     bind  = 0;
+    bool        is_undefined = false;
+};
+
+using SymbolResolverFn = std::function<uint64_t(const std::string& name, const std::string& library)>;
 
 // ─── SCE-specific ELF dynamic tag extensions ────────────────────────────────
 
@@ -93,6 +108,9 @@ struct OpenOrbisLoadResult {
     std::vector<std::string> import_libs;
     std::vector<std::string> export_libs;
 
+    std::vector<DynamicSymbolInfo> symbols;
+    std::vector<std::string>       unresolved_symbols;
+
     OrbisSubsystem detected_subsystems = OrbisSubsystem::None;
 
     std::vector<OrbisLoadedSegment> segments;
@@ -112,14 +130,17 @@ public:
 
     /// Load a homebrew ELF binary from @p elf_path.
     /// On success result.success == true and result.entry_vaddr is valid.
-    [[nodiscard]] OpenOrbisLoadResult Load(const std::filesystem::path& elf_path);
+    [[nodiscard]] OpenOrbisLoadResult Load(const std::filesystem::path& elf_path,
+                                           SymbolResolverFn resolver = nullptr);
 
     /// Load from an in-memory ELF image (for tests / inline stubs).
     [[nodiscard]] OpenOrbisLoadResult LoadFromMemory(const uint8_t* data, size_t size,
-                                                     const std::string& label = "memory");
+                                                     const std::string& label = "memory",
+                                                     SymbolResolverFn resolver = nullptr);
 
     /// Process relocation table entries (R_X86_64_RELATIVE, R_X86_64_JUMP_SLOT, R_X86_64_GLOB_DAT).
-    static bool ProcessRelocations(const uint8_t* data, size_t size, OpenOrbisLoadResult& out);
+    static bool ProcessRelocations(const uint8_t* data, size_t size, OpenOrbisLoadResult& out,
+                                   SymbolResolverFn resolver = nullptr);
 
     /// Return the last loaded result (if any).
     [[nodiscard]] const OpenOrbisLoadResult& GetLastResult() const noexcept {

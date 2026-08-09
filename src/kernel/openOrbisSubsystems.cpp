@@ -139,6 +139,17 @@ int64_t OpenOrbisSubsystemHub::Dispatch(const std::string& name,
     return (*fn)(ctx);
 }
 
+Loader::SymbolResolverFn OpenOrbisSubsystemHub::CreateSymbolResolver(uint64_t stub_base_vaddr) {
+    return [this, stub_base_vaddr](const std::string& name, const std::string& /*library*/) -> uint64_t {
+        if (FindStub(name) != nullptr) {
+            std::hash<std::string> hasher;
+            uint64_t hash_offset = ((hasher(name) & 0x0000FFFF) + 1) * 16;
+            return stub_base_vaddr + hash_offset;
+        }
+        return 0;
+    };
+}
+
 // ─── Filesystem stubs ─────────────────────────────────────────────────────────
 
 int64_t OpenOrbisSubsystemHub::StubKernelOpen(const SubsystemCallCtx& /*ctx*/) {

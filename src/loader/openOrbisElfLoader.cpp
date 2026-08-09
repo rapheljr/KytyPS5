@@ -66,7 +66,25 @@ struct Elf64_Phdr {
 
 struct Elf64_Dyn {
     int64_t  d_tag;
-    uint64_t d_val; // or d_ptr
+    union {
+        uint64_t d_val;
+        uint64_t d_ptr;
+    } d_un;
+};
+
+struct Elf64_Sym {
+    uint32_t st_name;
+    uint8_t  st_info;
+    uint8_t  st_other;
+    uint16_t st_shndx;
+    uint64_t st_value;
+    uint64_t st_size;
+};
+
+struct Elf64_Rela {
+    uint64_t r_offset;
+    uint64_t r_info;
+    int64_t  r_addend;
 };
 #pragma pack(pop)
 
@@ -123,7 +141,8 @@ static const SubsystemKeyword kSubsystemKeywords[] = {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-OpenOrbisLoadResult OpenOrbisElfLoader::Load(const std::filesystem::path& elf_path) {
+OpenOrbisLoadResult OpenOrbisElfLoader::Load(const std::filesystem::path& elf_path,
+                                             SymbolResolverFn resolver) {
     OpenOrbisLoadResult result;
 
     if (!std::filesystem::exists(elf_path)) {
@@ -146,13 +165,14 @@ OpenOrbisLoadResult OpenOrbisElfLoader::Load(const std::filesystem::path& elf_pa
         return result;
     }
 
-    result = LoadFromMemory(data.data(), data.size(), elf_path.filename().string());
+    result = LoadFromMemory(data.data(), data.size(), elf_path.filename().string(), resolver);
     m_last_result = result;
     return result;
 }
 
 OpenOrbisLoadResult OpenOrbisElfLoader::LoadFromMemory(const uint8_t* data, size_t size,
-                                                        const std::string& label) {
+                                                      const std::string& label,
+                                                      SymbolResolverFn resolver) {
     OpenOrbisLoadResult result;
 
     if (!ParseElfHeader(data, size, result)) {
@@ -165,24 +185,27 @@ OpenOrbisLoadResult OpenOrbisElfLoader::LoadFromMemory(const uint8_t* data, size
         // Non-fatal; static ELFs may have no .dynamic
     }
 
-    ProcessRelocations(data, size, result);
+    ProcessRelocations(data, size, result, resolver);
 
     DetectSubsystems(result);
     result.module_name = label;
     result.success     = true;
 
-    LOGF("[OpenOrbisElfLoader] Loaded '%s': entry=0x%llx, base=0x%llx, size=0x%llx\n",
+    LOGF("[OpenOrbisElfLoader] Loaded '%s': entry=0x%llx, base=0x%llx, size=0x%llx (relocs=%u, resolved=%u)\n",
                   label.c_str(),
                   (unsigned long long)result.entry_vaddr,
                   (unsigned long long)result.base_vaddr,
-                  (unsigned long long)result.image_size);
+                  (unsigned long long)result.image_size,
+                  result.reloc_count,
+                  result.resolved_symbols_count);
 
     m_last_result = result;
     return result;
 }
 
 bool OpenOrbisElfLoader::ProcessRelocations(const uint8_t* data, size_t size,
-                                           OpenOrbisLoadResult& out) {
+                                           OpenOrbisLoadResult& out,
+                                           SymbolResolverFn resolver) {
     if (!data || size < sizeof(Elf64_Ehdr)) return false;
 
     const auto* hdr = reinterpret_cast<const Elf64_Ehdr*>(data);
@@ -207,6 +230,10 @@ bool OpenOrbisElfLoader::ProcessRelocations(const uint8_t* data, size_t size,
     uint64_t rela_size    = 0;
     uint64_t jmprel_vaddr = 0;
     uint64_t pltrel_size  = 0;
+    uint64_t symtab_vaddr = 0;
+    uint64_t syment_size  = sizeof(Elf64_Sym);
+    uint64_t strtab_vaddr = 0;
+    uint64_t strtab_size  = 0;
 
     const size_t entry_count = dyn_size / sizeof(Elf64_Dyn);
     for (size_t i = 0; i < entry_count; ++i) {
@@ -216,19 +243,138 @@ bool OpenOrbisElfLoader::ProcessRelocations(const uint8_t* data, size_t size,
         if (dyn.d_tag == 0x08 /* DT_RELASZ */ || dyn.d_tag == DT_SCE_RELASZ) rela_size = dyn.d_un.d_val;
         if (dyn.d_tag == 0x17 /* DT_JMPREL */ || dyn.d_tag == DT_SCE_JMPREL) jmprel_vaddr = dyn.d_un.d_val;
         if (dyn.d_tag == 0x02 /* DT_PLTRELSZ */ || dyn.d_tag == DT_SCE_PLTRELSZ) pltrel_size = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x06 /* DT_SYMTAB */ || dyn.d_tag == DT_SCE_SYMTAB) symtab_vaddr = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x0B /* DT_SYMENT */ || dyn.d_tag == DT_SCE_SYMENT) syment_size = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x05 /* DT_STRTAB */ || dyn.d_tag == DT_SCE_STRTAB) strtab_vaddr = dyn.d_un.d_val;
+        if (dyn.d_tag == 0x0A /* DT_STRSZ */ || dyn.d_tag == DT_SCE_STRSZ) strtab_size = dyn.d_un.d_val;
+    }
+
+    auto vaddr_to_file_offset = [&](uint64_t vaddr) -> uint64_t {
+        for (const auto& seg : out.segments) {
+            if (vaddr >= seg.guest_vaddr && vaddr < seg.guest_vaddr + seg.file_size) {
+                return vaddr - seg.guest_vaddr + seg.host_offset;
+            }
+        }
+        return UINT64_MAX;
+    };
+
+    auto get_string = [&](uint64_t str_idx) -> std::string {
+        if (strtab_vaddr == 0) return {};
+        uint64_t str_target = strtab_vaddr + str_idx;
+        uint64_t file_off = vaddr_to_file_offset(str_target);
+        if (file_off != UINT64_MAX && file_off < size) {
+            return std::string(reinterpret_cast<const char*>(data + file_off));
+        }
+        if (strtab_vaddr + str_idx < size) {
+            return std::string(reinterpret_cast<const char*>(data + strtab_vaddr + str_idx));
+        }
+        return {};
+    };
+
+    auto get_symbol = [&](uint32_t sym_idx, Elf64_Sym& out_sym, std::string& out_name) -> bool {
+        if (symtab_vaddr == 0 || sym_idx == 0) return false;
+        const uint64_t entry_sz = (syment_size > 0) ? syment_size : sizeof(Elf64_Sym);
+        uint64_t sym_target = symtab_vaddr + static_cast<uint64_t>(sym_idx) * entry_sz;
+        uint64_t file_off = vaddr_to_file_offset(sym_target);
+        if (file_off != UINT64_MAX && file_off + sizeof(Elf64_Sym) <= size) {
+            std::memcpy(&out_sym, data + file_off, sizeof(Elf64_Sym));
+            out_name = get_string(out_sym.st_name);
+            return true;
+        }
+        if (sym_target + sizeof(Elf64_Sym) <= size) {
+            std::memcpy(&out_sym, data + sym_target, sizeof(Elf64_Sym));
+            out_name = get_string(out_sym.st_name);
+            return true;
+        }
+        return false;
+    };
+
+    // Extract all dynamic symbols into out.symbols if symbol table is present
+    if (symtab_vaddr != 0 && strtab_vaddr != 0) {
+        uint64_t sym_file_off = vaddr_to_file_offset(symtab_vaddr);
+        if (sym_file_off == UINT64_MAX && symtab_vaddr < size) {
+            sym_file_off = symtab_vaddr;
+        }
+        if (sym_file_off != UINT64_MAX) {
+            const uint64_t entry_sz = (syment_size > 0) ? syment_size : sizeof(Elf64_Sym);
+            size_t max_symbols = 1024;
+            for (size_t s = 0; s < max_symbols; ++s) {
+                uint64_t cur_off = sym_file_off + s * entry_sz;
+                if (cur_off + sizeof(Elf64_Sym) > size) break;
+                Elf64_Sym sym;
+                std::memcpy(&sym, data + cur_off, sizeof(Elf64_Sym));
+                if (sym.st_name == 0 && sym.st_value == 0 && sym.st_info == 0 && s > 0) {
+                    break;
+                }
+                DynamicSymbolInfo dsym;
+                dsym.name = get_string(sym.st_name);
+                dsym.value = sym.st_value;
+                dsym.size = sym.st_size;
+                dsym.shndx = sym.st_shndx;
+                dsym.type = sym.st_info & 0x0F;
+                dsym.bind = sym.st_info >> 4;
+                dsym.is_undefined = (sym.st_shndx == 0);
+                out.symbols.push_back(std::move(dsym));
+            }
+        }
     }
 
     auto patch_reloc_entry = [&](const Elf64_Rela& rela) {
         uint32_t type = static_cast<uint32_t>(rela.r_info & 0xFFFFFFFF);
+        uint32_t sym_idx = static_cast<uint32_t>(rela.r_info >> 32);
         uint64_t target_vaddr = rela.r_offset;
 
         if (target_vaddr >= out.base_vaddr && target_vaddr < out.base_vaddr + out.image_size) {
             uint64_t buf_off = target_vaddr - out.base_vaddr;
             if (buf_off + sizeof(uint64_t) <= out.image_buffer.size()) {
                 out.reloc_count++;
-                if (type == 8 /* R_X86_64_RELATIVE */ || type == 6 /* R_X86_64_GLOB_DAT */ ||
-                    type == 7 /* R_X86_64_JUMP_SLOT */ || type == 1 /* R_X86_64_64 */) {
+
+                if (type == 8 /* R_X86_64_RELATIVE */) {
                     uint64_t val = out.base_vaddr + rela.r_addend;
+                    std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                    out.resolved_symbols_count++;
+                } else if (type == 1 /* R_X86_64_64 */ || type == 6 /* R_X86_64_GLOB_DAT */ ||
+                           type == 7 /* R_X86_64_JUMP_SLOT */) {
+                    Elf64_Sym sym{};
+                    std::string sym_name;
+                    bool has_sym = get_symbol(sym_idx, sym, sym_name);
+                    uint64_t sym_val = 0;
+                    bool resolved = false;
+
+                    if (has_sym) {
+                        if (sym.st_shndx != 0 /* SHN_UNDEF */) {
+                            // Defined in this module
+                            sym_val = (out.base_vaddr + sym.st_value);
+                            resolved = true;
+                        } else if (resolver && !sym_name.empty()) {
+                            // External symbol resolution
+                            std::string lib_name = !out.import_libs.empty() ? out.import_libs[0] : "";
+                            uint64_t resolved_addr = resolver(sym_name, lib_name);
+                            if (resolved_addr != 0) {
+                                sym_val = resolved_addr;
+                                resolved = true;
+                            }
+                        }
+                    }
+
+                    if (resolved) {
+                        uint64_t val = sym_val + rela.r_addend;
+                        std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                        out.resolved_symbols_count++;
+                    } else {
+                        if (rela.r_addend != 0) {
+                            uint64_t val = out.base_vaddr + rela.r_addend;
+                            std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                            out.resolved_symbols_count++;
+                        } else {
+                            if (!sym_name.empty()) {
+                                out.unresolved_symbols.push_back(sym_name);
+                            }
+                        }
+                    }
+                } else if (type == 18 /* R_X86_64_TPOFF64 */) {
+                    // TLS offset
+                    uint64_t val = rela.r_addend;
                     std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
                     out.resolved_symbols_count++;
                 }
@@ -238,16 +384,17 @@ bool OpenOrbisElfLoader::ProcessRelocations(const uint8_t* data, size_t size,
 
     auto read_rela_table = [&](uint64_t table_vaddr, uint64_t table_size) {
         if (table_vaddr == 0 || table_size == 0) return;
-        for (const auto& seg : out.segments) {
-            if (table_vaddr >= seg.guest_vaddr && table_vaddr < seg.guest_vaddr + seg.file_size) {
-                uint64_t file_off = table_vaddr - seg.guest_vaddr + seg.host_offset;
-                size_t num_relas = table_size / sizeof(Elf64_Rela);
-                for (size_t r = 0; r < num_relas; ++r) {
-                    if (file_off + (r + 1) * sizeof(Elf64_Rela) <= size) {
-                        Elf64_Rela rela;
-                        std::memcpy(&rela, data + file_off + r * sizeof(Elf64_Rela), sizeof(Elf64_Rela));
-                        patch_reloc_entry(rela);
-                    }
+        uint64_t file_off = vaddr_to_file_offset(table_vaddr);
+        if (file_off == UINT64_MAX && table_vaddr < size) {
+            file_off = table_vaddr;
+        }
+        if (file_off != UINT64_MAX) {
+            size_t num_relas = table_size / sizeof(Elf64_Rela);
+            for (size_t r = 0; r < num_relas; ++r) {
+                if (file_off + (r + 1) * sizeof(Elf64_Rela) <= size) {
+                    Elf64_Rela rela;
+                    std::memcpy(&rela, data + file_off + r * sizeof(Elf64_Rela), sizeof(Elf64_Rela));
+                    patch_reloc_entry(rela);
                 }
             }
         }

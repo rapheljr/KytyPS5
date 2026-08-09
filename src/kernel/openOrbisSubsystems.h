@@ -19,6 +19,7 @@
 #define KERNEL_OPEN_ORBIS_SUBSYSTEMS_H
 
 #include "common/common.h"
+#include "loader/openOrbisElfLoader.h"
 #include "loader/recompiler/jitTelemetryCollector.h"
 
 #include <cstdint>
@@ -66,6 +67,9 @@ public:
 
     /// Dispatch a call by stub name. Returns SCE_ERROR_ERRNO_ENOSYS if unregistered.
     int64_t Dispatch(const std::string& name, const SubsystemCallCtx& ctx);
+
+    /// Return a SymbolResolverFn lambda that binds to this hub instance.
+    [[nodiscard]] Loader::SymbolResolverFn CreateSymbolResolver(uint64_t stub_base_vaddr = 0x80000000);
 
     /// Total number of registered stubs.
     [[nodiscard]] size_t StubCount() const noexcept { return m_stubs.size(); }
