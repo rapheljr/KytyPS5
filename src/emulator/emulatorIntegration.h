@@ -100,6 +100,7 @@ private:
 	Loader::OpenOrbisElfLoader                 m_orbis_loader;
 	std::unique_ptr<Loader::Ps5JitDispatchLoop> m_jit_dispatch;
 	Kernel::OpenOrbisSubsystemHub              m_subsystems;
+	Libs::Graphics::Pm4::Pm4Translator         m_pm4_translator;
 	Compat::Ps5CompatibilityReport             m_compat_report;
 	Loader::OpenOrbisLoadResult                m_last_load_result;
 };

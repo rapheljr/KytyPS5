@@ -234,4 +234,74 @@ void MetalGraphicBackend::StopCapture() noexcept {
 #endif
 }
 
+MetalCommandBuffer* MetalGraphicBackend::AcquireCurrentCommandBuffer() {
+#if defined(__APPLE__)
+	if (!m_initialized || !m_metal_queue) {
+		return nullptr;
+	}
+	if (!m_active_cmd_buf || m_active_cmd_buf->GetState() != MetalCommandBufferState::Recording) {
+		m_active_cmd_buf = m_metal_queue->CreateCommandBuffer();
+	}
+	return m_active_cmd_buf.get();
+#else
+	return nullptr;
+#endif
+}
+
+bool MetalGraphicBackend::BeginRenderPass(uint32_t width, uint32_t height,
+                                         float r, float g, float b, float a) {
+#if defined(__APPLE__)
+	auto* cb = AcquireCurrentCommandBuffer();
+	if (!cb) return false;
+
+	MTLRenderPassDescriptor* rpd = [MTLRenderPassDescriptor renderPassDescriptor];
+	rpd.colorAttachments[0].loadAction  = MTLLoadActionClear;
+	rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
+	rpd.colorAttachments[0].clearColor  = MTLClearColorMake(r, g, b, a);
+
+	void* enc = cb->OpenRenderEncoder((__bridge void*)rpd);
+	if (!enc) return false;
+
+	cb->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
+	cb->SetScissorRect(0, 0, width, height);
+	return true;
+#else
+	(void)width; (void)height; (void)r; (void)g; (void)b; (void)a;
+	return false;
+#endif
+}
+
+void MetalGraphicBackend::EndRenderPass() {
+	if (m_active_cmd_buf) {
+		m_active_cmd_buf->CloseRenderEncoder();
+	}
+}
+
+bool MetalGraphicBackend::SubmitCurrentCommandBuffer() {
+	if (!m_active_cmd_buf || m_active_cmd_buf->GetState() != MetalCommandBufferState::Recording) {
+		return false;
+	}
+	m_active_cmd_buf->Commit();
+	return true;
+}
+
+void MetalGraphicBackend::PresentFrame(uint32_t buffer_index) {
+#if defined(__APPLE__)
+	if (m_frame_sync) {
+		m_frame_sync->BeginFrame();
+	}
+	if (m_active_cmd_buf && m_active_cmd_buf->GetState() == MetalCommandBufferState::Recording) {
+		EndRenderPass();
+		if (m_frame_sync) {
+			m_frame_sync->EndFrame(m_active_cmd_buf->GetNativeCommandBuffer());
+		}
+		SubmitCurrentCommandBuffer();
+	} else if (m_frame_sync) {
+		m_frame_sync->EndFrame(nullptr);
+	}
+#else
+	(void)buffer_index;
+#endif
+}
+
 } // namespace Libs::Graphics

@@ -216,9 +216,13 @@ void MetalFrameSync::EndFrame(void* command_buffer_handle) {
 
 	if (command_buffer_handle && sem) {
 		id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)command_buffer_handle;
-		[cb addCompletedHandler:^(id<MTLCommandBuffer> _Nonnull) {
+		if (cb.status < MTLCommandBufferStatusCommitted) {
+			[cb addCompletedHandler:^(id<MTLCommandBuffer> _Nonnull) {
+				dispatch_semaphore_signal(sem);
+			}];
+		} else {
 			dispatch_semaphore_signal(sem);
-		}];
+		}
 	} else if (sem) {
 		dispatch_semaphore_signal(sem);
 	}

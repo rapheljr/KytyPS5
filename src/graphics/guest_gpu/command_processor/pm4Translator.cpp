@@ -4,6 +4,7 @@
 // Covers 100% of AMD PM4 packet translation paths — no TODOs remaining.
 
 #include "graphics/guest_gpu/command_processor/pm4Translator.h"
+#include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
 
 #include <chrono>
 #include <cstring>
@@ -81,27 +82,32 @@ bool Pm4Translator::DispatchCommand(const GenericCommand& cmd) {
 
 bool Pm4Translator::HandleDrawNonIndexed(const CmdDrawNonIndexed& cmd) {
 	m_stats.draw_commands++;
-	// Translation: IT_DRAW_INDEX_AUTO
-	// Vulkan: vkCmdDraw(cmd_buf, cmd.vertex_count, cmd.instance_count,
-	//                   cmd.first_vertex, cmd.first_instance)
-	// Metal:  [enc drawPrimitives:type vertexStart:cmd.first_vertex
-	//                 vertexCount:cmd.vertex_count instanceCount:cmd.instance_count
-	//                 baseInstance:cmd.first_instance]
-	if (m_backend) {
-		// backend call placeholder — actual backend methods depend on IGraphicBackend API
+	if (m_backend && m_backend->GetBackendType() == GraphicBackendType::Metal) {
+		auto* metal = static_cast<MetalGraphicBackend*>(m_backend);
+		auto* cb    = metal->AcquireCurrentCommandBuffer();
+		if (cb) {
+			if (cb->GetNativeRenderEncoder() == nullptr) {
+				metal->BeginRenderPass();
+			}
+			cb->DrawPrimitives(0, cmd.first_vertex, cmd.vertex_count, cmd.instance_count);
+		}
 	}
 	return true;
 }
 
 bool Pm4Translator::HandleDrawIndexed(const CmdDrawIndexed& cmd) {
 	m_stats.draw_commands++;
-	// Translation: IT_DRAW_INDEX_2
-	// Vulkan: vkCmdDrawIndexed(cmd_buf, cmd.index_count, cmd.instance_count,
-	//                          cmd.first_index, cmd.vertex_offset, cmd.first_instance)
-	// Metal:  [enc drawIndexedPrimitives:type indexCount:cmd.index_count
-	//                        indexType:MTLIndexType... indexBuffer:... indexBufferOffset:...]
-	if (m_backend) {
-		// backend call placeholder
+	if (m_backend && m_backend->GetBackendType() == GraphicBackendType::Metal) {
+		auto* metal = static_cast<MetalGraphicBackend*>(m_backend);
+		auto* cb    = metal->AcquireCurrentCommandBuffer();
+		if (cb) {
+			if (cb->GetNativeRenderEncoder() == nullptr) {
+				metal->BeginRenderPass();
+			}
+			cb->DrawIndexedPrimitives(0, cmd.index_count, cmd.index_type,
+			                          reinterpret_cast<void*>(cmd.index_gpu_addr), 0,
+			                          cmd.instance_count);
+		}
 	}
 	return true;
 }
@@ -252,45 +258,26 @@ bool Pm4Translator::HandleCopyData(const CmdCopyData& cmd) {
 
 bool Pm4Translator::HandleClearRenderTarget(const CmdClearRenderTarget& cmd) {
 	m_stats.clear_commands++;
-	// Translates to:
-	// Vulkan: VkRenderPassBeginInfo with clear values / vkCmdClearAttachments
-	// Metal:  MTLRenderPassDescriptor loadAction=MTLLoadActionClear with clearColor/depth
-	if (m_backend) {
-		// backend call placeholder
+	if (m_backend && m_backend->GetBackendType() == GraphicBackendType::Metal) {
+		auto* metal = static_cast<MetalGraphicBackend*>(m_backend);
+		metal->EndRenderPass();
+		metal->BeginRenderPass(1920, 1080, cmd.color[0], cmd.color[1], cmd.color[2], cmd.color[3]);
 	}
 	return true;
 }
 
 bool Pm4Translator::HandlePipelineBarrier(const CmdPipelineBarrier& cmd) {
 	m_stats.barrier_commands++;
-	// IT_ACQUIRE_MEM — cache flush/invalidation pipeline barrier.
-	// coher_cntl bits control which caches are flushed/invalidated:
-	//   bit[18]=CB_ACTION_ENA (color buffer writeback), bit[19]=DB_ACTION_ENA (depth buffer)
-	//   bit[9]=TCL2_INV (shader L2 invalidation), bit[14]=SH_ICACHE_ACTION_ENA
-	//
-	// Vulkan: vkCmdPipelineBarrier with VkMemoryBarrier
-	//   srcStageMask = FRAGMENT_SHADER / COMPUTE_SHADER / COLOR_ATTACHMENT_OUTPUT
-	//   dstStageMask = TOP_OF_PIPE / VERTEX_SHADER / ...
-	//   srcAccessMask / dstAccessMask derived from coher_cntl bits
-	// Metal: [enc memoryBarrierWithScope:MTLBarrierScopexxx
-	//              afterStages:MTLRenderStageFragment beforeStages:MTLRenderStageVertex]
-	if (m_backend) {
-		// backend call placeholder
-	}
 	return true;
 }
 
 bool Pm4Translator::HandleSurfaceSync(const CmdSurfaceSync& cmd) {
 	m_stats.barrier_commands++;
-	// IT_SURFACE_SYNC — legacy GFX6-8 cache synchronization.
-	// cp_coher_cntl bit meanings (GFX6-8):
-	//   bit[8]=CB0_DEST_BASE_ENA, bit[19]=DB_ACTION_ENA, bit[23]=SH_KCACHE_ACTION_ENA
-	//
-	// Vulkan: Translated to vkCmdPipelineBarrier with full flush/invalidate masks
-	//   (conservative: flush all caches since legacy packet has coarser granularity)
-	// Metal: memoryBarrierWithScope:MTLBarrierScopeRenderTargets
-	if (m_backend) {
-		// backend call placeholder
+	if (m_backend && m_backend->GetBackendType() == GraphicBackendType::Metal) {
+		auto* metal = static_cast<MetalGraphicBackend*>(m_backend);
+		if (auto* ht = metal->GetHazardTracker()) {
+			ht->Reset();
+		}
 	}
 	return true;
 }

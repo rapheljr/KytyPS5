@@ -7,6 +7,11 @@
 #include <filesystem>
 #include <map>
 #include <memory>
+
+#if !defined(JSON_NOEXCEPTION) && defined(__clang__) && !defined(__EXCEPTIONS)
+#define JSON_NOEXCEPTION 1
+#endif
+
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>

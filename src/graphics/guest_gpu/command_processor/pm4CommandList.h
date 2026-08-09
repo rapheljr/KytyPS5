@@ -396,6 +396,11 @@ public:
 	[[nodiscard]] size_t GetCommandCount() const noexcept { return m_commands.size(); }
 	[[nodiscard]] bool IsEmpty() const noexcept { return m_commands.empty(); }
 
+	void AddCommand(const CmdDrawNonIndexed& cmd) { RecordDrawNonIndexed(cmd.vertex_count, cmd.instance_count, cmd.first_vertex, cmd.first_instance); }
+	void AddCommand(const CmdDrawIndexed& cmd) { RecordDrawIndexed(cmd.index_count, cmd.instance_count, cmd.first_index, cmd.vertex_offset, cmd.first_instance, cmd.index_gpu_addr, cmd.index_type); }
+	void AddCommand(const CmdClearRenderTarget& cmd) { RecordClear(cmd.color, cmd.depth, cmd.stencil, cmd.clear_color, cmd.clear_depth, cmd.clear_stencil); }
+	void AddCommand(const CmdSurfaceSync& cmd) { (void)cmd; RecordSurfaceSync(0, 0, 0, 0); }
+
 	void Append(const Pm4CommandList& other);
 
 private:

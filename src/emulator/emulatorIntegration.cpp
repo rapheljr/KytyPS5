@@ -5,6 +5,7 @@
 
 #include "emulator/emulatorIntegration.h"
 #include "graphics/host_gpu/renderer/backend/graphicBackendFactory.h"
+#include "graphics/host_gpu/renderer/backend/metalGraphicBackend.h"
 
 #include <chrono>
 #include <cstring>
@@ -47,6 +48,7 @@ bool EmulatorEngine::Initialize() {
     if (m_graphic_backend && !m_graphic_backend->Initialize()) {
         return false;
     }
+    m_pm4_translator.SetBackend(m_graphic_backend.get());
 
     // 3. Register all OpenOrbis subsystem stubs
     m_subsystems.RegisterAll();
@@ -99,8 +101,8 @@ bool EmulatorEngine::BootGame(const std::string& eboot_path) {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_offset = 0
             0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_vaddr = 0x400000
             0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_paddr
-            0x85, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_filesz = 133 bytes
-            0x85, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_memsz
+            0x7C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_filesz = 124 bytes (0x7C)
+            0x7C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_memsz
             0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // p_align = 0x1000
             // Code at offset 0x78 (entry point)
             0x48, 0x31, 0xC0,  // xor rax, rax  (return 0)
@@ -140,7 +142,7 @@ bool EmulatorEngine::BootGame(const std::string& eboot_path) {
 }
 
 bool EmulatorEngine::RunFrame() {
-    if (m_state != EmulatorState::Running || !m_jit_dispatch) {
+    if ((m_state != EmulatorState::Running && m_state != EmulatorState::Stopped) || !m_jit_dispatch) {
         return false;
     }
 
@@ -148,15 +150,26 @@ bool EmulatorEngine::RunFrame() {
 
     m_telemetry.BeginFrame();
 
-    // 1. JIT dispatch one frame slice
-    auto dispatch_result = m_jit_dispatch->RunSlice();
-    m_stats.total_syscalls++;
+    // 1. JIT dispatch one frame slice (if still running)
+    if (m_state == EmulatorState::Running) {
+        auto dispatch_result = m_jit_dispatch->RunSlice();
+        m_stats.total_syscalls++;
 
-    // 2. Process PM4 GPU Command Streams (synthetic)
-    uint32_t pm4_stream[] = {
-        KYTY_PM4(4, Libs::Graphics::Pm4::IT_DRAW_INDEX_2, 0),
-        36, 0, 0
-    };
+        // If JIT reached a terminal state, transition to stopped state
+        if (dispatch_result.stop_reason == Loader::DispatchStopReason::Completed ||
+            dispatch_result.stop_reason == Loader::DispatchStopReason::Exception) {
+            m_state = EmulatorState::Stopped;
+        }
+    }
+
+    // 2. Process PM4 GPU Command Streams
+    Libs::Graphics::Pm4::Pm4CommandList cmd_list;
+    Libs::Graphics::Pm4::CmdDrawNonIndexed draw_cmd{};
+    draw_cmd.vertex_count = 36;
+    draw_cmd.instance_count = 1;
+    cmd_list.AddCommand(draw_cmd);
+
+    m_pm4_translator.TranslateAndExecute(cmd_list);
     m_stats.pm4_packets_decoded++;
     m_telemetry.RecordPm4Packet();
 
@@ -173,6 +186,10 @@ bool EmulatorEngine::RunFrame() {
     }
 
     // 4. Render Frame & Present
+    if (m_graphic_backend && m_graphic_backend->GetBackendType() == Libs::Graphics::GraphicBackendType::Metal) {
+        auto* metal = static_cast<Libs::Graphics::MetalGraphicBackend*>(m_graphic_backend.get());
+        metal->PresentFrame(0);
+    }
     m_stats.frames_rendered++;
 
     m_telemetry.EndFrame();
@@ -186,12 +203,6 @@ bool EmulatorEngine::RunFrame() {
     m_stats.jit_blocks_compiled += jit_snap.blocks_compiled;
     m_stats.jit_cache_hits      += jit_snap.blocks_cache_hit;
     m_stats.jit_cycles          += jit_snap.jit_cycles;
-
-    // If JIT reached a terminal state, stop the engine
-    if (dispatch_result.stop_reason == Loader::DispatchStopReason::Completed ||
-        dispatch_result.stop_reason == Loader::DispatchStopReason::Exception) {
-        m_state = EmulatorState::Stopped;
-    }
 
     return true;
 }

@@ -60,12 +60,33 @@ public:
 	bool StartCapture(const char* capture_path = nullptr) noexcept;
 	void StopCapture() noexcept;
 
+	// ── Frame & Command Buffer Execution ──────────────────────────────────────
+	/// Acquires or creates the active command buffer for the current frame.
+	[[nodiscard]] MetalCommandBuffer* AcquireCurrentCommandBuffer();
+
+	/// Returns active recording command buffer, or nullptr if none active.
+	[[nodiscard]] MetalCommandBuffer* GetActiveCommandBuffer() noexcept { return m_active_cmd_buf.get(); }
+
+	/// Begins a render pass on the active command buffer with given clear colors.
+	bool BeginRenderPass(uint32_t width = 1920, uint32_t height = 1080,
+	                     float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
+
+	/// Ends the active render pass on the current command buffer.
+	void EndRenderPass();
+
+	/// Commits the active command buffer to the GPU command queue.
+	bool SubmitCurrentCommandBuffer();
+
+	/// Presents the rendered framebuffer and advances the frame synchronization slot.
+	void PresentFrame(uint32_t buffer_index = 0);
+
 private:
 	bool                                m_initialized   = false;
 	bool                                m_capturing     = false;
 	void*                               m_device        = nullptr; // id<MTLDevice>
 	void*                               m_command_queue = nullptr; // id<MTLCommandQueue>
 	std::unique_ptr<MetalCommandQueue>         m_metal_queue;
+	std::unique_ptr<MetalCommandBuffer>        m_active_cmd_buf;
 	std::unique_ptr<MetalPipelineCache>        m_pipeline_cache;
 	std::unique_ptr<MetalArgumentBufferCache>  m_argument_buffer_cache;
 	std::unique_ptr<HostGpu::Metal::MetalFrameSync>            m_frame_sync;
