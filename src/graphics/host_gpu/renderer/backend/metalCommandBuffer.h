@@ -12,6 +12,7 @@
 // Rendering encoders (MTLRenderCommandEncoder) will be added in a later phase.
 // No swapchain, no pipelines, no rendering in this phase.
 
+#include <cstddef>
 #include <cstdint>
 
 namespace Libs::Graphics {
@@ -57,6 +58,14 @@ public:
 
 	/// Closes the currently open compute encoder (calls endEncoding).
 	void CloseComputeEncoder();
+
+	/// Dispatches direct compute threadgroups.
+	void DispatchThreadgroups(uint32_t groups_x, uint32_t groups_y, uint32_t groups_z,
+	                          uint32_t threads_per_group_x, uint32_t threads_per_group_y, uint32_t threads_per_group_z);
+
+	/// Dispatches indirect compute threadgroups from GPU buffer.
+	void DispatchIndirect(void* indirect_buffer, size_t indirect_offset,
+	                      uint32_t threads_per_group_x, uint32_t threads_per_group_y, uint32_t threads_per_group_z);
 
 	// ── Submission & Synchronization ─────────────────────────────────────────
 

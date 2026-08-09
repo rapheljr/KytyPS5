@@ -82,6 +82,46 @@ void MetalCommandBuffer::CloseComputeEncoder() {
 #endif
 }
 
+void MetalCommandBuffer::DispatchThreadgroups(uint32_t groups_x, uint32_t groups_y, uint32_t groups_z,
+                                              uint32_t threads_per_group_x, uint32_t threads_per_group_y, uint32_t threads_per_group_z) {
+#if defined(__APPLE__)
+	if (m_compute_encoder == nullptr) {
+		return;
+	}
+	id<MTLComputeCommandEncoder> enc = (__bridge id<MTLComputeCommandEncoder>)m_compute_encoder;
+	MTLSize threadgroupsPerGrid = MTLSizeMake(groups_x > 0 ? groups_x : 1,
+	                                          groups_y > 0 ? groups_y : 1,
+	                                          groups_z > 0 ? groups_z : 1);
+	MTLSize threadsPerGroup     = MTLSizeMake(threads_per_group_x > 0 ? threads_per_group_x : 1,
+	                                          threads_per_group_y > 0 ? threads_per_group_y : 1,
+	                                          threads_per_group_z > 0 ? threads_per_group_z : 1);
+	[enc dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadsPerGroup];
+#else
+	(void)groups_x; (void)groups_y; (void)groups_z;
+	(void)threads_per_group_x; (void)threads_per_group_y; (void)threads_per_group_z;
+#endif
+}
+
+void MetalCommandBuffer::DispatchIndirect(void* indirect_buffer, size_t indirect_offset,
+                                          uint32_t threads_per_group_x, uint32_t threads_per_group_y, uint32_t threads_per_group_z) {
+#if defined(__APPLE__)
+	if (m_compute_encoder == nullptr || indirect_buffer == nullptr) {
+		return;
+	}
+	id<MTLComputeCommandEncoder> enc = (__bridge id<MTLComputeCommandEncoder>)m_compute_encoder;
+	id<MTLBuffer> buf                = (__bridge id<MTLBuffer>)indirect_buffer;
+	MTLSize threadsPerGroup          = MTLSizeMake(threads_per_group_x > 0 ? threads_per_group_x : 1,
+	                                               threads_per_group_y > 0 ? threads_per_group_y : 1,
+	                                               threads_per_group_z > 0 ? threads_per_group_z : 1);
+	[enc dispatchThreadgroupsWithIndirectBuffer:buf
+	                       indirectBufferOffset:static_cast<NSUInteger>(indirect_offset)
+	                      threadsPerThreadgroup:threadsPerGroup];
+#else
+	(void)indirect_buffer; (void)indirect_offset;
+	(void)threads_per_group_x; (void)threads_per_group_y; (void)threads_per_group_z;
+#endif
+}
+
 void MetalCommandBuffer::Commit() {
 #if defined(__APPLE__)
 	if (m_state != MetalCommandBufferState::Recording) {
