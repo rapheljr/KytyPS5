@@ -45,6 +45,18 @@ uint32_t GetConsoleLanguage() {
 	return g_config->console_language;
 }
 
+GraphicBackendChoice GetGraphicBackend() {
+	return g_config ? g_config->graphic_backend : GraphicBackendChoice::Default;
+}
+
+bool MetalCaptureEnabled() {
+	return g_config ? g_config->metal_capture_enabled : false;
+}
+
+std::filesystem::path GetMetalCaptureFile() {
+	return g_config ? g_config->metal_capture_file : "_metal_capture.gputrace";
+}
+
 bool VulkanValidationEnabled() {
 	return g_config->vulkan_validation_enabled;
 }

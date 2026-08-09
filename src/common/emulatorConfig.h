@@ -24,6 +24,8 @@ enum class ShaderLogDirection { Silent, Console, File };
 
 enum class ProfilerDirection { None, Network };
 
+enum class GraphicBackendChoice { Default, Metal, Vulkan };
+
 enum class OutputDirection { Silent, Console, File };
 
 using Keymap = std::vector<std::string>;
@@ -37,6 +39,9 @@ struct ConfigOptions {
 	bool                   fullscreen_enabled          = false;
 	uint32_t               vblank_frequency            = 60;
 	uint32_t               console_language            = DEFAULT_CONSOLE_LANGUAGE;
+	GraphicBackendChoice   graphic_backend             = GraphicBackendChoice::Default;
+	bool                   metal_capture_enabled       = false;
+	std::filesystem::path  metal_capture_file          = "_metal_capture.gputrace";
 	bool                   vulkan_validation_enabled   = false;
 	bool                   shader_validation_enabled   = false;
 	ShaderOptimizationType shader_optimization_type    = ShaderOptimizationType::None;
@@ -59,12 +64,15 @@ struct ConfigOptions {
 
 void Load(const ConfigOptions& cfg);
 
-uint32_t GetScreenWidth();
-uint32_t GetScreenHeight();
-bool     FullscreenEnabled();
-uint32_t GetVblankFrequency();
-uint32_t GetConsoleLanguage();
-bool     VulkanValidationEnabled();
+uint32_t             GetScreenWidth();
+uint32_t             GetScreenHeight();
+bool                 FullscreenEnabled();
+uint32_t             GetVblankFrequency();
+uint32_t             GetConsoleLanguage();
+GraphicBackendChoice GetGraphicBackend();
+bool                 MetalCaptureEnabled();
+std::filesystem::path GetMetalCaptureFile();
+bool                 VulkanValidationEnabled();
 
 bool                   ShaderValidationEnabled();
 ShaderOptimizationType GetShaderOptimizationType();

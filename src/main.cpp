@@ -50,6 +50,8 @@ static void PrintUsage() {
 	::printf("  --fullscreen                         Run in borderless desktop fullscreen.\n");
 	::printf("  --vblank-frequency <num>             Virtual vblank frequency. Default: 60.\n");
 	::printf("  --console-language <0-29>            Console language. Default: 1 (English US).\n");
+	::printf("  --graphic-backend <Metal|Vulkan>     Select host graphics backend. Default: Metal on macOS.\n");
+	::printf("  --metal-capture <path>               Enable MTLCaptureManager GPU frame trace to file.\n");
 	::printf("  --vulkan-validation <true|false>     Enable Vulkan validation.\n");
 	::printf("  --shader-validation <true|false>     Enable shader validation.\n");
 	::printf("  --shader-optimization-type <value>   None, Size, or Performance.\n");
@@ -202,6 +204,14 @@ static bool ParseArgs(int argc, char* argv[], RunOptions& options, bool& show_he
 				::printf("invalid console language: %s\n", value.c_str());
 				return false;
 			}
+		} else if (arg == "--graphic-backend") {
+			if (!ParseEnum(value, options.config.graphic_backend)) {
+				::printf("invalid graphic backend: %s (choose Metal or Vulkan)\n", value.c_str());
+				return false;
+			}
+		} else if (arg == "--metal-capture") {
+			options.config.metal_capture_enabled = true;
+			options.config.metal_capture_file    = value;
 		} else if (arg == "--vulkan-validation") {
 			if (!ParseBool(value, options.config.vulkan_validation_enabled)) {
 				::printf("invalid boolean for %s: %s\n", arg.c_str(), value.c_str());
