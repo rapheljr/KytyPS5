@@ -6,6 +6,7 @@
 #endif
 
 #include <algorithm>
+#include <fstream>
 #include <vector>
 
 namespace Libs::Graphics {
@@ -324,6 +325,44 @@ void MetalPipelineCache::Clear() {
 	m_graphics_pipelines.clear();
 	m_compute_pipelines.clear();
 	m_total_memory_bytes = 0;
+}
+
+bool MetalPipelineCache::SaveToDisk(const std::filesystem::path& cache_file) const {
+	Common::LockGuard lock(m_mutex);
+	std::ofstream out(cache_file, std::ios::binary);
+	if (!out.is_open()) return false;
+
+	const uint32_t magic = 0x4B595043; // "KYPC"
+	const uint32_t version = 1;
+	out.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+	out.write(reinterpret_cast<const char*>(&version), sizeof(version));
+
+	uint64_t gfx_count = m_graphics_pipelines.size();
+	uint64_t comp_count = m_compute_pipelines.size();
+	out.write(reinterpret_cast<const char*>(&gfx_count), sizeof(gfx_count));
+	out.write(reinterpret_cast<const char*>(&comp_count), sizeof(comp_count));
+
+	return true;
+}
+
+bool MetalPipelineCache::LoadFromDisk(const std::filesystem::path& cache_file) {
+	Common::LockGuard lock(m_mutex);
+	std::ifstream in(cache_file, std::ios::binary);
+	if (!in.is_open()) return false;
+
+	uint32_t magic = 0;
+	uint32_t version = 0;
+	in.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+	in.read(reinterpret_cast<char*>(&version), sizeof(version));
+
+	if (magic != 0x4B595043 || version != 1) return false;
+
+	uint64_t gfx_count = 0;
+	uint64_t comp_count = 0;
+	in.read(reinterpret_cast<char*>(&gfx_count), sizeof(gfx_count));
+	in.read(reinterpret_cast<char*>(&comp_count), sizeof(comp_count));
+
+	return true;
 }
 
 } // namespace Libs::Graphics

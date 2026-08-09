@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -179,6 +180,10 @@ public:
 
 	/// Clear all cached graphics & compute pipelines.
 	void Clear();
+
+	/// Serialize and deserialize pipeline cache metadata to disk.
+	bool SaveToDisk(const std::filesystem::path& cache_file) const;
+	bool LoadFromDisk(const std::filesystem::path& cache_file);
 
 	// ── Diagnostic Metrics ────────────────────────────────────────────────────
 
