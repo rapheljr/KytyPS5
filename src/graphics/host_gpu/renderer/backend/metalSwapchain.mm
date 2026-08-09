@@ -75,6 +75,7 @@ bool MetalSwapchain::Attach(SDL_Window* sdl_window,
 
 	if (@available(macOS 10.13, *)) {
 		layer.displaySyncEnabled = m_display_sync ? YES : NO;
+		layer.allowsNextDrawableTimeout = NO;
 	}
 
 	m_content_scale             = [view window].backingScaleFactor;
