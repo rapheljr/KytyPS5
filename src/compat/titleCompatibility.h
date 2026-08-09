@@ -143,7 +143,7 @@ struct TitleEntry {
 
 class TitleCompatibilityDatabase {
 public:
-	TitleCompatibilityDatabase()  = default;
+	TitleCompatibilityDatabase() { PopulateDefaultBuiltinTitles(); }
 	~TitleCompatibilityDatabase() = default;
 
 	KYTY_CLASS_NO_COPY(TitleCompatibilityDatabase);
@@ -163,6 +163,7 @@ public:
 	[[nodiscard]] std::vector<TitleEntry> GetAllEntries() const;
 	[[nodiscard]] size_t                  GetEntryCount() const;
 	void                                  Clear();
+	void                                  PopulateDefaultBuiltinTitles();
 
 	static bool MatchesWildcard(const std::string& pattern, const std::string& text);
 

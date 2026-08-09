@@ -12,6 +12,8 @@
 
 #include <charconv>
 #include <cstdio>
+#include "compat/commercialCompatDashboard.h"
+#include "compat/titleCompatibility.h"
 #include <fmt/format.h>
 
 using namespace Common;
@@ -71,6 +73,8 @@ static void PrintUsage() {
 #endif
 	::printf("  --keymap <Control=Input>             DualSense mapping; may be repeated.\n");
 	::printf("  --rd                                 Enable RenderDoc capture.\n");
+	::printf("  --compat-list                        List known commercial titles and compatibility status.\n");
+	::printf("  --compat-dashboard <path>            Export compatibility dashboard (HTML, Markdown, or JSON).\n");
 }
 
 static bool NextArg(int argc, char* argv[], int& index, std::string& out) {
@@ -130,6 +134,11 @@ static bool ParseArgs(int argc, char* argv[], RunOptions& options, bool& show_he
 
 		if (arg == "--help" || arg == "-h") {
 			show_help = true;
+			continue;
+		}
+
+		if (arg == "--compat-list") {
+			options.show_compat_list = true;
 			continue;
 		}
 
@@ -268,6 +277,8 @@ static bool ParseArgs(int argc, char* argv[], RunOptions& options, bool& show_he
 				::printf("invalid boolean for %s: %s\n", arg.c_str(), value.c_str());
 				return false;
 			}
+		} else if (arg == "--compat-dashboard") {
+			options.compat_dashboard_path = value;
 		} else if (arg == "--keymap") {
 			const auto split = value.find('=');
 			if (split == std::string::npos || split == 0 || split + 1 == value.size()) {
@@ -281,7 +292,7 @@ static bool ParseArgs(int argc, char* argv[], RunOptions& options, bool& show_he
 		}
 	}
 
-	return show_help || (!options.app0_dir.empty() && !options.elf.empty());
+	return show_help || options.show_compat_list || !options.compat_dashboard_path.empty() || (!options.app0_dir.empty() && !options.elf.empty());
 }
 
 int main(int argc, char* argv[]) {
@@ -304,6 +315,51 @@ int main(int argc, char* argv[]) {
 	if (show_help) {
 		PrintUsage();
 		return 0;
+	}
+
+	if (options.show_compat_list) {
+		Compat::TitleCompatibilityDatabase db;
+		auto entries = db.GetAllEntries();
+		::printf("================================================================================\n");
+		::printf("  KytyPS5 Known Titles Compatibility List (%zu titles registered)\n", entries.size());
+		::printf("================================================================================\n");
+		::printf("  %-12s  %-36s  %-12s\n", "Title ID", "Title Name", "Status");
+		::printf("  ----------------------------------------------------------------------------\n");
+		for (const auto& e : entries) {
+			::printf("  %-12s  %-36s  %-12s\n", e.title_id.c_str(), e.title_name.c_str(), Compat::GameStatusToString(e.status));
+		}
+		::printf("================================================================================\n");
+		slist.DestroyAll(false);
+		return 0;
+	}
+
+	if (!options.compat_dashboard_path.empty()) {
+		Compat::TitleCompatibilityDatabase db;
+		Compat::CommercialCompatDashboard dashboard;
+		for (const auto& e : db.GetAllEntries()) {
+			Compat::CommercialTitleEntry entry;
+			entry.title_id    = e.title_id;
+			entry.title_name  = e.title_name;
+			entry.boot_status = e.status;
+			entry.commit_hash = KYTY_GIT_VERSION;
+			dashboard.AddTitleEntry(entry);
+		}
+		std::string path_str = options.compat_dashboard_path.string();
+		bool ok = false;
+		if (Common::EndsWith(path_str, ".html")) {
+			ok = dashboard.ExportHtml(path_str);
+		} else if (Common::EndsWith(path_str, ".json")) {
+			ok = dashboard.ExportJson(path_str);
+		} else {
+			ok = dashboard.ExportMarkdown(path_str);
+		}
+		if (ok) {
+			::printf("Compatibility dashboard successfully exported to: %s\n", path_str.c_str());
+		} else {
+			::printf("Failed to export compatibility dashboard to: %s\n", path_str.c_str());
+		}
+		slist.DestroyAll(false);
+		return ok ? 0 : 1;
 	}
 
 	Run(options);
