@@ -61,7 +61,29 @@ enum class IROpcode : uint16_t {
 	// SSA Special & Conditionals
 	Phi,
 	Select,
-	SetCond
+	SetCond,
+	Cmp,
+	Test,
+	// Floating-Point Scalar
+	FAdd,
+	FSub,
+	FMul,
+	FDiv,
+	FNeg,
+	// Vector SIMD (128-Bit NEON / SSE)
+	VecAdd,
+	VecSub,
+	VecMul,
+	VecDiv,
+	VecAnd,
+	VecOr,
+	VecXor,
+	VecMin,
+	VecMax,
+	VecSqrt,
+	VecLoad,
+	VecStore,
+	VecMov
 };
 
 enum class IRCondition : uint8_t {

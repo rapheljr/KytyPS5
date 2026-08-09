@@ -9,11 +9,10 @@
 
 #include <atomic>
 #include <cstddef>
-#include <cstdint>
-
 namespace Loader::Recompiler {
 
-using CompiledBlockFunc = void (*)();
+struct GuestCpuContext;
+using CompiledBlockFunc = void (*)(GuestCpuContext* ctx);
 
 struct BlockCacheStats {
 	std::atomic<uint32_t> blocks_compiled{0};

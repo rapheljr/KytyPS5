@@ -81,6 +81,14 @@ enum class X86Opcode : uint16_t {
 	Pxor,
 	Pand,
 	Por,
+	Sqrtps,
+	Rsqrtps,
+	Andps,
+	Andnps,
+	Orps,
+	Xorps,
+	Minps,
+	Maxps,
 	// SSE3 / SSSE3 / SSE4.1 / SSE4.2 Vector Opcodes
 	Haddps,
 	Pshufb,
@@ -151,6 +159,8 @@ struct DecodedX86Instruction {
 	// Prefix & Operand Metadata
 	bool         operand_size_override  = false; // 0x66
 	bool         address_size_override  = false; // 0x67
+	bool         has_lock               = false; // 0xF0
+	bool         has_rep                = false; // 0xF2, 0xF3
 	bool         has_rex                = false;
 	bool         rex_w                  = false;
 	bool         rex_r                  = false;

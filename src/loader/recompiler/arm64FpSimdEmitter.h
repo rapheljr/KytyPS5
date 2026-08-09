@@ -46,10 +46,15 @@ public:
 	void EmitVmul4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitVdiv4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitVFaddp4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFmax4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFmin4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFsqrt4S(Arm64FpReg rd, Arm64FpReg rn);
 
 	// 3. Vector Integer Operations (.4S / .16B)
 	void EmitVadd16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitVsub16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitAdd4S_Int(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitSub4S_Int(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitAbs4S(Arm64FpReg rd, Arm64FpReg rn);
 	void EmitSmax4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitSmin4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);

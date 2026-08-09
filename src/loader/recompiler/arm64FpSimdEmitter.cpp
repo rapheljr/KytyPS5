@@ -91,6 +91,21 @@ void Arm64FpSimdEmitter::EmitVFaddp4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg r
 	m_emitter.Emit32(inst);
 }
 
+void Arm64FpSimdEmitter::EmitFmax4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4E20F400u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFmin4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4EA0F400u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFsqrt4S(Arm64FpReg rd, Arm64FpReg rn) {
+	uint32_t inst = 0x6EA1F800u | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
 // ─── 3. Vector Integer Operations (.4S / .16B) ────────────────────────────────
 
 void Arm64FpSimdEmitter::EmitVadd16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
@@ -100,6 +115,16 @@ void Arm64FpSimdEmitter::EmitVadd16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm
 
 void Arm64FpSimdEmitter::EmitVsub16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
 	uint32_t inst = 0x4EA08400u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitAdd4S_Int(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4EA08400u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitSub4S_Int(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x6EA08400u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
 	m_emitter.Emit32(inst);
 }
 

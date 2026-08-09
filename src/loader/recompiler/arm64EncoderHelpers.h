@@ -129,15 +129,39 @@ constexpr inline uint32_t LoadStoreUnscaled(bool sf, bool is_load, int32_t simm9
 	return inst;
 }
 
-// Load/Store Pair - LDP, STP (Pre-indexed / Post-indexed writeback)
-constexpr inline uint32_t LoadStorePair(bool sf, bool is_load, int32_t simm7, uint32_t rn, uint32_t rt1, uint32_t rt2) noexcept {
-	uint32_t inst = is_load ? 0xA8C00000u : 0xA9800000u; // Post-indexed LDP (0xA8C00000) or Pre-indexed STP (0xA9800000)
-	if (!sf) inst &= ~(1u << 31u);
+// Load/Store Pair - LDP, STP (Signed offset, Pre-indexed, Post-indexed)
+constexpr inline uint32_t LoadStorePairOffset(bool sf, bool is_load, int32_t simm7, uint32_t rn, uint32_t rt1, uint32_t rt2) noexcept {
+	uint32_t inst = is_load ? 0x29400000u : 0x29000000u;
+	if (sf) inst |= (0x2u << 30u); // 64-bit: opc = 10 -> 0xA9400000 (LDP) / 0xA9000000 (STP)
 	inst |= ((static_cast<uint32_t>(simm7) & 0x7Fu) << 15u);
 	inst |= ((rt2 & 0x1Fu) << 10u);
 	inst |= ((rn & 0x1Fu) << 5u);
 	inst |= (rt1 & 0x1Fu);
 	return inst;
+}
+
+constexpr inline uint32_t LoadStorePairPreIndex(bool sf, bool is_load, int32_t simm7, uint32_t rn, uint32_t rt1, uint32_t rt2) noexcept {
+	uint32_t inst = is_load ? 0x29C00000u : 0x29800000u;
+	if (sf) inst |= (0x2u << 30u); // 64-bit: opc = 10 -> 0xA9C00000 (LDP) / 0xA9800000 (STP)
+	inst |= ((static_cast<uint32_t>(simm7) & 0x7Fu) << 15u);
+	inst |= ((rt2 & 0x1Fu) << 10u);
+	inst |= ((rn & 0x1Fu) << 5u);
+	inst |= (rt1 & 0x1Fu);
+	return inst;
+}
+
+constexpr inline uint32_t LoadStorePairPostIndex(bool sf, bool is_load, int32_t simm7, uint32_t rn, uint32_t rt1, uint32_t rt2) noexcept {
+	uint32_t inst = is_load ? 0x28C00000u : 0x28800000u;
+	if (sf) inst |= (0x2u << 30u); // 64-bit: opc = 10 -> 0xA8C00000 (LDP) / 0xA8800000 (STP)
+	inst |= ((static_cast<uint32_t>(simm7) & 0x7Fu) << 15u);
+	inst |= ((rt2 & 0x1Fu) << 10u);
+	inst |= ((rn & 0x1Fu) << 5u);
+	inst |= (rt1 & 0x1Fu);
+	return inst;
+}
+
+constexpr inline uint32_t LoadStorePair(bool sf, bool is_load, int32_t simm7, uint32_t rn, uint32_t rt1, uint32_t rt2) noexcept {
+	return LoadStorePairOffset(sf, is_load, simm7, rn, rt1, rt2);
 }
 
 // Branches & Controls - B, BL, BR, BLR, RET, CBZ, CBNZ, TBZ, TBNZ

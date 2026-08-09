@@ -79,6 +79,8 @@ public:
 	void EmitStur64(Arm64Reg src, Arm64Reg base, int32_t simm9);
 	void EmitLdp64(Arm64Reg dst1, Arm64Reg dst2, Arm64Reg base, int32_t offset);
 	void EmitStp64(Arm64Reg src1, Arm64Reg src2, Arm64Reg base, int32_t offset);
+	void EmitLdp64PostIndex(Arm64Reg dst1, Arm64Reg dst2, Arm64Reg base, int32_t offset);
+	void EmitStp64PreIndex(Arm64Reg src1, Arm64Reg src2, Arm64Reg base, int32_t offset);
 
 	// 3. Branch Instructions
 	void EmitB(int32_t offset_words);

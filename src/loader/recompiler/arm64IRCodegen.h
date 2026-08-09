@@ -6,6 +6,7 @@
 #define LOADER_RECOMPILER_ARM64_IR_CODEGEN_H
 
 #include "loader/recompiler/arm64Emitter.h"
+#include "loader/recompiler/arm64FpSimdEmitter.h"
 #include "loader/recompiler/arm64LinearScanAllocator.h"
 #include "loader/recompiler/compilerIR.h"
 
@@ -23,7 +24,8 @@ public:
 	[[nodiscard]] const LinearScanAllocator& GetAllocator() const noexcept { return m_allocator; }
 
 private:
-	Arm64Reg MapOperandToArm64Reg(const VirtualReg& vreg) const noexcept;
+	Arm64Reg   MapOperandToArm64Reg(const VirtualReg& vreg) const noexcept;
+	Arm64FpReg MapOperandToArm64FpReg(const VirtualReg& vreg) const noexcept;
 
 	LinearScanAllocator m_allocator;
 };

@@ -167,12 +167,22 @@ void Arm64Emitter::EmitStur64(Arm64Reg src, Arm64Reg base, int32_t simm9) {
 
 void Arm64Emitter::EmitLdp64(Arm64Reg dst1, Arm64Reg dst2, Arm64Reg base, int32_t offset) {
 	int32_t simm7 = offset / 8;
-	Emit32(LoadStorePair(true, true, simm7, Reg(base), Reg(dst1), Reg(dst2)));
+	Emit32(LoadStorePairOffset(true, true, simm7, Reg(base), Reg(dst1), Reg(dst2)));
 }
 
 void Arm64Emitter::EmitStp64(Arm64Reg src1, Arm64Reg src2, Arm64Reg base, int32_t offset) {
 	int32_t simm7 = offset / 8;
-	Emit32(LoadStorePair(true, false, simm7, Reg(base), Reg(src1), Reg(src2)));
+	Emit32(LoadStorePairOffset(true, false, simm7, Reg(base), Reg(src1), Reg(src2)));
+}
+
+void Arm64Emitter::EmitLdp64PostIndex(Arm64Reg dst1, Arm64Reg dst2, Arm64Reg base, int32_t offset) {
+	int32_t simm7 = offset / 8;
+	Emit32(LoadStorePairPostIndex(true, true, simm7, Reg(base), Reg(dst1), Reg(dst2)));
+}
+
+void Arm64Emitter::EmitStp64PreIndex(Arm64Reg src1, Arm64Reg src2, Arm64Reg base, int32_t offset) {
+	int32_t simm7 = offset / 8;
+	Emit32(LoadStorePairPreIndex(true, false, simm7, Reg(base), Reg(src1), Reg(src2)));
 }
 
 // 3. Branch Instructions

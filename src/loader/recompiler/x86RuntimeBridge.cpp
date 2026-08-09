@@ -70,6 +70,7 @@ bool X86RuntimeBridge::ExecuteBlock(GuestCpuContext& ctx, const uint8_t* code_pt
 	if (!func) return false;
 
 	// 3. Execute JIT Machine Code & Register Flush
+	func(&ctx);
 	ctx.FlushLazyRegisters();
 	return true;
 }

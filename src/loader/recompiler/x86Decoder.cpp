@@ -160,10 +160,18 @@ static const OpcodeEntry* GetTwoByteOpcodeEntry(uint8_t opcode) {
 			table[0x90 + c] = {X86Opcode::Setcc, OpcodeFormat::ModRm_Rm_Reg, 0, conds[c >> 1], (c & 1) != 0};
 		}
 
+		table[0x51] = {X86Opcode::Sqrtps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x52] = {X86Opcode::Rsqrtps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x54] = {X86Opcode::Andps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x55] = {X86Opcode::Andnps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x56] = {X86Opcode::Orps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x57] = {X86Opcode::Xorps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x58] = {X86Opcode::Addps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x59] = {X86Opcode::Mulps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x5C] = {X86Opcode::Subps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x5D] = {X86Opcode::Minps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x5E] = {X86Opcode::Divps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x5F] = {X86Opcode::Maxps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x6F] = {X86Opcode::Movdqa, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x7F] = {X86Opcode::Movdqa, OpcodeFormat::ModRm_Rm_Reg, 0, X86Condition::Equal, false};
 
@@ -223,15 +231,21 @@ DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, siz
 			inst.rex_x   = (byte & 0x02) != 0;
 			inst.rex_b   = (byte & 0x01) != 0;
 			offset++;
-			break;
-		} else if (byte == 0x66) {
+		} else if (byte == 0x66) { // Operand Size Override
 			inst.operand_size_override = true;
 			offset++;
-		} else if (byte == 0x67) {
+		} else if (byte == 0x67) { // Address Size Override
 			inst.address_size_override = true;
 			offset++;
-		} else if (byte == 0xF0 || byte == 0xF2 || byte == 0xF3) {
-			offset++; // Lock / REP prefixes
+		} else if (byte == 0xF0) { // LOCK
+			inst.has_lock = true;
+			offset++;
+		} else if (byte == 0xF2 || byte == 0xF3) { // REPNE / REP
+			inst.has_rep = true;
+			offset++;
+		} else if (byte == 0x2E || byte == 0x36 || byte == 0x3E || byte == 0x26 || byte == 0x64 || byte == 0x65) {
+			// Segment overrides
+			offset++;
 		} else {
 			break;
 		}
@@ -288,7 +302,19 @@ DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, siz
 
 	// Determine Operand Byte Size
 	uint8_t op_size_bytes = 4;
-	if (inst.rex_w) {
+	if (is_twobyte && (inst.opcode == X86Opcode::Movaps || inst.opcode == X86Opcode::Movups ||
+	                   inst.opcode == X86Opcode::Movdqa || inst.opcode == X86Opcode::Movdqu ||
+	                   inst.opcode == X86Opcode::Addps  || inst.opcode == X86Opcode::Subps  ||
+	                   inst.opcode == X86Opcode::Mulps  || inst.opcode == X86Opcode::Divps  ||
+	                   inst.opcode == X86Opcode::Sqrtps || inst.opcode == X86Opcode::Rsqrtps ||
+	                   inst.opcode == X86Opcode::Andps  || inst.opcode == X86Opcode::Andnps ||
+	                   inst.opcode == X86Opcode::Orps   || inst.opcode == X86Opcode::Xorps  ||
+	                   inst.opcode == X86Opcode::Minps  || inst.opcode == X86Opcode::Maxps  ||
+	                   inst.opcode == X86Opcode::Pand   || inst.opcode == X86Opcode::Por    ||
+	                   inst.opcode == X86Opcode::Pxor   || inst.opcode == X86Opcode::Paddd  ||
+	                   inst.opcode == X86Opcode::Psubd)) {
+		op_size_bytes = 16;
+	} else if (inst.rex_w) {
 		op_size_bytes = 8;
 	} else if (inst.operand_size_override) {
 		op_size_bytes = 2;
@@ -300,14 +326,19 @@ DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, siz
 			break;
 
 		case OpcodeFormat::RegEmbed: {
-			uint8_t reg_id = (opcode_byte & 0x07) | (inst.rex_b ? 8 : 0);
+			uint8_t reg_id = 0;
+			if ((opcode_byte >= 0x50 && opcode_byte <= 0x5F) || (opcode_byte >= 0xB0 && opcode_byte <= 0xBF)) {
+				reg_id = (opcode_byte & 0x07) | (inst.rex_b ? 8 : 0);
+			} else {
+				reg_id = 0; // Accumulator (AL / AX / EAX / RAX)
+			}
 			inst.dst.kind = X86Operand::Kind::Reg;
 			inst.dst.reg = static_cast<X86Reg>(reg_id);
 			inst.dst.size_bytes = op_size_bytes;
 
 			if (entry.default_imm_size > 0 && offset + entry.default_imm_size <= max_bytes) {
 				int64_t imm_val = 0;
-				size_t read_bytes = (inst.rex_w && entry.default_imm_size == 4) ? 8 : entry.default_imm_size;
+				size_t read_bytes = (inst.rex_w && (opcode_byte >= 0xB8 && opcode_byte <= 0xBF)) ? 8 : entry.default_imm_size;
 				if (offset + read_bytes <= max_bytes) {
 					for (size_t i = 0; i < read_bytes; ++i) {
 						imm_val |= (static_cast<uint64_t>(code_ptr[offset + i]) << (i * 8));
@@ -412,7 +443,15 @@ DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, siz
 				inst.src = reg_op;
 			} else if (entry.format == OpcodeFormat::ModRm_Rm_Imm || entry.format == OpcodeFormat::ModRm_Group) {
 				inst.dst = rm_op;
-				if (entry.default_imm_size > 0) {
+				if (opcode_byte == 0xD0 || opcode_byte == 0xD1) {
+					inst.src.kind = X86Operand::Kind::Imm;
+					inst.src.imm = 1;
+					inst.src.size_bytes = 1;
+				} else if (opcode_byte == 0xD2 || opcode_byte == 0xD3) {
+					inst.src.kind = X86Operand::Kind::Reg;
+					inst.src.reg = X86Reg::RCX;
+					inst.src.size_bytes = 1;
+				} else if (entry.default_imm_size > 0) {
 					size_t imm_bytes = entry.default_imm_size;
 					if (offset + imm_bytes <= max_bytes) {
 						int64_t imm_val = 0;

@@ -97,11 +97,44 @@ bool Arm64InstructionSelector::SelectInstruction(const IRInstruction& inst, Arm6
 			}
 			break;
 
-		case IROpcode::BranchCond:
-			if (ops.size() >= 1 && ops[0].IsVReg()) {
-				// Optimal Pattern Selection: Zero Comparison -> CBZ / CBNZ
-				emitter.EmitCbz(vreg_map(ops[0].vreg), 0);
+		case IROpcode::Cmp:
+			if (ops.size() >= 2) {
+				if (ops[0].IsVReg() && ops[1].IsVReg()) {
+					emitter.EmitCmpReg(vreg_map(ops[0].vreg), vreg_map(ops[1].vreg));
+				} else if (ops[0].IsVReg() && ops[1].IsImmInt()) {
+					emitter.EmitCmpImm(vreg_map(ops[0].vreg), static_cast<uint32_t>(ops[1].imm_int));
+				}
 			}
+			break;
+
+		case IROpcode::Test:
+			if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+				emitter.EmitTstReg(vreg_map(ops[0].vreg), vreg_map(ops[1].vreg));
+			}
+			break;
+
+		case IROpcode::BranchCond: {
+			uint32_t cond_code = 0x0; // EQ default
+			switch (inst.GetCondition()) {
+				case IRCondition::Equal:          cond_code = 0x0; break;
+				case IRCondition::NotEqual:       cond_code = 0x1; break;
+				case IRCondition::AboveOrEqual:   cond_code = 0x2; break; // CS / HS
+				case IRCondition::Below:          cond_code = 0x3; break; // CC / LO
+				case IRCondition::Overflow:       cond_code = 0x6; break; // VS
+				case IRCondition::NoOverflow:     cond_code = 0x7; break; // VC
+				case IRCondition::Above:          cond_code = 0x8; break; // HI
+				case IRCondition::BelowOrEqual:   cond_code = 0x9; break; // LS
+				case IRCondition::GreaterOrEqual: cond_code = 0xA; break; // GE
+				case IRCondition::Less:           cond_code = 0xB; break; // LT
+				case IRCondition::Greater:        cond_code = 0xC; break; // GT
+				case IRCondition::LessOrEqual:    cond_code = 0xD; break; // LE
+			}
+			emitter.Emit32(0x54000000u | (cond_code & 0x0Fu)); // B.cond +0 (or fallthrough)
+			break;
+		}
+
+		case IROpcode::Jump:
+			emitter.EmitB(0); // Branch target
 			break;
 
 		case IROpcode::Return:

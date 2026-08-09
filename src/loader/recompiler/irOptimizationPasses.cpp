@@ -77,7 +77,7 @@ bool ConstantFoldingPass::Run(ControlFlowGraph& cfg, const DominatorTree& /*dom_
 				}
 
 				if (can_fold) {
-					inst->SetOpcode(IROpcode::Nop);
+					inst->SetOpcode(IROpcode::Add);
 					inst->GetOperands().clear();
 					inst->AddOperand(Value::MakeImmInt(result, inst->GetDst().type));
 					modified = true;
@@ -248,6 +248,9 @@ bool DeadCodeEliminationPass::Run(ControlFlowGraph& cfg, const DominatorTree& /*
 	for (const auto& block : cfg.GetBlocks()) {
 		for (auto& inst : block->GetInstructions()) {
 			if (!inst->IsActive() || !inst->HasDst() || inst->IsTerminator()) continue;
+
+			// Pinned physical registers (guest architectural state) must persist on block exit
+			if (inst->GetDst().phys_pin >= 0) continue;
 
 			if (inst->GetOpcode() != IROpcode::Load && inst->GetOpcode() != IROpcode::Store) {
 				if (!used_vregs.count(inst->GetDst().id)) {
