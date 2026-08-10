@@ -10,7 +10,7 @@
 using namespace Loader::Recompiler;
 
 static uint64_t g_dummy_exec_cnt = 0;
-static void DummyBlockFunc() {
+static void DummyBlockFunc(GuestCpuContext* /*ctx*/) {
 	g_dummy_exec_cnt++;
 }
 
@@ -41,7 +41,7 @@ static void TestRadixCodeCacheDirectLookup() {
 	}
 
 	// Execution check
-	fn1();
+	fn1(nullptr);
 	if (g_dummy_exec_cnt != 1) {
 		std::fprintf(stderr, "FAIL: Executed block function count mismatch\n");
 		std::exit(1);
