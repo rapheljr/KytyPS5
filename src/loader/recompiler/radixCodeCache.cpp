@@ -38,7 +38,7 @@ void RadixCodeCache::Insert(uint64_t guest_rip, CompiledBlockFunc host_func) noe
 
 	RadixNode* curr = m_root;
 	for (int level = 3; level >= 0; --level) {
-		uint8_t byte_val = (guest_rip >> (level * 16u)) & 0xFFu;
+		uint8_t byte_val = (guest_rip >> (level * 8u)) & 0xFFu;
 		RadixNode* child = curr->children[byte_val].load(std::memory_order_acquire);
 		if (!child) {
 			RadixNode* new_node = new RadixNode();
@@ -63,7 +63,7 @@ CompiledBlockFunc RadixCodeCache::Lookup(uint64_t guest_rip) noexcept {
 
 	RadixNode* curr = m_root;
 	for (int level = 3; level >= 0; --level) {
-		uint8_t byte_val = (guest_rip >> (level * 16u)) & 0xFFu;
+		uint8_t byte_val = (guest_rip >> (level * 8u)) & 0xFFu;
 		curr = curr->children[byte_val].load(std::memory_order_acquire);
 		if (!curr) return nullptr;
 	}
@@ -78,7 +78,7 @@ CompiledBlockFunc RadixCodeCache::LookupDirect(uint64_t guest_rip) noexcept {
 
 	RadixNode* curr = m_root;
 	for (int level = 3; level >= 0; --level) {
-		uint8_t byte_val = (guest_rip >> (level * 16u)) & 0xFFu;
+		uint8_t byte_val = (guest_rip >> (level * 8u)) & 0xFFu;
 		curr = curr->children[byte_val].load(std::memory_order_relaxed);
 		if (!curr) return nullptr;
 	}
@@ -91,12 +91,60 @@ void RadixCodeCache::Invalidate(uint64_t guest_rip) noexcept {
 
 	RadixNode* curr = m_root;
 	for (int level = 3; level >= 0; --level) {
-		uint8_t byte_val = (guest_rip >> (level * 16u)) & 0xFFu;
+		uint8_t byte_val = (guest_rip >> (level * 8u)) & 0xFFu;
 		curr = curr->children[byte_val].load(std::memory_order_acquire);
 		if (!curr) return;
 	}
 
 	curr->leaf_func.store(nullptr, std::memory_order_release);
+}
+
+size_t RadixCodeCache::GetBlockCount() const noexcept {
+	if (!m_root) return 0;
+	size_t count = 0;
+	CountNodesRecursive(m_root, count);
+	return count;
+}
+
+void RadixCodeCache::CountNodesRecursive(const RadixNode* node, size_t& count) const noexcept {
+	if (!node) return;
+	if (node->leaf_func.load(std::memory_order_relaxed) != nullptr) {
+		count++;
+	}
+	for (int i = 0; i < 256; ++i) {
+		const RadixNode* child = node->children[i].load(std::memory_order_relaxed);
+		if (child) {
+			CountNodesRecursive(child, count);
+		}
+	}
+}
+
+size_t RadixCodeCache::EvictOldestBlocks(uint64_t older_than_timestamp, size_t max_evictions) noexcept {
+	if (!m_root || max_evictions == 0) return 0;
+	size_t evicted = 0;
+	EvictNodesRecursive(m_root, older_than_timestamp, evicted, max_evictions);
+	return evicted;
+}
+
+void RadixCodeCache::EvictNodesRecursive(RadixNode* node, uint64_t older_than_ts, size_t& evicted, size_t max_evict) noexcept {
+	if (!node || evicted >= max_evict) return;
+
+	if (node->leaf_func.load(std::memory_order_relaxed) != nullptr) {
+		uint64_t last_ts = node->last_access_timestamp.load(std::memory_order_relaxed);
+		if (last_ts < older_than_ts) {
+			node->leaf_func.store(nullptr, std::memory_order_release);
+			evicted++;
+			if (evicted >= max_evict) return;
+		}
+	}
+
+	for (int i = 0; i < 256; ++i) {
+		RadixNode* child = node->children[i].load(std::memory_order_relaxed);
+		if (child) {
+			EvictNodesRecursive(child, older_than_ts, evicted, max_evict);
+			if (evicted >= max_evict) return;
+		}
+	}
 }
 
 void RadixCodeCache::Clear() noexcept {
@@ -181,6 +229,19 @@ bool GenerationalCodeCache::CompactCache() noexcept {
 	m_stats.gen0_bytes_used = 0;
 	m_stats.fragmentation_pct = 0.0;
 	return true;
+}
+
+size_t GenerationalCodeCache::EvictLRU(size_t target_reclaim_bytes) noexcept {
+	std::lock_guard<std::mutex> lock(m_gen_mutex);
+	size_t reclaimed = 0;
+	size_t curr_gen0 = m_gen0_offset.load(std::memory_order_relaxed);
+	if (curr_gen0 > 0) {
+		reclaimed = (curr_gen0 > target_reclaim_bytes) ? target_reclaim_bytes : curr_gen0;
+		m_gen0_offset.store(curr_gen0 - reclaimed, std::memory_order_relaxed);
+		m_stats.gen0_bytes_used = m_gen0_offset.load();
+		m_stats.evicted_block_cnt += (reclaimed / 64);
+	}
+	return reclaimed;
 }
 
 bool GenerationalCodeCache::SerializeToFile(const std::string& filepath) const {

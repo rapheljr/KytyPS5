@@ -35,10 +35,14 @@ public:
 	[[nodiscard]] CompiledBlockFunc Lookup(uint64_t guest_rip) noexcept;
 	[[nodiscard]] CompiledBlockFunc LookupDirect(uint64_t guest_rip) noexcept;
 	void Invalidate(uint64_t guest_rip) noexcept;
+	size_t EvictOldestBlocks(uint64_t older_than_timestamp, size_t max_evictions = 1000) noexcept;
+	size_t GetBlockCount() const noexcept;
 	void Clear() noexcept;
 
 private:
 	void FreeNodeRecursive(RadixNode* node);
+	void CountNodesRecursive(const RadixNode* node, size_t& count) const noexcept;
+	void EvictNodesRecursive(RadixNode* node, uint64_t older_than_ts, size_t& evicted, size_t max_evict) noexcept;
 
 	RadixNode* m_root = nullptr;
 };
@@ -47,6 +51,7 @@ struct CacheGenerationStats {
 	size_t gen0_bytes_used  = 0;
 	size_t gen1_bytes_used  = 0;
 	size_t active_block_cnt = 0;
+	size_t evicted_block_cnt = 0;
 	double fragmentation_pct = 0.0;
 };
 
@@ -62,6 +67,7 @@ public:
 
 	double CalculateFragmentationRatio() const noexcept;
 	bool CompactCache() noexcept;
+	size_t EvictLRU(size_t target_reclaim_bytes) noexcept;
 
 	// Persistent Cache Serialization & Cross-Session Reuse
 	bool SerializeToFile(const std::string& filepath) const;
