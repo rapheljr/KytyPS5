@@ -1,22 +1,26 @@
 // coreAudioBackend.h
 //
-// Apple CoreAudio Hardware Backend for PS5 Audio Subsystem.
+// CoreAudio Multi-Channel PS5 AudioOut Streaming Engine.
 
 #ifndef AUDIO_CORE_AUDIO_BACKEND_H
 #define AUDIO_CORE_AUDIO_BACKEND_H
 
-#include "audio/audioEngine.h"
 #include "common/common.h"
+#include "audio/audioEngine.h"
 
 #include <atomic>
 #include <cstdint>
-
-#if defined(__APPLE__)
-#include <AudioToolbox/AudioToolbox.h>
-#include <CoreAudio/CoreAudio.h>
-#endif
+#include <memory>
+#include <mutex>
+#include <vector>
 
 namespace Libs::Audio {
+
+struct AudioBackendStats {
+	uint64_t total_frames_written = 0;
+	uint64_t total_frames_played  = 0;
+	uint64_t buffer_underruns     = 0;
+};
 
 class CoreAudioBackend : public IAudioBackend {
 public:
@@ -26,25 +30,37 @@ public:
 	KYTY_CLASS_NO_COPY(CoreAudioBackend);
 
 	bool Initialize(const AudioStreamConfig& config) override;
+	bool Initialize(uint32_t sample_rate = 48000, uint32_t channels = 2, size_t ring_buffer_capacity_frames = 16384);
 	void Shutdown() override;
+
 	bool StartStream() override;
 	bool StopStream() override;
 	uint64_t GetAudioTimeUs() const override;
 	void SetLatencyUs(uint32_t latency_us) override;
-	const char* GetBackendName() const override { return "Apple CoreAudio HAL"; }
+	const char* GetBackendName() const override { return "Apple CoreAudio AudioUnit Backend"; }
 
-	void RenderAudio(float* buffer, size_t frame_count);
+	/// Push interleaved float PCM audio samples into the ring buffer
+	size_t WriteSamples(const float* interleaved_pcm, size_t num_frames);
+
+	[[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
+	[[nodiscard]] uint32_t GetSampleRate() const noexcept { return m_sample_rate; }
+	[[nodiscard]] uint32_t GetChannels() const noexcept { return m_channels; }
+	[[nodiscard]] size_t GetAvailableFramesToRead() const noexcept;
+	[[nodiscard]] const AudioBackendStats& GetStats() const noexcept { return m_stats; }
 
 private:
-	AudioEngine*       m_engine = nullptr;
-	AudioStreamConfig  m_config{};
-	std::atomic<bool>  m_running{false};
-	std::atomic<uint64_t> m_audio_time_us{0};
-	uint32_t           m_latency_us = 10000;
+	struct Impl;
+	std::unique_ptr<Impl> m_impl;
 
-#if defined(__APPLE__)
-	AudioComponentInstance m_audio_unit = nullptr;
-#endif
+	bool              m_initialized = false;
+	uint32_t          m_sample_rate = 48000;
+	uint32_t          m_channels    = 2;
+	size_t            m_capacity    = 0;
+
+	std::vector<float>    m_ring_buffer;
+	std::atomic<size_t>   m_write_pos{0};
+	std::atomic<size_t>   m_read_pos{0};
+	mutable AudioBackendStats m_stats{};
 };
 
 } // namespace Libs::Audio

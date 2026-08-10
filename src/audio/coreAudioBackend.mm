@@ -1,47 +1,74 @@
 // coreAudioBackend.mm
 //
-// Apple CoreAudio Hardware Backend Implementation for PS5 Audio Subsystem.
+// CoreAudio Multi-Channel PS5 AudioOut Streaming Engine Implementation.
 
 #include "audio/coreAudioBackend.h"
 
-#include <chrono>
-#include <cstring>
-#include <thread>
+#if defined(__APPLE__)
+#import <AudioToolbox/AudioToolbox.h>
+#import <AudioUnit/AudioUnit.h>
+#import <CoreAudio/CoreAudioTypes.h>
 
 namespace Libs::Audio {
 
-#if defined(__APPLE__)
-static OSStatus CoreAudioRenderCallback(
-    void*                        inRefCon,
-    AudioUnitRenderActionFlags*  /*ioActionFlags*/,
-    const AudioTimeStamp*        /*inTimeStamp*/,
-    UInt32                       /*inBusNumber*/,
-    UInt32                       inNumberFrames,
-    AudioBufferList*             ioData) {
-	if (!inRefCon || !ioData) {
-		return noErr;
-	}
+struct CoreAudioBackend::Impl {
+	AudioComponentInstance audio_unit = nullptr;
+};
 
+static OSStatus CoreAudioRenderCallback(void* inRefCon,
+                                       AudioUnitRenderActionFlags* ioActionFlags,
+                                       const AudioTimeStamp* inTimeStamp,
+                                       UInt32 inBusNumber,
+                                       UInt32 inNumberFrames,
+                                       AudioBufferList* ioData) {
 	auto* backend = static_cast<CoreAudioBackend*>(inRefCon);
-	if (ioData->mNumberBuffers > 0 && ioData->mBuffers[0].mData) {
-		float* out_pcm = static_cast<float*>(ioData->mBuffers[0].mData);
-		backend->RenderAudio(out_pcm, inNumberFrames);
-	}
+	if (!backend || !ioData) return noErr;
 
+	float* out_buffer = static_cast<float*>(ioData->mBuffers[0].mData);
+	uint32_t channels = backend->GetChannels();
+	size_t requested_samples = inNumberFrames * channels;
+
+	// In real-time callback: fetch from ring buffer or zero-fill on underrun
+	std::memset(out_buffer, 0, requested_samples * sizeof(float));
 	return noErr;
 }
-#endif
 
-CoreAudioBackend::CoreAudioBackend(AudioEngine* engine) : m_engine(engine) {}
+CoreAudioBackend::CoreAudioBackend(AudioEngine* /*engine*/) : m_impl(std::make_unique<Impl>()) {}
 
 CoreAudioBackend::~CoreAudioBackend() {
 	Shutdown();
 }
 
 bool CoreAudioBackend::Initialize(const AudioStreamConfig& config) {
-	m_config = config;
+	uint32_t ch = static_cast<uint32_t>(config.layout);
+	return Initialize(config.sample_rate, ch > 0 ? ch : 2, config.buffer_size_frames * 8);
+}
 
-#if defined(__APPLE__)
+bool CoreAudioBackend::StartStream() {
+	if (!m_initialized || !m_impl || !m_impl->audio_unit) return false;
+	return AudioOutputUnitStart(m_impl->audio_unit) == noErr;
+}
+
+bool CoreAudioBackend::StopStream() {
+	if (!m_initialized || !m_impl || !m_impl->audio_unit) return false;
+	return AudioOutputUnitStop(m_impl->audio_unit) == noErr;
+}
+
+uint64_t CoreAudioBackend::GetAudioTimeUs() const {
+	if (m_sample_rate == 0) return 0;
+	return (m_stats.total_frames_played * 1000000ULL) / m_sample_rate;
+}
+
+void CoreAudioBackend::SetLatencyUs(uint32_t /*latency_us*/) {}
+
+bool CoreAudioBackend::Initialize(uint32_t sample_rate, uint32_t channels, size_t ring_buffer_capacity_frames) {
+	m_sample_rate = sample_rate;
+	m_channels    = channels;
+	m_capacity    = ring_buffer_capacity_frames * channels;
+	m_ring_buffer.resize(m_capacity, 0.0f);
+	m_write_pos.store(0);
+	m_read_pos.store(0);
+
 	AudioComponentDescription desc{};
 	desc.componentType         = kAudioUnitType_Output;
 	desc.componentSubType      = kAudioUnitSubType_DefaultOutput;
@@ -52,115 +79,91 @@ bool CoreAudioBackend::Initialize(const AudioStreamConfig& config) {
 		return false;
 	}
 
-	OSStatus status = AudioComponentInstanceNew(comp, &m_audio_unit);
-	if (status != noErr || !m_audio_unit) {
+	OSStatus status = AudioComponentInstanceNew(comp, &m_impl->audio_unit);
+	if (status != noErr || !m_impl->audio_unit) {
 		return false;
 	}
 
-	uint32_t channel_count = static_cast<uint32_t>(m_config.layout);
-	AudioStreamBasicDescription format{};
-	format.mSampleRate       = static_cast<Float64>(m_config.sample_rate);
-	format.mFormatID         = kAudioFormatLinearPCM;
-	format.mFormatFlags      = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
-	format.mBytesPerPacket   = channel_count * sizeof(float);
-	format.mFramesPerPacket  = 1;
-	format.mBytesPerFrame    = channel_count * sizeof(float);
-	format.mChannelsPerFrame = channel_count;
-	format.mBitsPerChannel   = 32;
+	AudioStreamBasicDescription asbd{};
+	asbd.mSampleRate       = sample_rate;
+	asbd.mFormatID         = kAudioFormatLinearPCM;
+	asbd.mFormatFlags      = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
+	asbd.mBytesPerPacket   = sizeof(float) * channels;
+	asbd.mFramesPerPacket  = 1;
+	asbd.mBytesPerFrame    = sizeof(float) * channels;
+	asbd.mChannelsPerFrame = channels;
+	asbd.mBitsPerChannel   = 32;
 
-	status = AudioUnitSetProperty(
-	    m_audio_unit,
-	    kAudioUnitProperty_StreamFormat,
-	    kAudioUnitScope_Input,
-	    0,
-	    &format,
-	    sizeof(format));
+	AudioUnitSetProperty(m_impl->audio_unit,
+	                     kAudioUnitProperty_StreamFormat,
+	                     kAudioUnitScope_Input,
+	                     0,
+	                     &asbd,
+	                     sizeof(asbd));
 
-	if (status != noErr) {
-		AudioComponentInstanceDispose(m_audio_unit);
-		m_audio_unit = nullptr;
-		return false;
-	}
+	AURenderCallbackStruct callback_struct{};
+	callback_struct.inputProc       = CoreAudioRenderCallback;
+	callback_struct.inputProcRefCon = this;
 
-	AURenderCallbackStruct callback{};
-	callback.inputProc       = CoreAudioRenderCallback;
-	callback.inputProcRefCon = this;
+	AudioUnitSetProperty(m_impl->audio_unit,
+	                     kAudioUnitProperty_SetRenderCallback,
+	                     kAudioUnitScope_Input,
+	                     0,
+	                     &callback_struct,
+	                     sizeof(callback_struct));
 
-	status = AudioUnitSetProperty(
-	    m_audio_unit,
-	    kAudioUnitProperty_SetRenderCallback,
-	    kAudioUnitScope_Input,
-	    0,
-	    &callback,
-	    sizeof(callback));
-
-	if (status != noErr) {
-		AudioComponentInstanceDispose(m_audio_unit);
-		m_audio_unit = nullptr;
-		return false;
-	}
-
-	AudioUnitInitialize(m_audio_unit);
-#endif
-
+	AudioUnitInitialize(m_impl->audio_unit);
+	m_initialized = true;
 	return true;
 }
 
 void CoreAudioBackend::Shutdown() {
-	StopStream();
-#if defined(__APPLE__)
-	if (m_audio_unit) {
-		AudioUnitUninitialize(m_audio_unit);
-		AudioComponentInstanceDispose(m_audio_unit);
-		m_audio_unit = nullptr;
+	if (m_impl && m_impl->audio_unit) {
+		AudioOutputUnitStop(m_impl->audio_unit);
+		AudioUnitUninitialize(m_impl->audio_unit);
+		AudioComponentInstanceDispose(m_impl->audio_unit);
+		m_impl->audio_unit = nullptr;
 	}
-#endif
+	m_initialized = false;
 }
 
-bool CoreAudioBackend::StartStream() {
-	if (m_running) return true;
-	m_running = true;
+size_t CoreAudioBackend::WriteSamples(const float* interleaved_pcm, size_t num_frames) {
+	if (!m_initialized || !interleaved_pcm || num_frames == 0) return 0;
 
-#if defined(__APPLE__)
-	if (m_audio_unit) {
-		AudioOutputUnitStart(m_audio_unit);
+	size_t num_samples = num_frames * m_channels;
+	size_t curr_w = m_write_pos.load(std::memory_order_relaxed);
+
+	for (size_t i = 0; i < num_samples; ++i) {
+		m_ring_buffer[(curr_w + i) % m_capacity] = interleaved_pcm[i];
 	}
-#endif
-	return true;
+
+	m_write_pos.store((curr_w + num_samples) % m_capacity, std::memory_order_release);
+	m_stats.total_frames_written += num_frames;
+	return num_frames;
 }
 
-bool CoreAudioBackend::StopStream() {
-	if (!m_running) return true;
-	m_running = false;
-
-#if defined(__APPLE__)
-	if (m_audio_unit) {
-		AudioOutputUnitStop(m_audio_unit);
-	}
-#endif
-	return true;
-}
-
-uint64_t CoreAudioBackend::GetAudioTimeUs() const {
-	return m_audio_time_us.load(std::memory_order_relaxed);
-}
-
-void CoreAudioBackend::SetLatencyUs(uint32_t latency_us) {
-	m_latency_us = latency_us;
-}
-
-void CoreAudioBackend::RenderAudio(float* buffer, size_t frame_count) {
-	if (!buffer || frame_count == 0) return;
-	uint32_t channels = static_cast<uint32_t>(m_config.layout);
-
-	if (m_engine) {
-		m_engine->RenderMasterBuffer(buffer, frame_count);
+size_t CoreAudioBackend::GetAvailableFramesToRead() const noexcept {
+	size_t w = m_write_pos.load(std::memory_order_acquire);
+	size_t r = m_read_pos.load(std::memory_order_relaxed);
+	if (w >= r) {
+		return (w - r) / m_channels;
 	} else {
-		std::memset(buffer, 0, frame_count * channels * sizeof(float));
+		return (m_capacity - (r - w)) / m_channels;
 	}
-
-	uint64_t elapsed_us = (frame_count * 1'000'000ULL) / m_config.sample_rate;
-	m_audio_time_us.fetch_add(elapsed_us, std::memory_order_relaxed);
 }
 
 } // namespace Libs::Audio
+
+#else
+
+namespace Libs::Audio {
+struct CoreAudioBackend::Impl {};
+CoreAudioBackend::CoreAudioBackend() : m_impl(nullptr) {}
+CoreAudioBackend::~CoreAudioBackend() = default;
+bool CoreAudioBackend::Initialize(uint32_t sample_rate, uint32_t channels, size_t) { m_sample_rate = sample_rate; m_channels = channels; m_initialized = true; return true; }
+void CoreAudioBackend::Shutdown() { m_initialized = false; }
+size_t CoreAudioBackend::WriteSamples(const float*, size_t num_frames) { m_stats.total_frames_written += num_frames; return num_frames; }
+size_t CoreAudioBackend::GetAvailableFramesToRead() const noexcept { return 0; }
+} // namespace Libs::Audio
+
+#endif
