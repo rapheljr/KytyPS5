@@ -400,6 +400,7 @@ public:
 	void AddCommand(const CmdDrawIndexed& cmd) { RecordDrawIndexed(cmd.index_count, cmd.instance_count, cmd.first_index, cmd.vertex_offset, cmd.first_instance, cmd.index_gpu_addr, cmd.index_type); }
 	void AddCommand(const CmdClearRenderTarget& cmd) { RecordClear(cmd.color, cmd.depth, cmd.stencil, cmd.clear_color, cmd.clear_depth, cmd.clear_stencil); }
 	void AddCommand(const CmdSurfaceSync& cmd) { (void)cmd; RecordSurfaceSync(0, 0, 0, 0); }
+	void AddCommand(const CmdPipelineBarrier& cmd) { RecordBarrier(cmd.flush_cb, cmd.flush_db, cmd.inv_l2); }
 
 	void Append(const Pm4CommandList& other);
 

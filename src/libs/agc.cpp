@@ -74,9 +74,10 @@ void GraphicsDbgDumpDcb(const char* type, uint32_t num_dw, uint32_t* cmd_buffer)
 
 	if (Config::CommandBufferDumpEnabled() && num_dw > 0 && cmd_buffer != nullptr) {
 		Common::File f;
+		uint32_t frame_num = (g_renderer != nullptr) ? g_renderer->GetGpu().GetFrameNum() : 0;
 		auto         file_name = Config::GetCommandBufferDumpFolder() /
 		                         fmt::format("{:04d}_{:04d}_buffer_{}.log",
-		                                     g_renderer->GetGpu().GetFrameNum(), id++, type);
+		                                     frame_num, id++, type);
 		Common::File::CreateDirectories(file_name.parent_path());
 		f.Create(file_name);
 		if (f.IsInvalid()) {
@@ -3885,9 +3886,10 @@ static bool dcb_has_queued_interrupt(const uint32_t* dcb, uint32_t size_in_dword
 
 static void submit_dcb(uint32_t* dcb, uint32_t size_in_dwords) {
 	GraphicsDbgDumpDcb("d", size_in_dwords, dcb);
-	EXIT_IF(g_renderer == nullptr);
-	g_renderer->GetGpu().Submit(dcb, size_in_dwords, nullptr, 0,
-	                            !dcb_has_queued_interrupt(dcb, size_in_dwords));
+	if (g_renderer != nullptr) {
+		g_renderer->GetGpu().Submit(dcb, size_in_dwords, nullptr, 0,
+		                            !dcb_has_queued_interrupt(dcb, size_in_dwords));
+	}
 }
 
 int KYTY_SYSV_ABI GraphicsDriverSubmitDcb(const Packet* packet) {
