@@ -29,7 +29,7 @@ bool GameLoadingPipeline::Initialize() {
 	if (m_initialized) return true;
 
 	if (!Libs::LibKernel::Memory::IsInitialized()) {
-		Libs::LibKernel::Memory::MemorySubsystem::Instance()->Init(nullptr);
+		Libs::LibKernel::Memory::Initialize();
 	}
 
 	m_linker->Clear();

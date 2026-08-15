@@ -329,7 +329,6 @@ int main(int argc, char* argv[]) {
 			::printf("  %-12s  %-36s  %-12s\n", e.title_id.c_str(), e.title_name.c_str(), Compat::GameStatusToString(e.status));
 		}
 		::printf("================================================================================\n");
-		slist.DestroyAll(false);
 		return 0;
 	}
 
@@ -358,7 +357,6 @@ int main(int argc, char* argv[]) {
 		} else {
 			::printf("Failed to export compatibility dashboard to: %s\n", path_str.c_str());
 		}
-		slist.DestroyAll(false);
 		return ok ? 0 : 1;
 	}
 
