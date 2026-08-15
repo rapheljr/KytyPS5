@@ -1,13 +1,11 @@
-// commercialGameValidator.cpp
-//
-// Commercial PS5 Game Subsystem Validation Engine Implementation.
-
 #include "compat/commercialGameValidator.h"
 
 #include "common/logging/log.h"
 #include "loader/openOrbisElfLoader.h"
 #include "loader/recompiler/x86RuntimeBridge.h"
 #include "loader/recompiler/radixCodeCache.h"
+#include "graphics/host_gpu/renderer/backend/metalVrsPipeline.h"
+#include "kernel/openOrbisSubsystems.h"
 
 #include <chrono>
 #include <cstring>
@@ -17,16 +15,18 @@ namespace Compat {
 
 const char* SubsystemValidationTypeToString(SubsystemValidationType type) {
     switch (type) {
-        case SubsystemValidationType::LargeExecutable:    return "Large Executable";
-        case SubsystemValidationType::MillionInstructions: return "Million Instructions";
-        case SubsystemValidationType::ThreadSynchronization:return "Thread Synchronization";
-        case SubsystemValidationType::ExceptionHandling:   return "Exception Handling";
-        case SubsystemValidationType::DynamicLibraries:    return "Dynamic Libraries (PRX)";
-        case SubsystemValidationType::GpuCommandStreams:   return "GPU Command Streams";
-        case SubsystemValidationType::ShaderCompilation:   return "Shader Compilation";
-        case SubsystemValidationType::MemoryManagement:    return "Memory Management";
-        case SubsystemValidationType::SaveStates:          return "Save States";
-        case SubsystemValidationType::IntegrationHealth:   return "Integration Health";
+        case SubsystemValidationType::LargeExecutable:        return "Large Executable";
+        case SubsystemValidationType::MillionInstructions:    return "Million Instructions";
+        case SubsystemValidationType::ThreadSynchronization:  return "Thread Synchronization";
+        case SubsystemValidationType::ExceptionHandling:       return "Exception Handling";
+        case SubsystemValidationType::DynamicLibraries:        return "Dynamic Libraries (PRX)";
+        case SubsystemValidationType::GpuCommandStreams:       return "GPU Command Streams";
+        case SubsystemValidationType::ShaderCompilation:       return "Shader Compilation";
+        case SubsystemValidationType::MemoryManagement:        return "Memory Management";
+        case SubsystemValidationType::SaveStates:              return "Save States";
+        case SubsystemValidationType::VariableRateShading:     return "Variable Rate Shading (VRS)";
+        case SubsystemValidationType::UserServicesAndTrophies: return "User Services & Trophy Subsystems";
+        case SubsystemValidationType::IntegrationHealth:       return "Integration Health";
     }
     return "Unknown";
 }
@@ -48,6 +48,8 @@ CommercialValidationReport CommercialGameValidator::ValidateGame(const std::stri
     rep.results.push_back(ValidateShaderCompilation());
     rep.results.push_back(ValidateMemoryManagement());
     rep.results.push_back(ValidateSaveStates());
+    rep.results.push_back(ValidateVariableRateShading());
+    rep.results.push_back(ValidateUserServicesAndTrophies());
     rep.results.push_back(ValidateIntegrationHealth());
 
     rep.tests_passed = 0;
@@ -322,6 +324,70 @@ SubsystemTestResult CommercialGameValidator::ValidateSaveStates() {
     return res;
 }
 
+SubsystemTestResult CommercialGameValidator::ValidateVariableRateShading() {
+    SubsystemTestResult res;
+    res.type = SubsystemValidationType::VariableRateShading;
+    res.name = SubsystemValidationTypeToString(res.type);
+
+    auto t0 = std::chrono::steady_clock::now();
+
+    Graphics::HostGpu::MetalVrsPipeline vrs;
+    Graphics::HostGpu::VrsDrsConfig cfg;
+    cfg.target_frame_time_ms = 16.666f;
+    bool init_ok = vrs.Initialize(cfg);
+    vrs.EvaluateFrame(22.0f); // Over budget, switches to Rate2x2 coarse shading
+    bool eval_ok = (vrs.GetCurrentShadingRate() == Graphics::HostGpu::MetalShadingRate::Rate2x2);
+
+    auto t1 = std::chrono::steady_clock::now();
+    res.duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    if (init_ok && eval_ok) {
+        res.passed  = true;
+        res.details = "Variable Rate Shading (VRS) & DRS adaptive heuristics verified";
+    } else {
+        res.passed      = false;
+        res.details     = "VRS pipeline initialization or evaluation failed";
+        res.error_trace = "VRS rate mismatch";
+    }
+    return res;
+}
+
+SubsystemTestResult CommercialGameValidator::ValidateUserServicesAndTrophies() {
+    SubsystemTestResult res;
+    res.type = SubsystemValidationType::UserServicesAndTrophies;
+    res.name = SubsystemValidationTypeToString(res.type);
+
+    auto t0 = std::chrono::steady_clock::now();
+
+    Loader::Recompiler::JitTelemetryCollector telemetry;
+    Kernel::OpenOrbisSubsystemHub hub(telemetry);
+    hub.RegisterAll();
+
+    int32_t user_id = 0;
+    Kernel::SubsystemCallCtx ctx{};
+    ctx.arg0 = reinterpret_cast<uint64_t>(&user_id);
+    hub.Dispatch("sceUserServiceGetInitialUser", ctx);
+
+    int32_t online_status = 0;
+    ctx.arg0 = reinterpret_cast<uint64_t>(&online_status);
+    hub.Dispatch("sceNpGetOnlineStatus", ctx);
+
+    int64_t trophy_ctx = hub.Dispatch("sceNpTrophyRegisterContext", ctx);
+
+    auto t1 = std::chrono::steady_clock::now();
+    res.duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    if (user_id == 0x10000000 && online_status == 1 && trophy_ctx == 1) {
+        res.passed  = true;
+        res.details = "User Service (0x10000000), PSN Online Status, and Trophy Context verified";
+    } else {
+        res.passed      = false;
+        res.details     = "User service / PSN stub validation failed";
+        res.error_trace = "Invalid return codes from user/trophy stubs";
+    }
+    return res;
+}
+
 SubsystemTestResult CommercialGameValidator::ValidateIntegrationHealth() {
     SubsystemTestResult res;
     res.type = SubsystemValidationType::IntegrationHealth;
@@ -336,7 +402,7 @@ SubsystemTestResult CommercialGameValidator::ValidateIntegrationHealth() {
 
     if (health_ok) {
         res.passed  = true;
-        res.details = "All 7 core emulator services (Kernel, VFS, JIT, Subsystems, GPU) healthy";
+        res.details = "All core emulator services (Kernel, VFS, JIT, Subsystems, GPU) healthy";
     } else {
         res.passed      = false;
         res.details     = "Integration health check failed";

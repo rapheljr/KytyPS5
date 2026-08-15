@@ -3,6 +3,7 @@
 // Tempest 3D Audio HRTF Spatial DSP Engine Implementation.
 
 #include "audio/tempest3DAudioEngine.h"
+#include "common/profiler.h"
 
 #include <algorithm>
 #include <chrono>
@@ -55,6 +56,8 @@ void Tempest3DAudioEngine::SetEmitterPosition(uint32_t emitter_id, const Spatial
 }
 
 void Tempest3DAudioEngine::ProcessBinauralHrtf(uint32_t emitter_id, const float* mono_in, float* left_out, float* right_out, size_t frames) {
+	KYTY_PROFILER_FUNCTION();
+
 	if (!m_initialized || !mono_in || !left_out || !right_out || frames == 0) return;
 
 	const Spatial3DSoundEmitter* target = nullptr;
@@ -101,6 +104,8 @@ void Tempest3DAudioEngine::ProcessBinauralHrtf(uint32_t emitter_id, const float*
 }
 
 void Tempest3DAudioEngine::ProcessSurround714(uint32_t emitter_id, const float* mono_in, float* const* channel_outputs, size_t frames) {
+	KYTY_PROFILER_FUNCTION();
+
 	if (!m_initialized || !mono_in || !channel_outputs || frames == 0) return;
 
 	// 12-channel 7.1.4: [0] FL, [1] FR, [2] C, [3] LFE, [4] SL, [5] SR, [6] RL, [7] RR, [8] TFL, [9] TFR, [10] TRL, [11] TRR
@@ -128,6 +133,44 @@ void Tempest3DAudioEngine::ProcessSurround714(uint32_t emitter_id, const float* 
 			}
 		}
 	}
+}
+
+void Tempest3DAudioEngine::ProcessMultiChannelPcm(const float* const* channel_inputs, uint32_t channel_count, float* left_out, float* right_out, size_t frames) {
+	KYTY_PROFILER_FUNCTION();
+
+	if (!m_initialized || !channel_inputs || !left_out || !right_out || frames == 0 || channel_count == 0) return;
+
+	std::memset(left_out, 0, frames * sizeof(float));
+	std::memset(right_out, 0, frames * sizeof(float));
+
+	for (uint32_t ch = 0; ch < channel_count; ++ch) {
+		const float* in = channel_inputs[ch];
+		if (!in) continue;
+
+		float left_gain = 0.5f;
+		float right_gain = 0.5f;
+		if (channel_count == 2) {
+			left_gain = (ch == 0) ? 1.0f : 0.0f;
+			right_gain = (ch == 1) ? 1.0f : 0.0f;
+		} else if (channel_count >= 6) { // 5.1 / 7.1 downmix
+			if (ch == 0 || ch == 4 || ch == 6) {
+				left_gain = 0.8f;
+				right_gain = 0.1f;
+			} else if (ch == 1 || ch == 5 || ch == 7) {
+				left_gain = 0.1f;
+				right_gain = 0.8f;
+			} else {
+				left_gain = 0.5f;
+				right_gain = 0.5f;
+			}
+		}
+
+		for (size_t i = 0; i < frames; ++i) {
+			left_out[i] += in[i] * left_gain;
+			right_out[i] += in[i] * right_gain;
+		}
+	}
+	m_stats.total_samples_convolved += frames;
 }
 
 } // namespace Audio

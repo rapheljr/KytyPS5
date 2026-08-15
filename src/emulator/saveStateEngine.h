@@ -15,11 +15,13 @@
 namespace Emulator {
 
 struct SaveStateHeader {
-	uint32_t magic          = 0x4B595459; // "KYTY"
-	uint32_t version        = 1;
-	uint64_t timestamp      = 0;
-	uint64_t frames_count   = 0;
-	uint32_t context_size   = sizeof(Loader::Recompiler::GuestCpuContext);
+	uint32_t magic                 = 0x4B595459; // "KYTY"
+	uint32_t version               = 2;
+	uint64_t timestamp             = 0;
+	uint64_t frames_count          = 0;
+	uint32_t context_size          = sizeof(Loader::Recompiler::GuestCpuContext);
+	uint32_t extra_data_size       = 0;
+	uint32_t compressed_extra_size = 0;
 };
 
 struct SaveStateSnapshot {

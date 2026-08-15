@@ -22,17 +22,17 @@ using Compat::SubsystemHealth;
 #define ASSERT_EQ(a, b) assert((a) == (b))
 #define ASSERT_GT(a, b) assert((a) > (b))
 
-TEST(SubsystemValidationSuite10) {
+TEST(SubsystemValidationSuite12) {
     CommercialGameValidator validator;
     auto report = validator.ValidateGame("CUSA00001", "Demon's Souls Remake");
 
     ASSERT_EQ(report.title_id, "CUSA00001");
-    ASSERT_EQ(report.results.size(), static_cast<size_t>(10));
+    ASSERT_EQ(report.results.size(), static_cast<size_t>(12));
     ASSERT_TRUE(report.overall_success);
-    ASSERT_EQ(report.tests_passed, static_cast<uint32_t>(10));
+    ASSERT_EQ(report.tests_passed, static_cast<uint32_t>(12));
     ASSERT_EQ(report.tests_failed, static_cast<uint32_t>(0));
 
-    std::printf("  10 Subsystem Commercial Validation Tests: ALL PASSED (%llu ms)\n",
+    std::printf("  12 Subsystem Commercial Validation Tests: ALL PASSED (%llu ms)\n",
                 (unsigned long long)report.total_duration_ms);
 }
 

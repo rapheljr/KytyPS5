@@ -55,6 +55,9 @@ public:
 	/// Process 7.1.4 12-channel surround output
 	void ProcessSurround714(uint32_t emitter_id, const float* mono_in, float* const* channel_outputs, size_t frames);
 
+	/// Mix multi-channel sound into binaural stereo stream
+	void ProcessMultiChannelPcm(const float* const* channel_inputs, uint32_t channel_count, float* left_out, float* right_out, size_t frames);
+
 	[[nodiscard]] const Tempest3DStats& GetStats() const noexcept { return m_stats; }
 	[[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
 

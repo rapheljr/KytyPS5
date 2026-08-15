@@ -44,6 +44,9 @@ add_library(imgui STATIC
 	imgui/imgui_widgets.cpp
 	imgui/backends/imgui_impl_vulkan.cpp
 )
+if(APPLE)
+	target_sources(imgui PRIVATE imgui/backends/imgui_impl_metal.mm)
+endif()
 target_include_directories(imgui PUBLIC
 	"${CMAKE_CURRENT_SOURCE_DIR}/imgui"
 	"${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends"

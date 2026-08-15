@@ -41,6 +41,8 @@ enum class SubsystemValidationType {
     ShaderCompilation,
     MemoryManagement,
     SaveStates,
+    VariableRateShading,
+    UserServicesAndTrophies,
     IntegrationHealth
 };
 
@@ -75,7 +77,7 @@ public:
 
     KYTY_CLASS_NO_COPY(CommercialGameValidator);
 
-    /// Run all 10 automated commercial subsystem validation tests for @p title_id.
+    /// Run all automated commercial subsystem validation tests for @p title_id.
     [[nodiscard]] CommercialValidationReport ValidateGame(const std::string& title_id,
                                                          const std::string& title_name = "Commercial Game");
 
@@ -89,6 +91,8 @@ public:
     [[nodiscard]] SubsystemTestResult ValidateShaderCompilation();
     [[nodiscard]] SubsystemTestResult ValidateMemoryManagement();
     [[nodiscard]] SubsystemTestResult ValidateSaveStates();
+    [[nodiscard]] SubsystemTestResult ValidateVariableRateShading();
+    [[nodiscard]] SubsystemTestResult ValidateUserServicesAndTrophies();
     [[nodiscard]] SubsystemTestResult ValidateIntegrationHealth();
 };
 

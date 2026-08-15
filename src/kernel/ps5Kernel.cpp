@@ -262,7 +262,12 @@ void SyscallDispatcher::RegisterAllFreeBSDSyscalls() {
 	RegisterSyscall(5, [](uint64_t path_ptr, uint64_t flags, uint64_t mode, uint64_t, uint64_t, uint64_t) -> int64_t { return 11; }); // sys_open (fd = 11)
 	RegisterSyscall(6, [](uint64_t fd, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_close
 	RegisterSyscall(54, [](uint64_t fd, uint64_t cmd, uint64_t arg, uint64_t, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_ioctl
+	RegisterSyscall(65, [](uint64_t addr, uint64_t len, uint64_t flags, uint64_t, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_msync
 	RegisterSyscall(92, [](uint64_t fd, uint64_t cmd, uint64_t arg, uint64_t, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_fcntl
+	RegisterSyscall(116, [](uint64_t tp_ptr, uint64_t tzp_ptr, uint64_t, uint64_t, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_gettimeofday
+	RegisterSyscall(202, [](uint64_t name_ptr, uint64_t namelen, uint64_t oldp, uint64_t oldlenp, uint64_t newp, uint64_t newlen) -> int64_t { return 0; }); // sys_sysctl
+	RegisterSyscall(466, [](uint64_t function, uint64_t lwpid, uint64_t rtp_ptr, uint64_t, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_rtprio_thread
+	RegisterSyscall(486, [](uint64_t level, uint64_t which, uint64_t id, uint64_t setid_ptr, uint64_t, uint64_t) -> int64_t { return 0; }); // sys_cpuset_getid
 }
 
 } // namespace Libs::Kernel::Ps5

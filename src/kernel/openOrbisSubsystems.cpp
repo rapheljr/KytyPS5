@@ -73,8 +73,34 @@ void OpenOrbisSubsystemHub::RegisterAll() {
         [this](const SubsystemCallCtx& ctx) { return StubPadReadState(ctx); });
     RegisterStub("scePadClose",
         [this](const SubsystemCallCtx& ctx) { return StubPadClose(ctx); });
+    RegisterStub("scePadSetActuatorEffect",
+        [this](const SubsystemCallCtx& ctx) { return StubPadSetActuatorEffect(ctx); });
+    RegisterStub("scePadSetLightBar",
+        [this](const SubsystemCallCtx& ctx) { return StubPadSetLightBar(ctx); });
+    RegisterStub("scePadSetTriggerEffect",
+        [this](const SubsystemCallCtx& ctx) { return StubPadSetTriggerEffect(ctx); });
+    RegisterStub("scePadGetHandle",
+        [this](const SubsystemCallCtx& ctx) { return StubPadGetHandle(ctx); });
+    RegisterStub("scePadGetMotionData",
+        [this](const SubsystemCallCtx& ctx) { return StubPadGetMotionData(ctx); });
+    RegisterStub("scePadGetTouchData",
+        [this](const SubsystemCallCtx& ctx) { return StubPadGetTouchData(ctx); });
 
-    // ── Audio ─────────────────────────────────────────────────────────────────
+    // ── Common Dialogs & IME ──────────────────────────────────────────────────
+    RegisterStub("sceCommonDialogInitialize",
+        [this](const SubsystemCallCtx& ctx) { return StubCommonDialogInitialize(ctx); });
+    RegisterStub("sceMsgDialogOpen",
+        [this](const SubsystemCallCtx& ctx) { return StubMsgDialogOpen(ctx); });
+    RegisterStub("sceMsgDialogGetStatus",
+        [this](const SubsystemCallCtx& ctx) { return StubMsgDialogGetStatus(ctx); });
+    RegisterStub("sceMsgDialogClose",
+        [this](const SubsystemCallCtx& ctx) { return StubMsgDialogClose(ctx); });
+    RegisterStub("sceImeDialogOpen",
+        [this](const SubsystemCallCtx& ctx) { return StubImeDialogOpen(ctx); });
+    RegisterStub("sceImeDialogGetResult",
+        [this](const SubsystemCallCtx& ctx) { return StubImeDialogGetResult(ctx); });
+
+    // ── Audio & Voice ────────────────────────────────────────────────────────
     RegisterStub("sceAudioOutOpen",
         [this](const SubsystemCallCtx& ctx) { return StubAudioOutOpen(ctx); });
     RegisterStub("sceAudioOutOutput",
@@ -84,6 +110,18 @@ void OpenOrbisSubsystemHub::RegisterAll() {
     RegisterStub("sceAudioOutGetLastOutputTimestamp",
         [this](const SubsystemCallCtx& ctx) {
             return StubAudioOutGetLastOutputTimestamp(ctx); });
+    RegisterStub("sceAudio3dInitialize",
+        [this](const SubsystemCallCtx& ctx) { return StubAudio3dInitialize(ctx); });
+    RegisterStub("sceAudio3dCreateEmitter",
+        [this](const SubsystemCallCtx& ctx) { return StubAudio3dCreateEmitter(ctx); });
+    RegisterStub("sceAudio3dSetPosition",
+        [this](const SubsystemCallCtx& ctx) { return StubAudio3dSetPosition(ctx); });
+    RegisterStub("sceVoiceInit",
+        [this](const SubsystemCallCtx& ctx) { return StubVoiceInit(ctx); });
+    RegisterStub("sceVoiceStart",
+        [this](const SubsystemCallCtx& ctx) { return StubVoiceStart(ctx); });
+    RegisterStub("sceVoiceStop",
+        [this](const SubsystemCallCtx& ctx) { return StubVoiceStop(ctx); });
 
     // ── Networking ────────────────────────────────────────────────────────────
     RegisterStub("sceNetSocket",
@@ -116,6 +154,30 @@ void OpenOrbisSubsystemHub::RegisterAll() {
         [this](const SubsystemCallCtx& ctx) { return StubGnmSubmitCommandBuffers(ctx); });
     RegisterStub("sceGnmFlushGarlic",
         [this](const SubsystemCallCtx& ctx) { return StubGnmFlushGarlic(ctx); });
+
+    // ── User Service, PSN & Trophies ──────────────────────────────────────────
+    RegisterStub("sceUserServiceInitialize",
+        [this](const SubsystemCallCtx& ctx) { return StubUserServiceInitialize(ctx); });
+    RegisterStub("sceUserServiceGetInitialUser",
+        [this](const SubsystemCallCtx& ctx) { return StubUserServiceGetInitialUser(ctx); });
+    RegisterStub("sceNpInitialize",
+        [this](const SubsystemCallCtx& ctx) { return StubNpInitialize(ctx); });
+    RegisterStub("sceNpGetOnlineStatus",
+        [this](const SubsystemCallCtx& ctx) { return StubNpGetOnlineStatus(ctx); });
+    RegisterStub("sceNpTrophyRegisterContext",
+        [this](const SubsystemCallCtx& ctx) { return StubNpTrophyRegisterContext(ctx); });
+    RegisterStub("sceNpTrophyUnlock",
+        [this](const SubsystemCallCtx& ctx) { return StubNpTrophyUnlock(ctx); });
+
+    // ── Dynamic System Modules & Debugging ────────────────────────────────────
+    RegisterStub("sceSysmoduleLoadModule",
+        [this](const SubsystemCallCtx& ctx) { return StubSysmoduleLoadModule(ctx); });
+    RegisterStub("sceSysmoduleUnloadModule",
+        [this](const SubsystemCallCtx& ctx) { return StubSysmoduleUnloadModule(ctx); });
+    RegisterStub("sceSysmoduleIsLoaded",
+        [this](const SubsystemCallCtx& ctx) { return StubSysmoduleIsLoaded(ctx); });
+    RegisterStub("sceKernelDbgBreak",
+        [this](const SubsystemCallCtx& ctx) { return StubKernelDbgBreak(ctx); });
 }
 
 void OpenOrbisSubsystemHub::RegisterStub(std::string name, SubsystemStubFn fn) {
@@ -266,6 +328,67 @@ int64_t OpenOrbisSubsystemHub::StubPadClose(const SubsystemCallCtx& ctx) {
     LOGF("[SubsystemHub] scePadClose(handle=%llu)\n", (unsigned long long)ctx.arg0);
     return SCE_OK;
 }
+int64_t OpenOrbisSubsystemHub::StubPadSetActuatorEffect(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] scePadSetActuatorEffect(handle=%llu)\n", (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubPadSetLightBar(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] scePadSetLightBar(handle=%llu)\n", (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubPadSetTriggerEffect(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] scePadSetTriggerEffect(handle=%llu)\n", (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubPadGetHandle(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] scePadGetHandle(userId=%llu, type=%llu) -> 1\n",
+         (unsigned long long)ctx.arg0, (unsigned long long)ctx.arg1);
+    return 1;
+}
+int64_t OpenOrbisSubsystemHub::StubPadGetMotionData(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] scePadGetMotionData(handle=%llu)\n", (unsigned long long)ctx.arg0);
+    if (ctx.arg1 != 0) {
+        std::memset(reinterpret_cast<void*>(ctx.arg1), 0, 64);
+    }
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubPadGetTouchData(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] scePadGetTouchData(handle=%llu)\n", (unsigned long long)ctx.arg0);
+    if (ctx.arg1 != 0) {
+        std::memset(reinterpret_cast<void*>(ctx.arg1), 0, 48);
+    }
+    return SCE_OK;
+}
+
+// ─── Common Dialogs & IME stubs ───────────────────────────────────────────────
+
+int64_t OpenOrbisSubsystemHub::StubCommonDialogInitialize(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceCommonDialogInitialize() -> SCE_OK\n");
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubMsgDialogOpen(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceMsgDialogOpen() -> SCE_OK\n");
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubMsgDialogGetStatus(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceMsgDialogGetStatus() -> FINISHED\n");
+    return 2; // Finished
+}
+int64_t OpenOrbisSubsystemHub::StubMsgDialogClose(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceMsgDialogClose() -> SCE_OK\n");
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubImeDialogOpen(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceImeDialogOpen() -> SCE_OK\n");
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubImeDialogGetResult(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceImeDialogGetResult()\n");
+    if (ctx.arg0 != 0) {
+        std::memset(reinterpret_cast<void*>(ctx.arg0), 0, 64);
+    }
+    return SCE_OK;
+}
 
 // ─── Audio stubs ──────────────────────────────────────────────────────────────
 
@@ -291,6 +414,32 @@ int64_t OpenOrbisSubsystemHub::StubAudioOutGetLastOutputTimestamp(const Subsyste
         uint64_t ts = 0;
         std::memcpy(reinterpret_cast<void*>(ctx.arg1), &ts, sizeof(ts));
     }
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubAudio3dInitialize(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceAudio3dInitialize() -> SCE_OK\n");
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubAudio3dCreateEmitter(const SubsystemCallCtx& /*ctx*/) {
+    static uint32_t next_emitter_id = 1;
+    uint32_t emitter = next_emitter_id++;
+    LOGF("[SubsystemHub] sceAudio3dCreateEmitter() -> %u\n", emitter);
+    return emitter;
+}
+int64_t OpenOrbisSubsystemHub::StubAudio3dSetPosition(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceAudio3dSetPosition(emitter=%llu)\n", (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubVoiceInit(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceVoiceInit() -> SCE_OK\n");
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubVoiceStart(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceVoiceStart(port=%llu)\n", (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+int64_t OpenOrbisSubsystemHub::StubVoiceStop(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceVoiceStop(port=%llu)\n", (unsigned long long)ctx.arg0);
     return SCE_OK;
 }
 
@@ -373,6 +522,73 @@ int64_t OpenOrbisSubsystemHub::StubGnmSubmitCommandBuffers(const SubsystemCallCt
 }
 int64_t OpenOrbisSubsystemHub::StubGnmFlushGarlic(const SubsystemCallCtx& /*ctx*/) {
     LOGF("[SubsystemHub] sceGnmFlushGarlic\n");
+    return SCE_OK;
+}
+
+// ─── User Service, PSN & Trophy stubs ────────────────────────────────────────
+
+int64_t OpenOrbisSubsystemHub::StubUserServiceInitialize(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceUserServiceInitialize() -> SCE_OK\n");
+    return SCE_OK;
+}
+
+int64_t OpenOrbisSubsystemHub::StubUserServiceGetInitialUser(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceUserServiceGetInitialUser() -> userId=0x10000000\n");
+    if (ctx.arg0 != 0) {
+        int32_t user_id = 0x10000000; // Standard primary local user ID
+        std::memcpy(reinterpret_cast<void*>(ctx.arg0), &user_id, sizeof(user_id));
+    }
+    return SCE_OK;
+}
+
+int64_t OpenOrbisSubsystemHub::StubNpInitialize(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceNpInitialize() -> SCE_OK\n");
+    return SCE_OK;
+}
+
+int64_t OpenOrbisSubsystemHub::StubNpGetOnlineStatus(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceNpGetOnlineStatus() -> ONLINE\n");
+    if (ctx.arg0 != 0) {
+        int32_t status = 1; // Online / Signed In
+        std::memcpy(reinterpret_cast<void*>(ctx.arg0), &status, sizeof(status));
+    }
+    return SCE_OK;
+}
+
+int64_t OpenOrbisSubsystemHub::StubNpTrophyRegisterContext(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceNpTrophyRegisterContext(context=%llu) -> handle=1\n",
+         (unsigned long long)ctx.arg0);
+    return 1; // Valid context handle
+}
+
+int64_t OpenOrbisSubsystemHub::StubNpTrophyUnlock(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceNpTrophyUnlock(handle=%llu, trophyId=%llu) -> UNLOCKED\n",
+         (unsigned long long)ctx.arg0, (unsigned long long)ctx.arg1);
+    return SCE_OK;
+}
+
+// ─── Dynamic System Modules & Debugging stubs ─────────────────────────────────
+
+int64_t OpenOrbisSubsystemHub::StubSysmoduleLoadModule(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceSysmoduleLoadModule(id=0x%llx) -> SCE_OK\n",
+         (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+
+int64_t OpenOrbisSubsystemHub::StubSysmoduleUnloadModule(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceSysmoduleUnloadModule(id=0x%llx) -> SCE_OK\n",
+         (unsigned long long)ctx.arg0);
+    return SCE_OK;
+}
+
+int64_t OpenOrbisSubsystemHub::StubSysmoduleIsLoaded(const SubsystemCallCtx& ctx) {
+    LOGF("[SubsystemHub] sceSysmoduleIsLoaded(id=0x%llx) -> 1 (LOADED)\n",
+         (unsigned long long)ctx.arg0);
+    return 1; // Loaded
+}
+
+int64_t OpenOrbisSubsystemHub::StubKernelDbgBreak(const SubsystemCallCtx& /*ctx*/) {
+    LOGF("[SubsystemHub] sceKernelDbgBreak() -> SCE_OK\n");
     return SCE_OK;
 }
 

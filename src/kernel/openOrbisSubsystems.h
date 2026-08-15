@@ -107,12 +107,32 @@ private:
     int64_t StubPadOpen(const SubsystemCallCtx& ctx);
     int64_t StubPadReadState(const SubsystemCallCtx& ctx);
     int64_t StubPadClose(const SubsystemCallCtx& ctx);
+    int64_t StubPadSetActuatorEffect(const SubsystemCallCtx& ctx);
+    int64_t StubPadSetLightBar(const SubsystemCallCtx& ctx);
+    int64_t StubPadSetTriggerEffect(const SubsystemCallCtx& ctx);
+    int64_t StubPadGetHandle(const SubsystemCallCtx& ctx);
+    int64_t StubPadGetMotionData(const SubsystemCallCtx& ctx);
+    int64_t StubPadGetTouchData(const SubsystemCallCtx& ctx);
 
-    // Audio
+    // Common Dialogs & IME
+    int64_t StubCommonDialogInitialize(const SubsystemCallCtx& ctx);
+    int64_t StubMsgDialogOpen(const SubsystemCallCtx& ctx);
+    int64_t StubMsgDialogGetStatus(const SubsystemCallCtx& ctx);
+    int64_t StubMsgDialogClose(const SubsystemCallCtx& ctx);
+    int64_t StubImeDialogOpen(const SubsystemCallCtx& ctx);
+    int64_t StubImeDialogGetResult(const SubsystemCallCtx& ctx);
+
+    // Audio & Voice
     int64_t StubAudioOutOpen(const SubsystemCallCtx& ctx);
     int64_t StubAudioOutOutput(const SubsystemCallCtx& ctx);
     int64_t StubAudioOutClose(const SubsystemCallCtx& ctx);
     int64_t StubAudioOutGetLastOutputTimestamp(const SubsystemCallCtx& ctx);
+    int64_t StubAudio3dInitialize(const SubsystemCallCtx& ctx);
+    int64_t StubAudio3dCreateEmitter(const SubsystemCallCtx& ctx);
+    int64_t StubAudio3dSetPosition(const SubsystemCallCtx& ctx);
+    int64_t StubVoiceInit(const SubsystemCallCtx& ctx);
+    int64_t StubVoiceStart(const SubsystemCallCtx& ctx);
+    int64_t StubVoiceStop(const SubsystemCallCtx& ctx);
 
     // Networking
     int64_t StubNetSocket(const SubsystemCallCtx& ctx);
@@ -131,6 +151,20 @@ private:
     int64_t StubVideoOutClose(const SubsystemCallCtx& ctx);
     int64_t StubGnmSubmitCommandBuffers(const SubsystemCallCtx& ctx);
     int64_t StubGnmFlushGarlic(const SubsystemCallCtx& ctx);
+
+    // User Service, PSN & Trophies
+    int64_t StubUserServiceInitialize(const SubsystemCallCtx& ctx);
+    int64_t StubUserServiceGetInitialUser(const SubsystemCallCtx& ctx);
+    int64_t StubNpInitialize(const SubsystemCallCtx& ctx);
+    int64_t StubNpGetOnlineStatus(const SubsystemCallCtx& ctx);
+    int64_t StubNpTrophyRegisterContext(const SubsystemCallCtx& ctx);
+    int64_t StubNpTrophyUnlock(const SubsystemCallCtx& ctx);
+
+    // Dynamic System Modules & Debugging
+    int64_t StubSysmoduleLoadModule(const SubsystemCallCtx& ctx);
+    int64_t StubSysmoduleUnloadModule(const SubsystemCallCtx& ctx);
+    int64_t StubSysmoduleIsLoaded(const SubsystemCallCtx& ctx);
+    int64_t StubKernelDbgBreak(const SubsystemCallCtx& ctx);
 
     std::unordered_map<std::string, SubsystemStubFn> m_stubs;
     Loader::Recompiler::JitTelemetryCollector&        m_telemetry;
