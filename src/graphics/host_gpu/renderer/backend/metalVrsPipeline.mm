@@ -39,6 +39,12 @@ bool MetalVrsPipeline::Initialize(const VrsDrsConfig& config) {
 		m_stats = {};
 		m_stats.current_render_scale = config.max_render_scale;
 		m_stats.current_shading_rate = config.default_rate;
+
+		if (@available(macOS 11.0, *)) {
+			BOOL supportsRateMap = [m_impl->device supportsRasterizationRateMapWithLayerCount:1];
+			(void)supportsRateMap;
+		}
+
 		m_initialized = true;
 
 		return true;

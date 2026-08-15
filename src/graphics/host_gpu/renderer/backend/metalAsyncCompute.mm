@@ -126,8 +126,24 @@ bool MetalAsyncComputeEngine::InsertCrossQueueBarrier() {
 	if (!m_initialized) return false;
 
 	@autoreleasepool {
-		// In Metal FIFO queue semantics, committing and waiting on a synchronization token ensures
-		// all prior asynchronous compute passes are flushed and completed before subsequent render passes
+		if (@available(macOS 10.14, *)) {
+			id<MTLEvent> event = [m_impl->device newEvent];
+			if (event) {
+				id<MTLCommandBuffer> computeCmdBuf = [m_impl->compute_queue commandBuffer];
+				[computeCmdBuf encodeSignalEvent:event value:1];
+				[computeCmdBuf commit];
+
+				id<MTLCommandBuffer> renderCmdBuf = [m_impl->render_queue commandBuffer];
+				[renderCmdBuf encodeWaitForEvent:event value:1];
+				[renderCmdBuf commit];
+				[event release];
+
+				m_stats.sync_barriers_total++;
+				return true;
+			}
+		}
+
+		// Fallback FIFO sync token
 		id<MTLCommandBuffer> syncBuf = [m_impl->compute_queue commandBuffer];
 		[syncBuf commit];
 		[syncBuf waitUntilCompleted];

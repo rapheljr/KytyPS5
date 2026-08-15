@@ -6,6 +6,10 @@
 #include "graphics/host_gpu/graphicContext.h"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
+#if defined(__APPLE__)
+#import <Metal/Metal.h>
+#include "imgui_impl_metal.h"
+#endif
 #include "libs/controller.h"
 #include "libs/ime.h"
 #include "libs/imeDialog.h"
@@ -553,6 +557,9 @@ struct ImeOverlay::Impl {
 
 	~Impl() {
 		ReleaseVulkan();
+#if defined(__APPLE__)
+		ReleaseMetal();
+#endif
 		if (imgui_context != nullptr) {
 			ImGui::DestroyContext(imgui_context);
 		}
@@ -924,9 +931,80 @@ struct ImeOverlay::Impl {
 		vulkan_initialized = false;
 	}
 
+#if defined(__APPLE__)
+	void EnsureMetal(void* mtl_device) {
+		EnsureContext();
+		if (metal_initialized) {
+			return;
+		}
+		id<MTLDevice> device = (__bridge id<MTLDevice>)mtl_device;
+		EXIT_IF(!ImGui_ImplMetal_Init(device));
+		metal_initialized = true;
+	}
+
+	bool PrepareFrameMetal(uint32_t width, uint32_t height, void* mtl_device) {
+		Ime::HostSnapshot snapshot;
+		if (!Ime::GetHostSnapshot(&snapshot)) {
+			return false;
+		}
+		const uint64_t prepared_generation = snapshot.generation;
+		EnsureMetal(mtl_device);
+		if (generation != snapshot.generation) {
+			generation    = snapshot.generation;
+			focus_pending = true;
+			shift         = (snapshot.option & Ime::OPTION_NO_AUTO_CAPITALIZE) == 0;
+			symbol_mode   = false;
+			panel_offset  = {};
+			right_stick   = {};
+			auto& io      = ImGui::GetIO();
+			io.ClearEventsQueue();
+			io.ClearInputKeys();
+			io.ClearInputMouse();
+		}
+		DrainInput(snapshot.generation);
+
+		auto& io       = ImGui::GetIO();
+		io.DisplaySize = {static_cast<float>(width), static_cast<float>(height)};
+		const auto now = std::chrono::steady_clock::now();
+		io.DeltaTime   = last_frame == std::chrono::steady_clock::time_point {}
+		                     ? 1.0f / 60.0f
+		                     : std::clamp(std::chrono::duration<float>(now - last_frame).count(),
+		                                  1.0f / 1000.0f, 0.1f);
+		last_frame     = now;
+		ImGui_ImplMetal_NewFrame(nil);
+		ImGui::NewFrame();
+		if (!Ime::GetHostSnapshot(&snapshot) || snapshot.generation != prepared_generation) {
+			ImGui::EndFrame();
+			return false;
+		}
+		vk::Extent2D frame_extent{width, height};
+		DrawDialog(snapshot, frame_extent);
+		ImGui::Render();
+		extent = frame_extent;
+		return true;
+	}
+
+	void RecordMetal(void* mtl_command_buffer, void* mtl_render_command_encoder) {
+		if (mtl_render_command_encoder == nullptr || mtl_command_buffer == nullptr) return;
+		id<MTLCommandBuffer> cmd_buf = (__bridge id<MTLCommandBuffer>)mtl_command_buffer;
+		id<MTLRenderCommandEncoder> enc = (__bridge id<MTLRenderCommandEncoder>)mtl_render_command_encoder;
+		ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), cmd_buf, enc);
+	}
+
+	void ReleaseMetal() {
+		if (!metal_initialized) {
+			return;
+		}
+		ImGui::SetCurrentContext(imgui_context);
+		ImGui_ImplMetal_Shutdown();
+		metal_initialized = false;
+	}
+#endif
+
 	GraphicContext&                       graphics;
 	ImGuiContext*                         imgui_context      = nullptr;
 	bool                                  vulkan_initialized = false;
+	bool                                  metal_initialized  = false;
 	bool                                  shift              = false;
 	bool                                  symbol_mode        = false;
 	bool                                  focus_pending      = true;
@@ -954,5 +1032,19 @@ void ImeOverlay::Record(vk::CommandBuffer command, vk::ImageView target) {
 void ImeOverlay::ReleaseVulkan() {
 	m_impl->ReleaseVulkan();
 }
+
+#if defined(__APPLE__)
+bool ImeOverlay::PrepareFrameMetal(uint32_t width, uint32_t height, void* mtl_device) {
+	return m_impl->PrepareFrameMetal(width, height, mtl_device);
+}
+
+void ImeOverlay::RecordMetal(void* mtl_command_buffer, void* mtl_render_command_encoder) {
+	m_impl->RecordMetal(mtl_command_buffer, mtl_render_command_encoder);
+}
+
+void ImeOverlay::ReleaseMetal() {
+	m_impl->ReleaseMetal();
+}
+#endif
 
 } // namespace Libs::Graphics

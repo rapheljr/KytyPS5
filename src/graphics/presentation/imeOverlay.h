@@ -32,6 +32,12 @@ public:
 	void               Record(vk::CommandBuffer command, vk::ImageView target);
 	void               ReleaseVulkan();
 
+#if defined(__APPLE__)
+	[[nodiscard]] bool PrepareFrameMetal(uint32_t width, uint32_t height, void* mtl_device);
+	void               RecordMetal(void* mtl_command_buffer, void* mtl_render_command_encoder);
+	void               ReleaseMetal();
+#endif
+
 private:
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;

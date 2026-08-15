@@ -18,6 +18,7 @@
 #include "common/threads.h"
 #include "graphics/host_gpu/renderer/pipeline/pipelineCache.h"
 #include "graphics/shader/shader.h"
+#include <xxhash.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -41,26 +42,17 @@ struct MetalPipelineKeyHasher {
 	static void MixShaderId(std::size_t& hash, const ShaderId& id) noexcept {
 		Mix(hash, id.hash0);
 		Mix(hash, id.crc32);
-		Mix(hash, id.ids.size());
-		for (auto value : id.ids) {
-			Mix(hash, value);
+		if (!id.ids.empty()) {
+			Mix(hash, static_cast<std::size_t>(XXH3_64bits(id.ids.data(), id.ids.size() * sizeof(uint32_t))));
 		}
 	}
 
 	static void MixStaticParams(std::size_t& hash, const PipelineStaticParameters& params) noexcept {
-		const auto* bytes = reinterpret_cast<const uint8_t*>(&params);
-		for (std::size_t i = 0; i < sizeof(params); ++i) {
-			Mix(hash, bytes[i]);
-		}
+		Mix(hash, static_cast<std::size_t>(XXH3_64bits(&params, sizeof(params))));
 	}
 
 	static void MixRendering(std::size_t& hash, const PipelineRenderingState& rendering) noexcept {
-		Mix(hash, rendering.color_count);
-		for (uint32_t i = 0; i < rendering.color_count; ++i) {
-			Mix(hash, static_cast<uint32_t>(rendering.color_formats[i]));
-		}
-		Mix(hash, static_cast<uint32_t>(rendering.depth_format));
-		Mix(hash, static_cast<uint32_t>(rendering.stencil_format));
+		Mix(hash, static_cast<std::size_t>(XXH3_64bits(&rendering, sizeof(rendering))));
 	}
 };
 

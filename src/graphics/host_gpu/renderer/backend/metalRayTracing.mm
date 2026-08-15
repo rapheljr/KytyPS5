@@ -21,8 +21,8 @@ struct MetalRayTracingEngine::Impl {
 	uint32_t next_blas_id = 1;
 	uint32_t next_tlas_id = 1;
 
-	std::unordered_map<uint32_t, id<MTLAccelerationStructure>> blas_map;
-	std::unordered_map<uint32_t, id<MTLAccelerationStructure>> tlas_map;
+	std::unordered_map<uint32_t, id> blas_map;
+	std::unordered_map<uint32_t, id> tlas_map;
 
 	~Impl() {
 		blas_map.clear();
@@ -81,7 +81,7 @@ uint32_t MetalRayTracingEngine::BuildBlas(const std::vector<RayTracingGeometryDe
 	if (!m_initialized || geometries.empty()) return 0;
 
 	std::lock_guard<std::mutex> lock(m_impl->mutex);
-	uint32_t id = m_impl->next_blas_id++;
+	uint32_t as_id = m_impl->next_blas_id++;
 
 	@autoreleasepool {
 		uint64_t total_verts = 0;
@@ -93,28 +93,60 @@ uint32_t MetalRayTracingEngine::BuildBlas(const std::vector<RayTracingGeometryDe
 		m_stats.total_blas_count++;
 		m_stats.total_as_memory_bytes += as_size;
 
-		// Simulated/Native AS handle
-		m_impl->blas_map[id] = nil;
+		if (@available(macOS 11.0, *)) {
+			if (m_stats.hardware_raytracing_supported) {
+				NSMutableArray<MTLAccelerationStructureTriangleGeometryDescriptor*>* geom_descriptors = [NSMutableArray array];
+				for (const auto& g : geometries) {
+					MTLAccelerationStructureTriangleGeometryDescriptor* tri_desc = [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];
+					tri_desc.opaque = g.opaque;
+					tri_desc.vertexStride = g.vertex_stride;
+					tri_desc.triangleCount = (g.index_count > 0) ? (g.index_count / 3) : (g.vertex_count / 3);
+					[geom_descriptors addObject:tri_desc];
+				}
+				MTLPrimitiveAccelerationStructureDescriptor* blas_desc = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+				blas_desc.geometryDescriptors = geom_descriptors;
+
+				MTLAccelerationStructureSizes sizes = [m_impl->device accelerationStructureSizesWithDescriptor:blas_desc];
+				id blas = [m_impl->device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
+				m_impl->blas_map[as_id] = blas;
+			} else {
+				m_impl->blas_map[as_id] = nil;
+			}
+		} else {
+			m_impl->blas_map[as_id] = nil;
+		}
 	}
 
-	return id;
+	return as_id;
 }
 
 uint32_t MetalRayTracingEngine::BuildTlas(const std::vector<RayTracingInstanceDesc>& instances) {
 	if (!m_initialized || instances.empty()) return 0;
 
 	std::lock_guard<std::mutex> lock(m_impl->mutex);
-	uint32_t id = m_impl->next_tlas_id++;
+	uint32_t as_id = m_impl->next_tlas_id++;
 
 	@autoreleasepool {
 		uint64_t as_size = instances.size() * sizeof(RayTracingInstanceDesc) + 2048;
 		m_stats.total_tlas_count++;
 		m_stats.total_as_memory_bytes += as_size;
 
-		m_impl->tlas_map[id] = nil;
+		if (@available(macOS 11.0, *)) {
+			if (m_stats.hardware_raytracing_supported) {
+				MTLInstanceAccelerationStructureDescriptor* tlas_desc = [MTLInstanceAccelerationStructureDescriptor descriptor];
+				tlas_desc.instanceCount = instances.size();
+				MTLAccelerationStructureSizes sizes = [m_impl->device accelerationStructureSizesWithDescriptor:tlas_desc];
+				id tlas = [m_impl->device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
+				m_impl->tlas_map[as_id] = tlas;
+			} else {
+				m_impl->tlas_map[as_id] = nil;
+			}
+		} else {
+			m_impl->tlas_map[as_id] = nil;
+		}
 	}
 
-	return id;
+	return as_id;
 }
 
 bool MetalRayTracingEngine::DispatchRayQuery(uint32_t tlas_id, uint32_t ray_count) {

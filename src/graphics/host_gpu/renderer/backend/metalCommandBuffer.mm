@@ -1,5 +1,6 @@
 #include "graphics/host_gpu/renderer/backend/metalCommandBuffer.h"
 #include "common/timer.h"
+#include "common/profiler.h"
 
 #if defined(__APPLE__)
 #import <Metal/Metal.h>
@@ -182,6 +183,7 @@ void MetalCommandBuffer::SetVertexBuffer(void* mtl_buffer, size_t offset, uint32
 }
 
 void MetalCommandBuffer::DrawPrimitives(uint32_t primitive_type, uint32_t vertex_start, uint32_t vertex_count, uint32_t instance_count) {
+	KYTY_PROFILER_FUNCTION();
 #if defined(__APPLE__)
 	if (m_render_encoder == nullptr || vertex_count == 0) {
 		return;
@@ -207,6 +209,7 @@ void MetalCommandBuffer::DrawPrimitives(uint32_t primitive_type, uint32_t vertex
 
 void MetalCommandBuffer::DrawIndexedPrimitives(uint32_t primitive_type, uint32_t index_count, uint32_t index_type,
                                                void* index_buffer, size_t index_buffer_offset, uint32_t instance_count) {
+	KYTY_PROFILER_FUNCTION();
 #if defined(__APPLE__)
 	if (m_render_encoder == nullptr || index_count == 0 || index_buffer == nullptr) {
 		return;
@@ -235,6 +238,7 @@ void MetalCommandBuffer::DrawIndexedPrimitives(uint32_t primitive_type, uint32_t
 }
 
 void MetalCommandBuffer::Commit() {
+	KYTY_PROFILER_FUNCTION();
 #if defined(__APPLE__)
 	if (m_state != MetalCommandBufferState::Recording) {
 		return;
@@ -255,6 +259,7 @@ void MetalCommandBuffer::Commit() {
 
 void MetalCommandBuffer::DispatchThreadgroups(uint32_t groups_x, uint32_t groups_y, uint32_t groups_z,
                                               uint32_t threads_per_group_x, uint32_t threads_per_group_y, uint32_t threads_per_group_z) {
+	KYTY_PROFILER_FUNCTION();
 #if defined(__APPLE__)
 	if (m_compute_encoder == nullptr) {
 		return;
@@ -295,6 +300,7 @@ void MetalCommandBuffer::DispatchIndirect(void* indirect_buffer, size_t indirect
 
 
 void MetalCommandBuffer::WaitUntilCompleted() {
+	KYTY_PROFILER_FUNCTION();
 #if defined(__APPLE__)
 	if (m_state != MetalCommandBufferState::Committed) {
 		return;

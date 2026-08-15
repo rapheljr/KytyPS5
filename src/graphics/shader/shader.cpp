@@ -235,6 +235,28 @@ static bool SpirvValidateBinary(const char* label, uint64_t shader_hash,
 	return false;
 }
 
+static bool SpirvOptimizeBinary(const std::vector<uint32_t>& input_spirv, std::vector<uint32_t>& output_spirv) {
+	if (input_spirv.empty()) {
+		return false;
+	}
+	spvtools::Optimizer optimizer(SPV_ENV_VULKAN_1_3);
+	optimizer.RegisterLegalizationPasses();
+	optimizer.RegisterPerformancePasses();
+	optimizer.RegisterSizePasses();
+
+	std::string error_msgs;
+	optimizer.SetMessageConsumer([&error_msgs](spv_message_level_t /*level*/, const char* /*source*/,
+	                                           const spv_position_t& pos, const char* msg) {
+		error_msgs += fmt::format("{}:{} {}\n", pos.line, pos.column, msg);
+	});
+
+	if (!optimizer.Run(input_spirv.data(), input_spirv.size(), &output_spirv)) {
+		output_spirv = input_spirv;
+		return false;
+	}
+	return true;
+}
+
 static void ExitShaderRecompilerFailure(const char* label, uint64_t shader_hash,
                                         const char* reason) {
 	EXIT("%s failed hash=0x%016" PRIx64 ": %s\n", label, shader_hash,
@@ -1454,7 +1476,13 @@ bool ShaderCompileSpirvVS(const HW::VertexShaderInfo& regs, const HW::ShaderRegi
 	input_info.stage.resources =
 	    std::make_shared<const ShaderRecompiler::IR::ResourceSnapshot>(std::move(result.resources));
 	ApplyVertexOutputs(input_info, *input_info.stage.program);
-	spirv = std::move(result.spirv);
+
+	std::vector<uint32_t> optimized_spirv;
+	if (SpirvOptimizeBinary(result.spirv, optimized_spirv)) {
+		spirv = std::move(optimized_spirv);
+	} else {
+		spirv = std::move(result.spirv);
+	}
 	DumpShaderRecompilerSpirv("vs", options.shader_hash, spirv);
 
 	if (options.dump_ir) {
@@ -1506,7 +1534,13 @@ bool ShaderCompileSpirvPS(const HW::PixelShaderInfo& regs, const HW::ShaderRegis
 	input_info.stage.resources =
 	    std::make_shared<const ShaderRecompiler::IR::ResourceSnapshot>(std::move(result.resources));
 	ApplyPixelOutputs(input_info, *input_info.stage.program);
-	spirv = std::move(result.spirv);
+
+	std::vector<uint32_t> optimized_spirv_ps;
+	if (SpirvOptimizeBinary(result.spirv, optimized_spirv_ps)) {
+		spirv = std::move(optimized_spirv_ps);
+	} else {
+		spirv = std::move(result.spirv);
+	}
 	DumpShaderRecompilerSpirv("ps", options.shader_hash, spirv);
 
 	if (options.dump_ir) {
@@ -1555,7 +1589,13 @@ bool ShaderCompileSpirvCS(const HW::ComputeShaderInfo& regs, const HW::ShaderReg
 	    std::make_shared<const ShaderRecompiler::IR::Program>(std::move(result.program));
 	input_info.stage.resources =
 	    std::make_shared<const ShaderRecompiler::IR::ResourceSnapshot>(std::move(result.resources));
-	spirv = std::move(result.spirv);
+
+	std::vector<uint32_t> optimized_spirv_cs;
+	if (SpirvOptimizeBinary(result.spirv, optimized_spirv_cs)) {
+		spirv = std::move(optimized_spirv_cs);
+	} else {
+		spirv = std::move(result.spirv);
+	}
 	DumpShaderRecompilerSpirv("cs", options.shader_hash, spirv);
 
 	if (options.dump_ir) {

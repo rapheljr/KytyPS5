@@ -16,6 +16,7 @@
 #include "common/common.h"
 #include "common/threads.h"
 #include "graphics/host_gpu/renderer/pipeline/descriptorCache.h"
+#include <xxhash.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -36,16 +37,28 @@ struct MetalBufferBinding {
 	uint64_t offset = 0;       // Static or dynamic byte offset
 	uint64_t range  = 0;       // Byte range
 	uint32_t slot   = 0;       // Argument buffer index
+
+	bool operator==(const MetalBufferBinding& o) const noexcept {
+		return buffer == o.buffer && offset == o.offset && range == o.range && slot == o.slot;
+	}
 };
 
 struct MetalTextureBinding {
 	void*    texture = nullptr; // id<MTLTexture>
 	uint32_t slot    = 0;       // Argument buffer index
+
+	bool operator==(const MetalTextureBinding& o) const noexcept {
+		return texture == o.texture && slot == o.slot;
+	}
 };
 
 struct MetalSamplerBinding {
 	void*    sampler = nullptr; // id<MTLSamplerState>
 	uint32_t slot    = 0;       // Argument buffer index
+
+	bool operator==(const MetalSamplerBinding& o) const noexcept {
+		return sampler == o.sampler && slot == o.slot;
+	}
 };
 
 /// Set of all bound resources for a descriptor layout
@@ -63,46 +76,30 @@ struct MetalResourceSet {
 	}
 
 	[[nodiscard]] uint64_t ComputeHash() const noexcept {
-		uint64_t hash = 14695981039346656037ull;
-		auto add_word = [&hash](uint64_t val) {
-			hash ^= val;
-			hash *= 1099511628211ull;
-		};
-		for (const auto& b : buffers) {
-			add_word(reinterpret_cast<uint64_t>(b.buffer));
-			add_word(b.offset);
-			add_word(b.range);
-			add_word(static_cast<uint64_t>(b.slot));
+		uint64_t hash = 0;
+		if (!buffers.empty()) {
+			hash ^= XXH3_64bits(buffers.data(), buffers.size() * sizeof(MetalBufferBinding));
 		}
-		for (const auto& t : textures) {
-			add_word(reinterpret_cast<uint64_t>(t.texture));
-			add_word(static_cast<uint64_t>(t.slot));
+		if (!textures.empty()) {
+			hash ^= XXH3_64bits(textures.data(), textures.size() * sizeof(MetalTextureBinding));
 		}
-		for (const auto& s : samplers) {
-			add_word(reinterpret_cast<uint64_t>(s.sampler));
-			add_word(static_cast<uint64_t>(s.slot));
+		if (!samplers.empty()) {
+			hash ^= XXH3_64bits(samplers.data(), samplers.size() * sizeof(MetalSamplerBinding));
 		}
 		return hash;
 	}
 
 	[[nodiscard]] uint64_t ComputeBaseHash() const noexcept {
-		uint64_t hash = 14695981039346656037ull;
-		auto add_word = [&hash](uint64_t val) {
-			hash ^= val;
-			hash *= 1099511628211ull;
-		};
+		uint64_t hash = 0;
 		for (const auto& b : buffers) {
-			add_word(reinterpret_cast<uint64_t>(b.buffer));
-			add_word(b.range);
-			add_word(static_cast<uint64_t>(b.slot));
+			struct { void* buf; uint64_t rng; uint32_t slt; } base_b{b.buffer, b.range, b.slot};
+			hash ^= XXH3_64bits(&base_b, sizeof(base_b));
 		}
-		for (const auto& t : textures) {
-			add_word(reinterpret_cast<uint64_t>(t.texture));
-			add_word(static_cast<uint64_t>(t.slot));
+		if (!textures.empty()) {
+			hash ^= XXH3_64bits(textures.data(), textures.size() * sizeof(MetalTextureBinding));
 		}
-		for (const auto& s : samplers) {
-			add_word(reinterpret_cast<uint64_t>(s.sampler));
-			add_word(static_cast<uint64_t>(s.slot));
+		if (!samplers.empty()) {
+			hash ^= XXH3_64bits(samplers.data(), samplers.size() * sizeof(MetalSamplerBinding));
 		}
 		return hash;
 	}
