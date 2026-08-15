@@ -112,6 +112,18 @@ enum class X86Opcode : uint16_t {
 	Vpxor,
 	Vex2Byte,
 	Vex3Byte,
+	// BMI1 / BMI2 / Advanced Bitwise Opcodes
+	Popcnt,
+	Lzcnt,
+	Tzcnt,
+	Andn,
+	Bextr,
+	Blsr,
+	Blsmsk,
+	Rorx,
+	Sarx,
+	Shlx,
+	Shrx,
 	Unsupported
 };
 

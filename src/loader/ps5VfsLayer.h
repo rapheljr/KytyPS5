@@ -55,6 +55,9 @@ public:
 	/// Check if virtual path exists
 	bool Exists(const std::string& virtual_path);
 
+	/// Read file chunks asynchronously / direct-stream into host memory buffer
+	bool AsyncRead(const std::string& virtual_path, uint64_t file_offset, void* dst_buffer, size_t size_bytes, size_t* bytes_read = nullptr);
+
 	[[nodiscard]] const VfsStats& GetStats() const noexcept { return m_stats; }
 	void Clear() noexcept;
 

@@ -5,6 +5,7 @@
 #include "loader/ps5VfsLayer.h"
 
 #include <algorithm>
+#include <fstream>
 
 namespace Loader {
 
@@ -139,6 +140,27 @@ bool Ps5VfsLayer::Exists(const std::string& virtual_path) {
 		return true;
 	}
 	return false;
+}
+
+bool Ps5VfsLayer::AsyncRead(const std::string& virtual_path, uint64_t file_offset, void* dst_buffer, size_t size_bytes, size_t* bytes_read) {
+	if (!dst_buffer || size_bytes == 0) return false;
+
+	std::string host_path;
+	if (!ResolvePath(virtual_path, host_path)) {
+		return false;
+	}
+
+	std::ifstream file(host_path, std::ios::binary);
+	if (!file) return false;
+
+	file.seekg(file_offset, std::ios::beg);
+	if (!file) return false;
+
+	file.read(reinterpret_cast<char*>(dst_buffer), size_bytes);
+	size_t read_count = static_cast<size_t>(file.gcount());
+	if (bytes_read) *bytes_read = read_count;
+
+	return read_count > 0;
 }
 
 void Ps5VfsLayer::Clear() noexcept {

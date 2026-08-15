@@ -2,153 +2,38 @@
 #define KYTY_COMMON_HASH_H_
 
 #include "common/common.h"
+#include <xxhash.h>
 
 namespace Common {
 
 inline uint32_t hash(const void* key, uint32_t key_len) {
-	uint32_t hash = 0;
-
-	const auto* ptr = static_cast<const uint8_t*>(key);
-
-	while (key_len >= 4) {
-		hash += ptr[0];
-		hash += (hash << 10u);
-		hash ^= (hash >> 6u);
-		hash += ptr[1];
-		hash += (hash << 10u);
-		hash ^= (hash >> 6u);
-		hash += ptr[2];
-		hash += (hash << 10u);
-		hash ^= (hash >> 6u);
-		hash += ptr[3];
-		hash += (hash << 10u);
-		hash ^= (hash >> 6u);
-
-		key_len -= 4;
-		ptr += 4;
+	if (key == nullptr || key_len == 0) {
+		return 0;
 	}
+	return static_cast<uint32_t>(XXH3_64bits(key, static_cast<size_t>(key_len)));
+}
 
-	switch (key_len) {
-		case 3:
-			hash += ptr[2];
-			hash += (hash << 10u);
-			hash ^= (hash >> 6u);
-			[[fallthrough]];
-		case 2:
-			hash += ptr[1];
-			hash += (hash << 10u);
-			hash ^= (hash >> 6u);
-			[[fallthrough]];
-		case 1:
-			hash += ptr[0];
-			hash += (hash << 10u);
-			hash ^= (hash >> 6u);
-			[[fallthrough]];
-		default: break;
+inline uint64_t hash64_data(const void* key, size_t key_len) {
+	if (key == nullptr || key_len == 0) {
+		return 0;
 	}
-
-	hash += (hash << 3u);
-	hash ^= (hash >> 11u);
-	hash += (hash << 15u);
-
-	return hash;
+	return XXH3_64bits(key, key_len);
 }
 
 inline uint32_t hash8(uint8_t key) {
-	uint32_t hash = 0;
-
-	uint8_t* ptr = &key;
-
-	hash += ptr[0];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-
-	hash += (hash << 3u);
-	hash ^= (hash >> 11u);
-	hash += (hash << 15u);
-
-	return hash;
+	return static_cast<uint32_t>(XXH3_64bits(&key, sizeof(key)));
 }
 
 inline uint32_t hash16(uint16_t key) {
-	uint32_t hash = 0;
-
-	auto* ptr = reinterpret_cast<uint8_t*>(&key);
-
-	hash += ptr[0];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[1];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-
-	hash += (hash << 3u);
-	hash ^= (hash >> 11u);
-	hash += (hash << 15u);
-
-	return hash;
+	return static_cast<uint32_t>(XXH3_64bits(&key, sizeof(key)));
 }
 
 inline uint32_t hash32(uint32_t key) {
-	uint32_t hash = 0;
-
-	auto* ptr = reinterpret_cast<uint8_t*>(&key);
-
-	hash += ptr[0];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[1];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[2];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[3];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-
-	hash += (hash << 3u);
-	hash ^= (hash >> 11u);
-	hash += (hash << 15u);
-
-	return hash;
+	return static_cast<uint32_t>(XXH3_64bits(&key, sizeof(key)));
 }
 
 inline uint32_t hash64(uint64_t key) {
-	uint32_t hash = 0;
-
-	auto* ptr = reinterpret_cast<uint8_t*>(&key);
-
-	hash += ptr[0];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[1];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[2];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[3];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[4];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[5];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[6];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-	hash += ptr[7];
-	hash += (hash << 10u);
-	hash ^= (hash >> 6u);
-
-	hash += (hash << 3u);
-	hash ^= (hash >> 11u);
-	hash += (hash << 15u);
-
-	return hash;
+	return static_cast<uint32_t>(XXH3_64bits(&key, sizeof(key)));
 }
 
 } // namespace Common

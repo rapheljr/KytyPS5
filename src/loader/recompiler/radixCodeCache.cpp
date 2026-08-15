@@ -4,6 +4,7 @@
 
 #include "loader/recompiler/radixCodeCache.h"
 
+#include <xxhash.h>
 #include <sys/mman.h>
 
 #include <chrono>
@@ -249,12 +250,34 @@ bool GenerationalCodeCache::SerializeToFile(const std::string& filepath) const {
 	if (!out) return false;
 
 	uint32_t magic = 0x4B595459; // 'KYTY'
+	uint32_t version = 2;
 	out.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+	out.write(reinterpret_cast<const char*>(&version), sizeof(version));
 
 	size_t gen0_used = m_gen0_offset.load();
+	size_t gen1_used = m_gen1_offset.load();
 	out.write(reinterpret_cast<const char*>(&gen0_used), sizeof(gen0_used));
+	out.write(reinterpret_cast<const char*>(&gen1_used), sizeof(gen1_used));
+
+	// Calculate XXH3 checksum of cached executable code payloads
+	XXH3_state_t* state = XXH3_createState();
+	XXH3_64bits_reset(state);
+	if (gen0_used > 0 && m_gen0_base) {
+		XXH3_64bits_update(state, m_gen0_base, gen0_used);
+	}
+	if (gen1_used > 0 && m_gen1_base) {
+		XXH3_64bits_update(state, m_gen1_base, gen1_used);
+	}
+	uint64_t checksum = XXH3_64bits_digest(state);
+	XXH3_freeState(state);
+
+	out.write(reinterpret_cast<const char*>(&checksum), sizeof(checksum));
+
 	if (gen0_used > 0 && m_gen0_base) {
 		out.write(reinterpret_cast<const char*>(m_gen0_base), gen0_used);
+	}
+	if (gen1_used > 0 && m_gen1_base) {
+		out.write(reinterpret_cast<const char*>(m_gen1_base), gen1_used);
 	}
 
 	return true;
@@ -268,15 +291,65 @@ bool GenerationalCodeCache::DeserializeFromFile(const std::string& filepath) {
 	in.read(reinterpret_cast<char*>(&magic), sizeof(magic));
 	if (magic != 0x4B595459) return false;
 
+	uint32_t version = 0;
+	in.read(reinterpret_cast<char*>(&version), sizeof(version));
+	if (version != 2 && version != 1) return false;
+
 	size_t gen0_used = 0;
+	size_t gen1_used = 0;
 	in.read(reinterpret_cast<char*>(&gen0_used), sizeof(gen0_used));
-	if (gen0_used > 0 && m_gen0_base && gen0_used <= m_gen0_capacity) {
+	if (version >= 2) {
+		in.read(reinterpret_cast<char*>(&gen1_used), sizeof(gen1_used));
+	}
+
+	if (gen0_used > m_gen0_capacity || gen1_used > m_gen1_capacity) {
+		return false; // Out of capacity
+	}
+
+	uint64_t stored_checksum = 0;
+	if (version >= 2) {
+		in.read(reinterpret_cast<char*>(&stored_checksum), sizeof(stored_checksum));
+	}
+
+	std::vector<uint8_t> gen0_temp(gen0_used);
+	std::vector<uint8_t> gen1_temp(gen1_used);
+
+	if (gen0_used > 0) {
+		in.read(reinterpret_cast<char*>(gen0_temp.data()), gen0_used);
+	}
+	if (gen1_used > 0) {
+		in.read(reinterpret_cast<char*>(gen1_temp.data()), gen1_used);
+	}
+
+	if (version >= 2 && stored_checksum != 0) {
+		XXH3_state_t* state = XXH3_createState();
+		XXH3_64bits_reset(state);
+		if (gen0_used > 0) XXH3_64bits_update(state, gen0_temp.data(), gen0_used);
+		if (gen1_used > 0) XXH3_64bits_update(state, gen1_temp.data(), gen1_used);
+		uint64_t computed_checksum = XXH3_64bits_digest(state);
+		XXH3_freeState(state);
+
+		if (computed_checksum != stored_checksum) {
+			return false; // Corrupted cache payload
+		}
+	}
+
+	if (gen0_used > 0 && m_gen0_base) {
 		Arm64CodeCache::SetJitWriteProtect(false);
-		in.read(reinterpret_cast<char*>(m_gen0_base), gen0_used);
+		std::memcpy(m_gen0_base, gen0_temp.data(), gen0_used);
 		Arm64CodeCache::SetJitWriteProtect(true);
 		Arm64CodeCache::FlushInstructionCache(m_gen0_base, gen0_used);
 		m_gen0_offset.store(gen0_used);
 		m_stats.gen0_bytes_used = gen0_used;
+	}
+
+	if (gen1_used > 0 && m_gen1_base) {
+		Arm64CodeCache::SetJitWriteProtect(false);
+		std::memcpy(m_gen1_base, gen1_temp.data(), gen1_used);
+		Arm64CodeCache::SetJitWriteProtect(true);
+		Arm64CodeCache::FlushInstructionCache(m_gen1_base, gen1_used);
+		m_gen1_offset.store(gen1_used);
+		m_stats.gen1_bytes_used = gen1_used;
 	}
 
 	return true;

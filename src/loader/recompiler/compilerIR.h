@@ -45,6 +45,14 @@ enum class IROpcode : uint16_t {
 	Ror,
 	Neg,
 	Not,
+	// Bit Manipulation & Count
+	Clz,
+	Ctz,
+	Popcnt,
+	Andn,
+	Bextr,
+	Blsr,
+	Blsmsk,
 	// Casts & Extensions
 	ZExt,
 	SExt,

@@ -3,6 +3,7 @@
 // Target-Independent Compiler IR to Native ARM64 Code Generator.
 
 #include "loader/recompiler/arm64IRCodegen.h"
+#include "common/profiler.h"
 
 namespace Loader::Recompiler {
 
@@ -25,6 +26,8 @@ Arm64FpReg Arm64IRCodegen::MapOperandToArm64FpReg(const VirtualReg& vreg) const 
 }
 
 bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
+	KYTY_PROFILER_FUNCTION();
+
 	// 1. Execute Linear Scan Register Allocator over Compiler IR CFG
 	auto alloc_res = m_allocator.Allocate(cfg);
 	if (!alloc_res.success) return false;
@@ -226,6 +229,42 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 							emitter.EmitMovImm64(Arm64Reg::X16, static_cast<uint64_t>(ops[1].imm_int));
 							emitter.EmitAsr(dst_reg, MapOperandToArm64Reg(ops[0].vreg), Arm64Reg::X16);
 						}
+					}
+					break;
+
+				case IROpcode::Ror:
+					if (ops.size() >= 2) {
+						if (ops[0].IsVReg() && ops[1].IsVReg()) {
+							emitter.EmitRor(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+						} else if (ops[0].IsVReg() && ops[1].IsImmInt()) {
+							emitter.EmitMovImm64(Arm64Reg::X16, static_cast<uint64_t>(ops[1].imm_int));
+							emitter.EmitRor(dst_reg, MapOperandToArm64Reg(ops[0].vreg), Arm64Reg::X16);
+						}
+					}
+					break;
+
+				case IROpcode::Clz:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						emitter.EmitClz(dst_reg, MapOperandToArm64Reg(ops[0].vreg));
+					}
+					break;
+
+				case IROpcode::Ctz:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						emitter.EmitRbit(dst_reg, MapOperandToArm64Reg(ops[0].vreg));
+						emitter.EmitClz(dst_reg, dst_reg);
+					}
+					break;
+
+				case IROpcode::Andn:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+						emitter.EmitBicReg(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+					}
+					break;
+
+				case IROpcode::Bextr:
+					if (ops.size() >= 3 && ops[0].IsVReg() && ops[1].IsImmInt() && ops[2].IsImmInt()) {
+						emitter.EmitUbfx(dst_reg, MapOperandToArm64Reg(ops[0].vreg), static_cast<uint8_t>(ops[1].imm_int), static_cast<uint8_t>(ops[2].imm_int));
 					}
 					break;
 

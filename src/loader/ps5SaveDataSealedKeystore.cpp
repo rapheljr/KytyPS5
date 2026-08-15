@@ -6,6 +6,11 @@
 
 #include <cstring>
 
+#if defined(__APPLE__)
+#include <CommonCrypto/CommonCryptor.h>
+#include <CommonCrypto/CommonHMAC.h>
+#endif
+
 namespace Loader {
 
 Ps5SaveDataSealedKeystore::Ps5SaveDataSealedKeystore() = default;
@@ -13,14 +18,25 @@ Ps5SaveDataSealedKeystore::Ps5SaveDataSealedKeystore() = default;
 std::vector<uint8_t> Ps5SaveDataSealedKeystore::DeriveKey(const std::string& title_id, uint64_t account_id) {
 	std::vector<uint8_t> derived(32, 0);
 
+#if defined(__APPLE__)
+	const char salt[] = "KytyPS5_SealedKey_MasterSalt_v1";
+	std::vector<uint8_t> msg;
+	msg.reserve(title_id.size() + sizeof(account_id));
+	msg.insert(msg.end(), title_id.begin(), title_id.end());
+	const auto* acc_bytes = reinterpret_cast<const uint8_t*>(&account_id);
+	msg.insert(msg.end(), acc_bytes, acc_bytes + sizeof(account_id));
+
+	CCHmac(kCCHmacAlgSHA256, salt, sizeof(salt) - 1, msg.data(), msg.size(), derived.data());
+	return derived;
+#else
 	// Seed with Title ID and Account ID
 	for (size_t i = 0; i < 32; ++i) {
 		uint8_t t_byte = i < title_id.size() ? static_cast<uint8_t>(title_id[i]) : 0x55;
 		uint8_t a_byte = static_cast<uint8_t>((account_id >> ((i % 8) * 8)) & 0xFF);
 		derived[i] = t_byte ^ a_byte ^ static_cast<uint8_t>(i * 7 + 0x3A);
 	}
-
 	return derived;
+#endif
 }
 
 std::vector<uint8_t> Ps5SaveDataSealedKeystore::SealKey(const std::string& title_id, uint64_t account_id, const uint8_t* raw_key, size_t key_len) {
@@ -41,9 +57,13 @@ std::vector<uint8_t> Ps5SaveDataSealedKeystore::SealKey(const std::string& title
 	}
 
 	// Generate HMAC tag
+#if defined(__APPLE__)
+	CCHmac(kCCHmacAlgSHA256, master_key.data(), master_key.size(), header.encrypted_key, sizeof(header.encrypted_key), header.hmac_tag);
+#else
 	for (size_t i = 0; i < 32; ++i) {
 		header.hmac_tag[i] = header.encrypted_key[i] ^ master_key[31 - i] ^ 0xAA;
 	}
+#endif
 
 	std::vector<uint8_t> output(sizeof(SealedKeyHeader));
 	std::memcpy(output.data(), &header, sizeof(SealedKeyHeader));
@@ -70,12 +90,18 @@ bool Ps5SaveDataSealedKeystore::UnsealKey(const uint8_t* sealed_data, size_t sea
 	auto master_key = DeriveKey(title_id, account_id);
 
 	// Verify HMAC tag
+	uint8_t expected_tag[32] = {0};
+#if defined(__APPLE__)
+	CCHmac(kCCHmacAlgSHA256, master_key.data(), master_key.size(), header.encrypted_key, sizeof(header.encrypted_key), expected_tag);
+#else
 	for (size_t i = 0; i < 32; ++i) {
-		uint8_t expected_tag = header.encrypted_key[i] ^ master_key[31 - i] ^ 0xAA;
-		if (header.hmac_tag[i] != expected_tag) {
-			m_stats.integrity_failures++;
-			return false;
-		}
+		expected_tag[i] = header.encrypted_key[i] ^ master_key[31 - i] ^ 0xAA;
+	}
+#endif
+
+	if (std::memcmp(header.hmac_tag, expected_tag, 32) != 0) {
+		m_stats.integrity_failures++;
+		return false;
 	}
 
 	out_key.resize(32);

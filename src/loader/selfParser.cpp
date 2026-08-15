@@ -6,6 +6,11 @@
 
 #include <algorithm>
 #include <cstring>
+#include <zlib.h>
+
+#if defined(__APPLE__)
+#include <CommonCrypto/CommonCryptor.h>
+#endif
 
 namespace Loader {
 
@@ -25,6 +30,25 @@ bool SelfParser::DecryptSelfHeader(const uint8_t* encrypted_header, size_t heade
 	if (key && key_size >= 16) {
 		uint8_t iv[16] = {0};
 		std::memcpy(iv, key, 16);
+#if defined(__APPLE__)
+		size_t num_bytes_decrypted = 0;
+		CCCryptorStatus status = CCCrypt(
+			kCCDecrypt,
+			kCCAlgorithmAES128,
+			0, // Raw block cipher
+			key,
+			key_size >= 32 ? 32 : 16,
+			iv,
+			encrypted_header,
+			header_size,
+			out_decrypted.data(),
+			out_decrypted.size(),
+			&num_bytes_decrypted
+		);
+		if (status == kCCSuccess && num_bytes_decrypted > 0) {
+			return true;
+		}
+#endif
 		for (size_t i = 0; i < header_size; ++i) {
 			out_decrypted[i] = encrypted_header[i] ^ key[i % key_size] ^ iv[i % 16];
 		}
@@ -44,6 +68,31 @@ bool SelfParser::DecompressSegment(const uint8_t* src, size_t src_size, uint8_t*
 		return true;
 	}
 
+	// 1. Attempt zlib inflate decompression
+	z_stream strm{};
+	strm.next_in   = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(src));
+	strm.avail_in  = static_cast<uInt>(src_size);
+	strm.next_out  = reinterpret_cast<Bytef*>(dst);
+	strm.avail_out = static_cast<uInt>(dst_size);
+
+	// Try standard zlib / gzip / raw deflate auto-detection (windowBits = 15 + 32)
+	int ret = inflateInit2(&strm, 15 + 32);
+	if (ret != Z_OK) {
+		ret = inflateInit2(&strm, -15);
+	}
+
+	if (ret == Z_OK) {
+		ret = inflate(&strm, Z_FINISH);
+		inflateEnd(&strm);
+		if (ret == Z_STREAM_END || (ret == Z_OK && strm.avail_out == 0)) {
+			if (dst_size > strm.total_out) {
+				std::memset(dst + strm.total_out, 0, dst_size - strm.total_out);
+			}
+			return true;
+		}
+	}
+
+	// 2. Fallback for uncompressed data slices
 	size_t copy_bytes = std::min(src_size, dst_size);
 	std::memcpy(dst, src, copy_bytes);
 	if (dst_size > copy_bytes) {

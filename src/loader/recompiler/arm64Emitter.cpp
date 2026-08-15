@@ -273,12 +273,27 @@ void Arm64Emitter::EmitSmulh(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2) {
 	Emit32(MultiplyHigh(true, Reg(src2), Reg(src1), Reg(dst)));
 }
 
+void Arm64Emitter::EmitClz(Arm64Reg dst, Arm64Reg src, bool sf) {
+	Emit32((sf ? 0xDAC01000u : 0x5AC01000u) | (static_cast<uint32_t>(src) << 5u) | static_cast<uint32_t>(dst));
+}
+
+void Arm64Emitter::EmitRbit(Arm64Reg dst, Arm64Reg src, bool sf) {
+	Emit32((sf ? 0xDAC00000u : 0x5AC00000u) | (static_cast<uint32_t>(src) << 5u) | static_cast<uint32_t>(dst));
+}
+
+void Arm64Emitter::EmitBicReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf) {
+	Emit32(LogicReg(sf, 0, true, Reg(src2), 0, Reg(src1), Reg(dst)));
+}
+
+void Arm64Emitter::EmitUbfx(Arm64Reg dst, Arm64Reg src, uint8_t lsb, uint8_t width, bool sf) {
+	uint32_t imms = (lsb + width - 1) & 0x3Fu;
+	uint32_t immr = lsb & 0x3Fu;
+	Emit32((sf ? 0xD3400000u : 0x53000000u) | (immr << 16u) | (imms << 10u) | (static_cast<uint32_t>(src) << 5u) | static_cast<uint32_t>(dst));
+}
+
 bool Arm64Emitter::CompileBlock(const RecompilerBasicBlock& block) {
-	const auto& insts = block.GetInstructions();
-
-	for (const auto& inst : insts) {
+	for (const auto& inst : block.GetInstructions()) {
 		if (!inst.active) continue;
-
 		switch (inst.opcode) {
 			case X86Opcode::Nop:
 				EmitNop();
@@ -332,6 +347,65 @@ bool Arm64Emitter::CompileBlock(const RecompilerBasicBlock& block) {
 					} else if (inst.src.kind == X86Operand::Kind::Imm) {
 						EmitCmpImm(dst_arm, static_cast<uint32_t>(inst.src.imm));
 					}
+				}
+				break;
+
+			case X86Opcode::Lzcnt:
+			case X86Opcode::Bsr:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					Arm64Reg src_arm = MapX86ToArm64Reg(inst.src.reg);
+					EmitClz(dst_arm, src_arm, true);
+				}
+				break;
+
+			case X86Opcode::Tzcnt:
+			case X86Opcode::Bsf:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					Arm64Reg src_arm = MapX86ToArm64Reg(inst.src.reg);
+					EmitRbit(dst_arm, src_arm, true);
+					EmitClz(dst_arm, dst_arm, true);
+				}
+				break;
+
+			case X86Opcode::Andn:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					Arm64Reg src_arm = MapX86ToArm64Reg(inst.src.reg);
+					EmitBicReg(dst_arm, dst_arm, src_arm, true);
+				}
+				break;
+
+			case X86Opcode::Rorx:
+			case X86Opcode::Ror:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					EmitRor(dst_arm, dst_arm, MapX86ToArm64Reg(inst.src.reg), true);
+				}
+				break;
+
+			case X86Opcode::Shlx:
+			case X86Opcode::Shl:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					EmitLsl(dst_arm, dst_arm, MapX86ToArm64Reg(inst.src.reg), true);
+				}
+				break;
+
+			case X86Opcode::Shrx:
+			case X86Opcode::Shr:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					EmitLsr(dst_arm, dst_arm, MapX86ToArm64Reg(inst.src.reg), true);
+				}
+				break;
+
+			case X86Opcode::Sarx:
+			case X86Opcode::Sar:
+				if (inst.dst.kind == X86Operand::Kind::Reg && inst.src.kind == X86Operand::Kind::Reg) {
+					Arm64Reg dst_arm = MapX86ToArm64Reg(inst.dst.reg);
+					EmitAsr(dst_arm, dst_arm, MapX86ToArm64Reg(inst.src.reg), true);
 				}
 				break;
 

@@ -372,9 +372,31 @@ bool OpenOrbisElfLoader::ProcessRelocations(const uint8_t* data, size_t size,
                             }
                         }
                     }
+                } else if (type == 16 /* R_X86_64_DTPMOD64 */) {
+                    uint64_t val = 1; // Primary module TLS index
+                    std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                    out.resolved_symbols_count++;
+                } else if (type == 17 /* R_X86_64_DTPOFF64 */) {
+                    Elf64_Sym sym{};
+                    std::string sym_name;
+                    get_symbol(sym_idx, sym, sym_name);
+                    uint64_t val = sym.st_value + rela.r_addend;
+                    std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                    out.resolved_symbols_count++;
                 } else if (type == 18 /* R_X86_64_TPOFF64 */) {
                     // TLS offset
-                    uint64_t val = rela.r_addend;
+                    Elf64_Sym sym{};
+                    std::string sym_name;
+                    get_symbol(sym_idx, sym, sym_name);
+                    uint64_t val = sym.st_value + rela.r_addend;
+                    std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
+                    out.resolved_symbols_count++;
+                } else if (type == 2 /* R_X86_64_PC32 */ || type == 4 /* R_X86_64_PLT32 */) {
+                    Elf64_Sym sym{};
+                    std::string sym_name;
+                    bool has_sym = get_symbol(sym_idx, sym, sym_name);
+                    uint64_t sym_val = has_sym ? (out.base_vaddr + sym.st_value) : 0;
+                    int32_t val = static_cast<int32_t>(sym_val + rela.r_addend - (out.base_vaddr + rela.r_offset));
                     std::memcpy(out.image_buffer.data() + buf_off, &val, sizeof(val));
                     out.resolved_symbols_count++;
                 }

@@ -1,8 +1,8 @@
-// jitTier2Optimizer.cpp
-//
-// Tier-2 Profile-Guided JIT Optimizer Implementation.
-
 #include "loader/recompiler/jitTier2Optimizer.h"
+#include "loader/recompiler/jitEscapeAnalysis.h"
+#include "loader/recompiler/jitFunctionInliner.h"
+#include "loader/recompiler/jitLoopVectorizer.h"
+#include "common/profiler.h"
 
 #include <algorithm>
 #include <sstream>
@@ -12,6 +12,20 @@
 namespace Loader::Recompiler {
 
 bool JitTier2Optimizer::Optimize(ControlFlowGraph& cfg) {
+	KYTY_PROFILER_FUNCTION();
+
+	// 1. Run Function Inlining Pass
+	JitFunctionInliner inliner;
+	inliner.RunPass(cfg);
+
+	// 2. Run Escape Analysis & Stack Scalar Replacement
+	JitEscapeAnalysis escape_analysis;
+	escape_analysis.RunPass(cfg);
+
+	// 3. Run Auto-SIMD Loop Vectorization Pass
+	JitLoopVectorizer loop_vectorizer;
+	loop_vectorizer.RunPass(cfg);
+
 	uint32_t passes = 0;
 	bool changed = true;
 

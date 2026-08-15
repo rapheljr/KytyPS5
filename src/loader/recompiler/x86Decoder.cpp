@@ -4,6 +4,7 @@
 
 #include "loader/recompiler/x86Decoder.h"
 #include "loader/recompiler/x86DecoderTables.h"
+#include "common/profiler.h"
 
 #include <cstdio>
 #include <sstream>
@@ -178,6 +179,9 @@ static const OpcodeEntry* GetTwoByteOpcodeEntry(uint8_t opcode) {
 		table[0xAF] = {X86Opcode::Imul, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xB6] = {X86Opcode::Movzx, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xB7] = {X86Opcode::Movzx, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xB8] = {X86Opcode::Popcnt, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBC] = {X86Opcode::Bsf,    OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBD] = {X86Opcode::Bsr,    OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xBE] = {X86Opcode::Movsx, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xBF] = {X86Opcode::Movsx, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xDB] = {X86Opcode::Pand, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
@@ -213,6 +217,8 @@ const X86Opcode g_group5_table[8] = {
 };
 
 DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, size_t max_bytes, uint64_t guest_rip) {
+	KYTY_PROFILER_FUNCTION();
+
 	DecodedX86Instruction inst{};
 	inst.guest_rip = guest_rip;
 
@@ -299,6 +305,14 @@ DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, siz
 	inst.opcode      = entry.opcode;
 	inst.cond        = entry.cond;
 	inst.cond_invert = entry.cond_invert;
+
+	if (is_twobyte && inst.has_rep) {
+		if (inst.opcode == X86Opcode::Bsf) {
+			inst.opcode = X86Opcode::Tzcnt;
+		} else if (inst.opcode == X86Opcode::Bsr) {
+			inst.opcode = X86Opcode::Lzcnt;
+		}
+	}
 
 	// Determine Operand Byte Size
 	uint8_t op_size_bytes = 4;
@@ -582,6 +596,17 @@ std::string X86Decoder::DisassembleInstruction(const DecodedX86Instruction& inst
 		case X86Opcode::Vpxor:    ss << "vpxor"; break;
 		case X86Opcode::Vex2Byte: ss << "vex2"; break;
 		case X86Opcode::Vex3Byte: ss << "vex3"; break;
+		case X86Opcode::Popcnt:   ss << "popcnt"; break;
+		case X86Opcode::Lzcnt:    ss << "lzcnt"; break;
+		case X86Opcode::Tzcnt:    ss << "tzcnt"; break;
+		case X86Opcode::Andn:     ss << "andn"; break;
+		case X86Opcode::Bextr:    ss << "bextr"; break;
+		case X86Opcode::Blsr:     ss << "blsr"; break;
+		case X86Opcode::Blsmsk:   ss << "blsmsk"; break;
+		case X86Opcode::Rorx:     ss << "rorx"; break;
+		case X86Opcode::Sarx:     ss << "sarx"; break;
+		case X86Opcode::Shlx:     ss << "shlx"; break;
+		case X86Opcode::Shrx:     ss << "shrx"; break;
 		default:                ss << "unknown"; break;
 	}
 	return ss.str();

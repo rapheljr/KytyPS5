@@ -1,11 +1,12 @@
-// ps5PfsDecryptor.cpp
-//
-// PlayStation File System (PFS) Container Parser and Decryptor Implementation.
-
 #include "loader/ps5PfsDecryptor.h"
 
 #include <cstring>
 #include <iostream>
+
+#if defined(__APPLE__)
+#include <CommonCrypto/CommonHMAC.h>
+#include <CommonCrypto/CommonCryptor.h>
+#endif
 
 namespace Loader {
 
@@ -13,9 +14,14 @@ Ps5PfsDecryptor::Ps5PfsDecryptor() = default;
 
 void Ps5PfsDecryptor::SetPasscodeKey(const std::string& passcode) {
 	m_derived_key.resize(32, 0);
+#if defined(__APPLE__)
+	const char* salt = "PS5_PFS_PASSCODE_SALT";
+	CCHmac(kCCHmacAlgSHA256, salt, std::strlen(salt), passcode.data(), passcode.size(), m_derived_key.data());
+#else
 	for (size_t i = 0; i < passcode.size(); ++i) {
 		m_derived_key[i % 32] ^= static_cast<uint8_t>(passcode[i]);
 	}
+#endif
 }
 
 bool Ps5PfsDecryptor::LoadFromMemory(const uint8_t* data, size_t size) {

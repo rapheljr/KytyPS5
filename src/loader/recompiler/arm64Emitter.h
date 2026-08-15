@@ -107,6 +107,12 @@ public:
 	void EmitUmulh(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2);
 	void EmitSmulh(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2);
 
+	// 6. Bit Manipulation & Count Instructions
+	void EmitClz(Arm64Reg dst, Arm64Reg src, bool sf = true);
+	void EmitRbit(Arm64Reg dst, Arm64Reg src, bool sf = true);
+	void EmitBicReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf = true);
+	void EmitUbfx(Arm64Reg dst, Arm64Reg src, uint8_t lsb, uint8_t width, bool sf = true);
+
 	// Translation Engine
 	bool CompileBlock(const RecompilerBasicBlock& block);
 
