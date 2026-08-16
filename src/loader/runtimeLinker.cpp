@@ -493,6 +493,34 @@ static KYTY_SYSV_ABI void RunEntry(uint64_t addr, EntryParams* params, atexit_fu
 	               "xmm11", "xmm12", "xmm13", "xmm14", "xmm15");
 #endif
 #elif defined(__aarch64__) || defined(__arm64__)
+#if defined(KYTY_VIRTUAL_MEMORY_ALLOCATION_TESTS)
+	if (stack_top != nullptr) {
+		const auto aligned_stack_top =
+		    reinterpret_cast<uintptr_t>(stack_top) & ~static_cast<uintptr_t>(0x0f);
+		const auto guest_sp = aligned_stack_top - 2u * sizeof(uintptr_t);
+		auto* guest_root_frame = reinterpret_cast<uintptr_t*>(guest_sp);
+		guest_root_frame[0] = 0;
+		guest_root_frame[1] = 0;
+
+		auto* func = reinterpret_cast<entry_func_t>(addr);
+		uintptr_t old_sp = 0;
+		asm volatile(
+			"mov %0, sp\n\t"
+			"mov sp, %1\n\t"
+			: "=r"(old_sp)
+			: "r"(guest_sp)
+			: "memory"
+		);
+		func(params, atexit_func);
+		asm volatile(
+			"mov sp, %0\n\t"
+			:
+			: "r"(old_sp)
+			: "memory"
+		);
+		return;
+	}
+#endif
 	(void)stack_top;
 	(void)params;
 	(void)atexit_func;
@@ -524,6 +552,9 @@ struct MainEntryStackTestState {
 static KYTY_SYSV_ABI void TestMainEntryStackCallback(EntryParams* params,
                                                      atexit_func_t /*atexit_func*/) {
 	auto* state = reinterpret_cast<MainEntryStackTestState*>(const_cast<char*>(params->argv[0]));
+#if defined(__aarch64__) || defined(_M_ARM64)
+	asm volatile("mov %0, sp" : "=r"(state->rsp) : : "memory");
+#elif defined(__x86_64__) || defined(_M_X64)
 	asm volatile("pushq %%r15\n\t"
 	             "pushq %%r14\n\t"
 	             "popq %%r14\n\t"
@@ -538,6 +569,9 @@ static KYTY_SYSV_ABI void TestMainEntryStackCallback(EntryParams* params,
 	             : "=r"(state->teb_stack_base), "=r"(state->teb_stack_limit)
 	             :
 	             : "memory");
+#endif
+#else
+	state->rsp = reinterpret_cast<uintptr_t>(&state);
 #endif
 	state->called = true;
 }
