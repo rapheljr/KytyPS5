@@ -228,6 +228,8 @@ file(GLOB kyty_emulator_src CONFIGURE_DEPENDS
 	"${KYTY_SOURCE_DIR}/compat/*.h"
 	"${KYTY_SOURCE_DIR}/emulator/*.cpp"
 	"${KYTY_SOURCE_DIR}/emulator/*.h"
+	"${KYTY_SOURCE_DIR}/emulator/compat/*.cpp"
+	"${KYTY_SOURCE_DIR}/emulator/compat/*.h"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/*.cpp"
 	"${KYTY_SOURCE_DIR}/loader/recompiler/*.h"
 	"${KYTY_SOURCE_DIR}/audio/*.cpp"
