@@ -95,6 +95,68 @@ static void TestDecryptSelfHeaderAndDecompress() {
 	std::printf("  [ OK ] SelfParserDecryptSelfHeaderAndDecompress\n");
 }
 
+static void TestExtractElfMultiSegment() {
+	std::printf("[TEST] SelfParserExtractElfMultiSegment\n");
+
+	// Construct a multi-segment mock SELF
+	// Segment 0: ELF Header (uncompressed, offset 0 in ELF, size 64)
+	// Segment 1: Program Code (uncompressed/direct copy, offset 64 in ELF, size 128)
+	size_t self_hdr_size = sizeof(Loader::SelfHeader) + 2 * sizeof(Loader::SelfSegmentHeader);
+	std::vector<uint8_t> buffer(self_hdr_size + 64 + 128, 0);
+
+	auto* hdr = reinterpret_cast<Loader::SelfHeader*>(buffer.data());
+	hdr->magic = Loader::kSelfMagic;
+	hdr->version = 1;
+	hdr->key_type = 0;
+	hdr->segment_count = 2;
+	hdr->header_size = static_cast<uint16_t>(self_hdr_size);
+
+	auto* segs = reinterpret_cast<Loader::SelfSegmentHeader*>(buffer.data() + sizeof(Loader::SelfHeader));
+
+	// Segment 0
+	segs[0].flags = 0x1;
+	segs[0].offset = self_hdr_size;
+	segs[0].compressed_size = 64;
+	segs[0].uncompressed_size = 64;
+	for (size_t i = 0; i < 64; ++i) {
+		buffer[self_hdr_size + i] = static_cast<uint8_t>(0x7F + i);
+	}
+
+	// Segment 1
+	segs[1].flags = 0x1;
+	segs[1].offset = self_hdr_size + 64;
+	segs[1].compressed_size = 128;
+	segs[1].uncompressed_size = 128;
+	for (size_t i = 0; i < 128; ++i) {
+		buffer[self_hdr_size + 64 + i] = static_cast<uint8_t>(0xAA ^ i);
+	}
+
+	Loader::SelfInfo info;
+	if (!Loader::SelfParser::Parse(buffer.data(), buffer.size(), info) || !info.valid) {
+		std::fprintf(stderr, "FAIL: Parse failed for multi-segment SELF\n");
+		std::exit(1);
+	}
+
+	std::vector<uint8_t> extracted_elf;
+	if (!Loader::SelfParser::ExtractElf(buffer.data(), buffer.size(), extracted_elf)) {
+		std::fprintf(stderr, "FAIL: ExtractElf failed for multi-segment SELF\n");
+		std::exit(1);
+	}
+
+	if (extracted_elf.size() != 64 + 128) {
+		std::fprintf(stderr, "FAIL: ExtractElf returned unexpected size %zu\n", extracted_elf.size());
+		std::exit(1);
+	}
+
+	if (std::memcmp(extracted_elf.data(), buffer.data() + self_hdr_size, 64) != 0 ||
+	    std::memcmp(extracted_elf.data() + 64, buffer.data() + self_hdr_size + 64, 128) != 0) {
+		std::fprintf(stderr, "FAIL: ExtractElf content mismatch\n");
+		std::exit(1);
+	}
+
+	std::printf("  [ OK ] SelfParserExtractElfMultiSegment\n");
+}
+
 int main() {
 	std::printf("================================================================================\n");
 	std::printf("  KytyPS5 — SelfParser Unit & Integration Test Suite\n");
@@ -103,9 +165,10 @@ int main() {
 	TestIsSelfBuffer();
 	TestParseHeaderAndSegments();
 	TestDecryptSelfHeaderAndDecompress();
+	TestExtractElfMultiSegment();
 
 	std::printf("================================================================================\n");
-	std::printf("  Results: 3 passed, 0 failed\n");
+	std::printf("  Results: 4 passed, 0 failed\n");
 	std::printf("================================================================================\n");
 
 	return 0;

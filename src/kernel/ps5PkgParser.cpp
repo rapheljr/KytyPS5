@@ -5,7 +5,9 @@
 #include "kernel/ps5PkgParser.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
+#include <filesystem>
 
 namespace Libs::Kernel::Ps5 {
 
@@ -142,7 +144,7 @@ bool PkgParser::MountPfsImage(const uint8_t* pfs_bytes, size_t size, const uint8
 
 // ─── PkgInstaller ─────────────────────────────────────────────────────────────
 
-bool PkgInstaller::InstallPackageBuffer(const uint8_t* data, size_t size, const std::string& /*target_dir*/, std::string* out_content_id) {
+bool PkgInstaller::InstallPackageBuffer(const uint8_t* data, size_t size, const std::string& target_dir, std::string* out_content_id) {
 	PkgParser parser;
 	if (!parser.Parse(data, size)) {
 		return false;
@@ -154,6 +156,49 @@ bool PkgInstaller::InstallPackageBuffer(const uint8_t* data, size_t size, const 
 
 	if (out_content_id) {
 		*out_content_id = parser.GetHeader().content_id;
+	}
+
+	if (!target_dir.empty()) {
+		std::filesystem::path target_path(target_dir);
+		std::error_code ec;
+		std::filesystem::create_directories(target_path, ec);
+		std::filesystem::create_directories(target_path / "sce_sys", ec);
+
+		for (const auto& [entry_id, entry] : parser.GetEntries()) {
+			std::vector<uint8_t> entry_bytes;
+			if (parser.ExtractEntry(data, size, entry_id, entry_bytes)) {
+				std::filesystem::path file_rel_path;
+				switch (static_cast<PkgEntryId>(entry_id)) {
+					case PkgEntryId::ParamSfo:
+						file_rel_path = "sce_sys/param.sfo";
+						break;
+					case PkgEntryId::Icon0Png:
+						file_rel_path = "sce_sys/icon0.png";
+						break;
+					case PkgEntryId::Pic0Png:
+						file_rel_path = "sce_sys/pic0.png";
+						break;
+					case PkgEntryId::EbootBin:
+						file_rel_path = "eboot.bin";
+						break;
+					case PkgEntryId::LicenseDat:
+						file_rel_path = "sce_sys/license.dat";
+						break;
+					default:
+						file_rel_path = "entry_0x" + std::to_string(entry_id) + ".bin";
+						break;
+				}
+				std::filesystem::path dest_file = target_path / file_rel_path;
+				if (dest_file.has_parent_path()) {
+					std::filesystem::create_directories(dest_file.parent_path(), ec);
+				}
+				FILE* f = std::fopen(dest_file.string().c_str(), "wb");
+				if (f) {
+					std::fwrite(entry_bytes.data(), 1, entry_bytes.size(), f);
+					std::fclose(f);
+				}
+			}
+		}
 	}
 
 	return true;

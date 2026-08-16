@@ -68,31 +68,42 @@ bool SelfParser::DecompressSegment(const uint8_t* src, size_t src_size, uint8_t*
 		return true;
 	}
 
-	// 1. Attempt zlib inflate decompression
+	// 1. Attempt zlib inflate decompression with auto header detection (zlib / gzip)
 	z_stream strm{};
 	strm.next_in   = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(src));
 	strm.avail_in  = static_cast<uInt>(src_size);
 	strm.next_out  = reinterpret_cast<Bytef*>(dst);
 	strm.avail_out = static_cast<uInt>(dst_size);
 
-	// Try standard zlib / gzip / raw deflate auto-detection (windowBits = 15 + 32)
 	int ret = inflateInit2(&strm, 15 + 32);
-	if (ret != Z_OK) {
-		ret = inflateInit2(&strm, -15);
-	}
-
 	if (ret == Z_OK) {
 		ret = inflate(&strm, Z_FINISH);
 		inflateEnd(&strm);
-		if (ret == Z_STREAM_END || (ret == Z_OK && strm.avail_out == 0)) {
-			if (dst_size > strm.total_out) {
-				std::memset(dst + strm.total_out, 0, dst_size - strm.total_out);
-			}
-			return true;
+	}
+
+	// 2. If standard header failed, retry with raw deflate (-15)
+	if (ret != Z_STREAM_END && !(ret == Z_OK && strm.avail_out == 0)) {
+		std::memset(&strm, 0, sizeof(strm));
+		strm.next_in   = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(src));
+		strm.avail_in  = static_cast<uInt>(src_size);
+		strm.next_out  = reinterpret_cast<Bytef*>(dst);
+		strm.avail_out = static_cast<uInt>(dst_size);
+
+		ret = inflateInit2(&strm, -15);
+		if (ret == Z_OK) {
+			ret = inflate(&strm, Z_FINISH);
+			inflateEnd(&strm);
 		}
 	}
 
-	// 2. Fallback for uncompressed data slices
+	if (ret == Z_STREAM_END || (ret == Z_OK && strm.avail_out == 0)) {
+		if (dst_size > strm.total_out) {
+			std::memset(dst + strm.total_out, 0, dst_size - strm.total_out);
+		}
+		return true;
+	}
+
+	// 3. Fallback for uncompressed data slices
 	size_t copy_bytes = std::min(src_size, dst_size);
 	std::memcpy(dst, src, copy_bytes);
 	if (dst_size > copy_bytes) {
@@ -139,6 +150,40 @@ bool SelfParser::ExtractElf(const uint8_t* self_buffer, size_t self_size, std::v
 	SelfInfo info;
 	if (!Parse(self_buffer, self_size, info) || !info.valid) {
 		return false;
+	}
+
+	if (!info.segments.empty()) {
+		uint64_t total_elf_size = 0;
+		uint64_t current_elf_offset = 0;
+		for (const auto& seg : info.segments) {
+			total_elf_size = std::max(total_elf_size, current_elf_offset + seg.uncompressed_size);
+			current_elf_offset += seg.uncompressed_size;
+		}
+
+		if (total_elf_size == 0) {
+			return false;
+		}
+
+		out_elf_buffer.assign(total_elf_size, 0);
+
+		current_elf_offset = 0;
+		for (const auto& seg : info.segments) {
+			if (seg.offset + seg.compressed_size > self_size) {
+				return false;
+			}
+			const uint8_t* src_ptr = self_buffer + seg.offset;
+			uint8_t*       dst_ptr = out_elf_buffer.data() + current_elf_offset;
+
+			if (seg.compressed_size != seg.uncompressed_size) {
+				if (!DecompressSegment(src_ptr, seg.compressed_size, dst_ptr, seg.uncompressed_size)) {
+					return false;
+				}
+			} else {
+				std::memcpy(dst_ptr, src_ptr, seg.uncompressed_size);
+			}
+			current_elf_offset += seg.uncompressed_size;
+		}
+		return true;
 	}
 
 	if (info.elf_offset + info.elf_size > self_size) {
