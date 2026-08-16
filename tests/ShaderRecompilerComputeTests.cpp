@@ -44,6 +44,8 @@
 #include "kernel/memory.h"
 #include "libs/agc.h"
 #include "spirv-tools/libspirv.hpp"
+#include "SDL_vulkan.h"
+#include <dlfcn.h>
 
 #if __has_include("graphics/host_gpu/renderer/renderTargetBarriers.h")
 #error "legacy render-target barrier API must remain deleted"
@@ -88,6 +90,12 @@
 #include <windows.h>
 #undef min
 #undef max
+#endif
+
+#if defined(__APPLE__)
+constexpr uintptr_t TEST_GUEST_BASE = 0x0000007000000000ull;
+#else
+constexpr uintptr_t TEST_GUEST_BASE = 0x0000000200000000ull;
 #endif
 
 namespace Libs::Graphics {
@@ -1413,7 +1421,7 @@ public:
 		GpuResourceManager resources(m_runtime_context, scheduler);
 		resources.SetGpu(&gpu);
 
-		constexpr uint64_t base = 0x0000000200000000ull;
+		constexpr uint64_t base = TEST_GUEST_BASE;
 		constexpr uint64_t page = 0x4000;
 		resources.MapMemory(base, page * 4);
 		resources.MapMemory(base + page * 2, page * 4);
@@ -1862,7 +1870,7 @@ public:
 		        "submit done did not drain prior PM4 work");
 
 		auto&              resources         = context.GetGpuResources();
-		constexpr uint64_t empty_unmap_base = 0x0000000200400000ull;
+		constexpr uint64_t empty_unmap_base = TEST_GUEST_BASE + 0x400000ull;
 		constexpr uint64_t empty_unmap_size = 0x4000;
 		resources.MapMemory(empty_unmap_base, empty_unmap_size);
 		label  = 0;
@@ -1932,7 +1940,7 @@ public:
 		            !resources.IsMapped(empty_unmap_base, empty_unmap_size),
 		        "unmap returned before an earlier guest-memory callback");
 
-		constexpr uintptr_t fault_base          = 0x0000000200500000ull;
+		constexpr uintptr_t fault_base          = TEST_GUEST_BASE + 0x500000ull;
 		constexpr uint64_t  fault_size          = 0x10000;
 		int64_t             fault_direct_offset = -1;
 		Require("GpuCommandLane", "processor fault direct allocation",
@@ -2388,7 +2396,7 @@ public:
 
 	void CheckBufferCacheDirtyGarbageCollection() {
 		constexpr const char* name                          = "BufferCacheDirtyGarbageCollection";
-		constexpr uintptr_t   base                          = 0x0000000200700000ull;
+		constexpr uintptr_t   base                          = TEST_GUEST_BASE + 0x700000ull;
 		constexpr uint64_t    allocation_size               = 0x2400000;
 		constexpr uint64_t    allocation_alignment          = 0x10000;
 		constexpr uint64_t    first_offset                  = 0x100;
@@ -2865,7 +2873,7 @@ public:
 
 	void CheckUnifiedTextureCacheFlow() {
 		constexpr const char* name                 = "UnifiedTextureCacheFlow";
-		constexpr uintptr_t   base                 = 0x0000000200600000ull;
+		constexpr uintptr_t   base                 = TEST_GUEST_BASE + 0x600000ull;
 		constexpr uint64_t    allocation_size      = 0x2800000;
 		constexpr uint64_t    allocation_alignment = 0x200000;
 		EnsureRuntimeContext();
@@ -8629,9 +8637,46 @@ private:
 	}
 
 	void Init() {
-		static vk::detail::DynamicLoader loader;
-		const auto                       get_instance_proc_addr =
-		    loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+#if defined(__APPLE__)
+		setenv("VK_ICD_FILENAMES",
+		       "/opt/homebrew/etc/vulkan/icd.d/MoltenVK_icd.json:/opt/homebrew/share/vulkan/icd.d/"
+		       "MoltenVK_icd.json",
+		       0);
+		setenv("VK_DRIVER_FILES",
+		       "/opt/homebrew/etc/vulkan/icd.d/MoltenVK_icd.json:/opt/homebrew/share/vulkan/icd.d/"
+		       "MoltenVK_icd.json",
+		       0);
+#endif
+		PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
+		static const char* const  candidates[]           = {
+            "/opt/homebrew/lib/libMoltenVK.dylib",
+            "libMoltenVK.dylib",
+            "/opt/homebrew/lib/libvulkan.dylib",
+            "/opt/homebrew/lib/libvulkan.1.dylib",
+            "libvulkan.dylib",
+            "/usr/local/lib/libvulkan.dylib",
+            "libvulkan.so.1",
+            "libvulkan.so",
+            "vulkan-1.dll"};
+		for (const auto* candidate: candidates) {
+			void* handle = dlopen(candidate, RTLD_NOW | RTLD_LOCAL);
+			if (handle != nullptr) {
+				get_instance_proc_addr =
+				    reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(handle, "vkGetInstanceProcAddr"));
+				if (get_instance_proc_addr != nullptr) {
+					break;
+				}
+			}
+		}
+		if (get_instance_proc_addr == nullptr) {
+			static vk::detail::DynamicLoader loader;
+			get_instance_proc_addr =
+			    loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+		}
+		if (get_instance_proc_addr == nullptr) {
+			get_instance_proc_addr =
+			    reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
+		}
 		Require("VulkanHarness", "dispatch", get_instance_proc_addr != nullptr,
 		        "could not load the Vulkan loader");
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(get_instance_proc_addr);
@@ -8644,8 +8689,45 @@ private:
 		vk::InstanceCreateInfo instance_info {};
 		instance_info.sType            = vk::StructureType::eInstanceCreateInfo;
 		instance_info.pApplicationInfo = &app;
-		RequireVk("VulkanHarness", "dispatch",
-		          vk::createInstance(&instance_info, nullptr, &m_instance), "vkCreateInstance");
+
+		std::vector<const char*> instance_extensions;
+		auto pfn_enumerate_ext = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
+		    get_instance_proc_addr(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties"));
+		if (pfn_enumerate_ext != nullptr) {
+			uint32_t count = 0;
+			if (pfn_enumerate_ext(nullptr, &count, nullptr) == VK_SUCCESS && count > 0) {
+				std::vector<VkExtensionProperties> props(count);
+				if (pfn_enumerate_ext(nullptr, &count, props.data()) == VK_SUCCESS) {
+					for (const auto& p: props) {
+						if (std::strcmp(p.extensionName, "VK_KHR_portability_enumeration") == 0) {
+							instance_extensions.push_back("VK_KHR_portability_enumeration");
+							instance_info.flags |= static_cast<vk::InstanceCreateFlagBits>(0x00000001);
+							break;
+						}
+					}
+				}
+			}
+		}
+		instance_info.enabledExtensionCount   = static_cast<uint32_t>(instance_extensions.size());
+		instance_info.ppEnabledExtensionNames = instance_extensions.data();
+
+		auto create_result = vk::createInstance(&instance_info, nullptr, &m_instance);
+		if (create_result != vk::Result::eSuccess) {
+			app.apiVersion = VK_API_VERSION_1_2;
+			create_result = vk::createInstance(&instance_info, nullptr, &m_instance);
+		}
+		if (create_result != vk::Result::eSuccess) {
+			app.apiVersion = VK_API_VERSION_1_1;
+			create_result = vk::createInstance(&instance_info, nullptr, &m_instance);
+		}
+		if (create_result != vk::Result::eSuccess) {
+			instance_info.flags = {};
+			instance_info.enabledExtensionCount = 0;
+			instance_info.ppEnabledExtensionNames = nullptr;
+			app.apiVersion = VK_API_VERSION_1_2;
+			create_result = vk::createInstance(&instance_info, nullptr, &m_instance);
+		}
+		RequireVk("VulkanHarness", "dispatch", create_result, "vkCreateInstance");
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
 
 		u32 physical_count = 0;
@@ -8731,9 +8813,19 @@ private:
 		device_features.shaderStorageImageReadWithoutFormat  = true;
 		device_features.sampleRateShading                    = true;
 		device_info.pEnabledFeatures                         = &device_features;
-		constexpr const char* device_extensions[] = {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
-		device_info.enabledExtensionCount         = std::size(device_extensions);
-		device_info.ppEnabledExtensionNames       = device_extensions;
+		std::vector<const char*> device_extensions = {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
+		uint32_t avail_ext_count = 0;
+		m_physical_device.enumerateDeviceExtensionProperties(nullptr, &avail_ext_count, nullptr);
+		std::vector<vk::ExtensionProperties> avail_exts(avail_ext_count);
+		m_physical_device.enumerateDeviceExtensionProperties(nullptr, &avail_ext_count, avail_exts.data());
+		for (const auto& ext : avail_exts) {
+			if (std::strcmp(ext.extensionName.data(), "VK_KHR_portability_subset") == 0) {
+				device_extensions.push_back("VK_KHR_portability_subset");
+				break;
+			}
+		}
+		device_info.enabledExtensionCount         = static_cast<uint32_t>(device_extensions.size());
+		device_info.ppEnabledExtensionNames       = device_extensions.data();
 		RequireVk("VulkanHarness", "dispatch",
 		          m_physical_device.createDevice(&device_info, nullptr, &m_device),
 		          "vkCreateDevice");
@@ -17724,7 +17816,7 @@ void CheckStandard64RenderTargetTileRoundTrip() {
 
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 void CheckStorageTextureGpuOwnedRebindState() {
-	constexpr uintptr_t base         = 0x0000000200200000ull;
+	constexpr uintptr_t base         = TEST_GUEST_BASE + 0x200000ull;
 	constexpr uint64_t  size         = 0x10000;
 	const auto          guest_memory = Libs::LibKernel::Memory::AllocateRuntimeMemory(
 	    base, size, Common::VirtualMemory::Mode::ReadWrite, "storage_texture_gpu_owned_rebind",
@@ -18673,6 +18765,7 @@ int main(int argc, char** argv) {
 
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
 	EnsureConfigInitialized();
+	Libs::LibKernel::Memory::Initialize();
 	CheckLeastRecentlyUsedCacheOrdering();
 	if (argc == 2 && std::strcmp(argv[1], "--clip-control-only") == 0) {
 		CheckClipControlDepthClipState();

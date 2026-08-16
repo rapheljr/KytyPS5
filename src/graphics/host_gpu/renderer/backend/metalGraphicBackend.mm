@@ -254,6 +254,9 @@ bool MetalGraphicBackend::BeginRenderPass(uint32_t width, uint32_t height,
 	auto* cb = AcquireCurrentCommandBuffer();
 	if (!cb) return false;
 
+	// Invalidate any currently open render encoder before rebinding attachment state
+	cb->CloseRenderEncoder();
+
 	MTLRenderPassDescriptor* rpd = [MTLRenderPassDescriptor renderPassDescriptor];
 	rpd.colorAttachments[0].loadAction  = MTLLoadActionClear;
 	rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
