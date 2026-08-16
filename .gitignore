@@ -11,3 +11,4 @@ test_relocations
 test_jit_metal
 compile_commands.json
 *.tmp
+.cache/
