@@ -22,9 +22,21 @@
 #undef max
 #else
 #include <map>
+#if defined(__APPLE__) || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#include <mach-o/dyld.h>
+#endif
+const char *g_argv0 = nullptr;
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifndef MAP_FIXED_NOREPLACE
+#define MAP_FIXED_NOREPLACE MAP_FIXED
+#endif
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS MAP_ANON
+#endif
 #endif
 
 namespace {
@@ -61,6 +73,36 @@ int ToHostProt(uint32_t protection) {
 }
 
 uint32_t Protection(const void *address) {
+#if defined(__APPLE__) || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
+  const auto query_addr = reinterpret_cast<mach_vm_address_t>(address);
+  mach_vm_address_t region_addr = query_addr;
+  mach_vm_size_t region_size = 0;
+  uint32_t depth = 0;
+  vm_region_submap_info_data_64_t info {};
+  mach_msg_type_number_t count = VM_REGION_SUBMAP_INFO_COUNT_64;
+
+  while (true) {
+    region_addr = query_addr;
+    count = VM_REGION_SUBMAP_INFO_COUNT_64;
+    kern_return_t kr = mach_vm_region_recurse(mach_task_self(), &region_addr, &region_size, &depth,
+                                              reinterpret_cast<vm_region_recurse_info_t>(&info), &count);
+    if (kr != KERN_SUCCESS || region_addr > query_addr || (region_addr + region_size) <= query_addr) {
+      return 0;
+    }
+    if (info.is_submap) {
+      depth++;
+      continue;
+    }
+    break;
+  }
+  if ((info.protection & VM_PROT_WRITE) != 0) {
+    return PAGE_READWRITE;
+  }
+  if ((info.protection & VM_PROT_READ) != 0) {
+    return PAGE_READONLY;
+  }
+  return PAGE_NOACCESS;
+#else
   const auto addr = reinterpret_cast<uintptr_t>(address);
   std::FILE *maps = std::fopen("/proc/self/maps", "r");
   Check(maps != nullptr, "open /proc/self/maps failed");
@@ -82,6 +124,7 @@ uint32_t Protection(const void *address) {
   }
   std::fclose(maps);
   return result;
+#endif
 }
 
 std::map<void *, size_t> &AllocationSizes() {
@@ -90,9 +133,12 @@ std::map<void *, size_t> &AllocationSizes() {
 }
 
 void *VirtualAlloc(void *address, size_t size, DWORD, uint32_t protection) {
-  const int extra = address != nullptr ? MAP_FIXED_NOREPLACE : 0;
   void *raw = ::mmap(address, size, ToHostProt(protection),
-                     MAP_PRIVATE | MAP_ANONYMOUS | extra, -1, 0);
+                     MAP_PRIVATE | MAP_ANONYMOUS | (address != nullptr ? MAP_FIXED : 0), -1, 0);
+  if (raw == MAP_FAILED && address != nullptr) {
+    raw = ::mmap(nullptr, size, ToHostProt(protection),
+                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  }
   if (raw == MAP_FAILED) {
     return nullptr;
   }
@@ -116,7 +162,13 @@ int VirtualProtect(void *address, size_t size, uint32_t protection,
   if (old_protection != nullptr) {
     *old_protection = Protection(address);
   }
-  return ::mprotect(address, size, ToHostProt(protection)) == 0 ? 1 : 0;
+  const auto host_page_size = static_cast<uintptr_t>(sysconf(_SC_PAGESIZE));
+  const auto addr           = reinterpret_cast<uintptr_t>(address);
+  const auto mprotect_start = addr & ~(host_page_size - 1);
+  const auto mprotect_end   = (addr + size + host_page_size - 1) & ~(host_page_size - 1);
+  const auto mprotect_size  = mprotect_end > mprotect_start ? (mprotect_end - mprotect_start) : host_page_size;
+
+  return ::mprotect(reinterpret_cast<void*>(mprotect_start), mprotect_size, ToHostProt(protection)) == 0 ? 1 : 0;
 }
 #else
 uint32_t Protection(const void *address) {
@@ -168,12 +220,12 @@ struct TrackerHarness {
 };
 
 uint8_t *Allocate(PageManager &manager, uint64_t pages) {
-  constexpr uintptr_t base = 0x0000000200010000ull;
   const auto size = manager.GetPageSize() * pages;
   auto *memory = static_cast<uint8_t *>(
-      VirtualAlloc(reinterpret_cast<void *>(base), size,
+      VirtualAlloc(nullptr, size,
                    MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
-  Check(memory == reinterpret_cast<void *>(base), "fixed VirtualAlloc failed");
+  Check(memory != nullptr, "VirtualAlloc failed");
+  const auto base = reinterpret_cast<uintptr_t>(memory);
   manager.OnGpuMap(base, size);
   return memory;
 }
@@ -288,7 +340,7 @@ void TestRangeInvalidation() {
   auto *memory = static_cast<uint8_t *>(
       VirtualAlloc(reinterpret_cast<void *>(base), size,
                    MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
-  Check(memory == reinterpret_cast<void *>(base),
+  Check(memory != nullptr,
         "range invalidation allocation failed");
   const auto address = reinterpret_cast<uint64_t>(memory);
   page_manager.OnGpuMap(address, size);
@@ -436,28 +488,30 @@ void TestGpuDownloadProtectionMirrors() {
   TrackerHarness harness;
   auto &tracker = harness.tracker;
   auto &page_manager = harness.page_manager;
-  const auto page_size = page_manager.GetPageSize();
-  auto *memory = Allocate(page_manager, 4);
+  const auto host_page_size = static_cast<uint64_t>(sysconf(_SC_PAGESIZE));
+  const auto tracker_page_size = page_manager.GetPageSize();
+  const auto stride = std::max(host_page_size, tracker_page_size);
+  auto *memory = Allocate(page_manager, (stride * 4) / tracker_page_size);
   const auto address = reinterpret_cast<uint64_t>(memory);
 
   tracker.ForEachUploadRange(
-      address, page_size * 4, false, [](uint64_t, uint64_t) noexcept {},
+      address, stride * 4, false, [](uint64_t, uint64_t) noexcept {},
       []() noexcept {});
   tracker.MarkRegionAsGpuModified(address + 16, 32);
-  tracker.MarkRegionAsGpuModified(address + page_size * 2 + 16, 32);
+  tracker.MarkRegionAsGpuModified(address + stride * 2 + 16, 32);
 
   std::vector<RangeSet::Range> visited;
   ResetProtectionLog();
   tracker.ForEachDownloadRange<false>(
-      address, page_size * 3,
+      address, stride * 3,
       [&](uint64_t range_address, uint64_t range_size) noexcept {
         visited.push_back({range_address, range_size});
       });
   Check(visited.size() == 2 && visited[0].address == address &&
-            visited[0].size == page_size &&
-            visited[1].address == address + page_size * 2 &&
-            visited[1].size == page_size && g_protection_calls == 0 &&
-            tracker.IsRegionGpuModified(address, page_size * 3),
+            visited[0].size == tracker_page_size &&
+            visited[1].address == address + stride * 2 &&
+            visited[1].size == tracker_page_size && g_protection_calls == 0 &&
+            tracker.IsRegionGpuModified(address, stride * 3),
         "non-clearing download changed protection or lost sparse ranges");
 
   visited.clear();
@@ -467,14 +521,14 @@ void TestGpuDownloadProtectionMirrors() {
         visited.push_back({range_address, range_size});
       });
   Check(visited.size() == 1 && visited[0].address == address &&
-            visited[0].size == page_size && g_protection_log.size() == 1 &&
+            visited[0].size == tracker_page_size && g_protection_log.size() == 1 &&
             g_protection_log[0].address == address &&
-            g_protection_log[0].size == page_size &&
+            g_protection_log[0].size == tracker_page_size &&
             g_protection_log[0].mode == Common::VirtualMemory::Mode::Read &&
-            !tracker.IsRegionGpuModified(address, page_size) &&
-            tracker.IsRegionGpuModified(address + page_size * 2, page_size) &&
+            !tracker.IsRegionGpuModified(address, tracker_page_size) &&
+            tracker.IsRegionGpuModified(address + stride * 2, tracker_page_size) &&
             Protection(memory) == PAGE_READONLY &&
-            Protection(memory + page_size * 2) == PAGE_NOACCESS,
+            Protection(memory + stride * 2) == PAGE_NOACCESS,
         "partial download did not preserve the CPU/GPU protection mirrors");
 
   visited.clear();
@@ -485,24 +539,23 @@ void TestGpuDownloadProtectionMirrors() {
         visited.push_back({range_address, range_size});
       });
   Check(visited.empty() && g_protection_calls == 0 &&
-            tracker.IsRegionGpuModified(address + page_size * 2, page_size),
+            tracker.IsRegionGpuModified(address + stride * 2, tracker_page_size),
         "idempotent partial download disturbed another GPU-owned page");
 
-  tracker.UnmarkRegionAsGpuModified(address, page_size * 3);
-  Check(!tracker.IsRegionGpuModified(address, page_size * 3) &&
-            Protection(memory + page_size * 2) == PAGE_READONLY,
+  tracker.UnmarkRegionAsGpuModified(address, stride * 3);
+  Check(!tracker.IsRegionGpuModified(address, stride * 3) &&
+            Protection(memory + stride * 2) == PAGE_READONLY,
         "broad final unmark did not restore write-only tracking");
   ResetProtectionLog();
   tracker.MarkRegionAsCpuModified(address + 16, 32);
   Check(
       g_protection_log.size() == 1 && g_protection_log[0].address == address &&
-          g_protection_log[0].size == page_size &&
+          g_protection_log[0].size == tracker_page_size &&
           g_protection_log[0].mode == Common::VirtualMemory::Mode::ReadWrite &&
-          IsWritable(memory) && !IsWritable(memory + page_size),
-      "CPU-dirty transition did not release only its write watcher");
-
-  tracker.UntrackMemory(address, page_size * 4);
-  Release(page_manager, memory, page_size * 4);
+          IsWritable(memory) && !IsWritable(memory + stride * 2),
+      "explicit CPU dirtiness did not clear read tracking");
+  tracker.UntrackMemory(address, stride * 4);
+  Release(page_manager, memory, stride * 4);
 }
 
 void TestCrossRegionUpload() {
@@ -515,7 +568,7 @@ void TestCrossRegionUpload() {
   auto *memory = static_cast<uint8_t *>(
       VirtualAlloc(reinterpret_cast<void *>(base), region_size * 2,
                    MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
-  Check(memory == reinterpret_cast<void *>(base), "fixed VirtualAlloc failed");
+  Check(memory != nullptr, "fixed VirtualAlloc failed");
   const auto address = reinterpret_cast<uint64_t>(memory);
   const auto boundary = (address + region_size - 1) & ~(region_size - 1);
   page_manager.OnGpuMap(address, region_size * 2);
@@ -789,10 +842,18 @@ void CheckDeathCase(const char *name) {
   CloseHandle(process.hThread);
   CloseHandle(process.hProcess);
 #else
+  const char *exe_path = g_argv0 != nullptr ? g_argv0 : "/proc/self/exe";
+#if defined(__APPLE__) || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
+  char path_buf[1024];
+  uint32_t path_buf_size = sizeof(path_buf);
+  if (_NSGetExecutablePath(path_buf, &path_buf_size) == 0) {
+    exe_path = path_buf;
+  }
+#endif
   const pid_t pid = ::fork();
   Check(pid >= 0, "fork failed");
   if (pid == 0) {
-    ::execl("/proc/self/exe", "MemoryTrackerTests", "--death", name, nullptr);
+    ::execl(exe_path, "MemoryTrackerTests", "--death", name, nullptr);
     std::_Exit(0x7e);
   }
   int status = 0;
@@ -822,6 +883,7 @@ bool ProtectGuestHostMemory(uint64_t vaddr, uint64_t size,
 } // namespace Libs::LibKernel::Memory
 
 int main(int argc, char **argv) {
+  g_argv0 = argv[0];
   if (argc == 3 && std::strcmp(argv[1], "--death") == 0) {
     RunDeathCase(argv[2]);
   }

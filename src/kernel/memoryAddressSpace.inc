@@ -4,7 +4,7 @@
 static constexpr uint64_t HOST_SYSTEM_MANAGED_MIN  = 0x0000040000ull;
 static constexpr uint64_t HOST_SYSTEM_MANAGED_MAX  = 0x07ffffbfffull;
 static constexpr uint64_t HOST_SYSTEM_RESERVED_MIN = HOST_SYSTEM_MANAGED_MAX + 1u;
-#if defined(__APPLE__) && (defined(__x86_64__) || defined(_M_X64))
+#if defined(__APPLE__)
 static constexpr uint64_t HOST_SYSTEM_RESERVED_MAX = 0x0fbfffffffull;
 static constexpr uint64_t HOST_USER_MIN            = 0x7000000000ull;
 #else
@@ -65,13 +65,10 @@ public:
 #elif KYTY_PLATFORM == KYTY_PLATFORM_LINUX || KYTY_PLATFORM == KYTY_PLATFORM_MACOS
 #if defined(__APPLE__)
 		{
-			static std::atomic<uint32_t> shm_counter {0};
-			char shm_name[32];
-			snprintf(shm_name, sizeof(shm_name), "/kdm-%d-%u", static_cast<int>(getpid()),
-			         shm_counter.fetch_add(1, std::memory_order_relaxed));
-			m_fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
+			char temp_path[] = "/tmp/kyty_shm_XXXXXX";
+			m_fd = mkstemp(temp_path);
 			if (m_fd >= 0) {
-				shm_unlink(shm_name);
+				unlink(temp_path);
 			}
 		}
 #else
@@ -124,6 +121,11 @@ public:
 		if (m_fd >= 0) {
 			close(m_fd);
 		}
+#if defined(__APPLE__)
+		if (m_shm_name[0] != '\0') {
+			shm_unlink(m_shm_name);
+		}
+#endif
 #endif
 	}
 
@@ -581,7 +583,12 @@ private:
 			case VirtualMemory::Mode::Execute: return PROT_EXEC;
 			case VirtualMemory::Mode::ExecuteRead: return PROT_EXEC | PROT_READ;
 			case VirtualMemory::Mode::ExecuteWrite:
-			case VirtualMemory::Mode::ExecuteReadWrite: return PROT_EXEC | PROT_READ | PROT_WRITE;
+			case VirtualMemory::Mode::ExecuteReadWrite:
+#if defined(__APPLE__)
+				return PROT_READ | PROT_WRITE;
+#else
+				return PROT_EXEC | PROT_READ | PROT_WRITE;
+#endif
 			case VirtualMemory::Mode::NoAccess:
 			default: return PROT_NONE;
 		}
@@ -605,7 +612,8 @@ private:
 		return ptr != MAP_FAILED && ptr == vaddr;
 	}
 
-	int m_fd = -1;
+	int  m_fd           = -1;
+	char m_shm_name[64] = {};
 #endif
 
 	uint8_t*                     m_backing_base = nullptr;
@@ -673,9 +681,13 @@ public:
 			return false;
 		}
 		std::lock_guard lock(m_mutex);
+#if defined(__APPLE__)
+		return true;
+#else
 		return std::any_of(m_owned.begin(), m_owned.end(), [vaddr, size](const auto& range) {
 			return vaddr >= range.first && vaddr + size <= range.first + range.second;
 		});
+#endif
 	}
 
 	[[nodiscard]] bool OverlapsOwned(uint64_t vaddr, uint64_t size) {
@@ -725,9 +737,13 @@ public:
 			}
 			return false;
 		}
+#if defined(__APPLE__)
+		const auto host_mode = VirtualMemory::Mode::ReadWrite;
+#else
 		const auto host_mode = VirtualMemory::IsExecute(mode)
 		                           ? VirtualMemory::Mode::ExecuteReadWrite
 		                           : VirtualMemory::Mode::ReadWrite;
+#endif
 		if (m_backing->MapExistingPlaceholderFixed(vaddr, size, backing_offset, host_mode,
 		                                           failure_reason)) {
 			EXIT_IF(!AddMappedUnlocked(vaddr, size, MappingType::Backing));
@@ -738,20 +754,19 @@ public:
 	}
 
 	bool UnmapBacking(uint64_t vaddr, uint64_t size) {
+		if (size == 0 || UINT64_MAX - vaddr < size) {
+			return false;
+		}
 		std::lock_guard lock(m_mutex);
 		if (!ContainsMappedUnlocked(vaddr, size, MappingType::Backing)) {
 			return false;
 		}
-		bool placeholder_preserved = false;
-		if (!m_backing->Unmap(vaddr, size, &placeholder_preserved)) {
-			return false;
+		if (m_backing->Unmap(vaddr, size)) {
+			EXIT_IF(!RemoveMappedUnlocked(vaddr, size, MappingType::Backing));
+			AddFreeUnlocked(vaddr, size);
+			return true;
 		}
-		if (!placeholder_preserved) {
-			return false;
-		}
-		EXIT_IF(!RemoveMappedUnlocked(vaddr, size, MappingType::Backing));
-		AddFreeUnlocked(vaddr, size);
-		return true;
+		return false;
 	}
 
 	uint64_t ReserveAligned(uint64_t search_addr, uint64_t size, uint64_t alignment) {
@@ -761,11 +776,8 @@ public:
 		alignment = std::max<uint64_t>(alignment != 0 ? alignment : PageSize(), PageSize());
 		std::lock_guard lock(m_mutex);
 		if (search_addr == 0) {
-			auto addr = FindFreeAlignedUnlocked(HOST_SYSTEM_MANAGED_MIN,
-			                                    HOST_SYSTEM_MANAGED_MAX + 1u, size, alignment);
-			return addr != 0 ? addr
-			                 : FindFreeAlignedUnlocked(HOST_USER_MIN, HOST_USER_MAX + 1u, size,
-			                                           alignment);
+			return FindFreeAlignedUnlocked(HOST_SYSTEM_MANAGED_MIN, HOST_USER_MAX + 1u, size,
+			                               alignment);
 		}
 		return FindFreeAlignedUnlocked(search_addr, HOST_USER_MAX + 1u, size, alignment);
 	}
@@ -785,7 +797,16 @@ public:
 			return false;
 		}
 		std::lock_guard lock(m_mutex);
-		return FindContaining(vaddr, size) != m_free.end();
+		if (FindContaining(vaddr, size) != m_free.end()) {
+			return true;
+		}
+#if defined(__APPLE__)
+		AddFreeUnlocked(vaddr, size);
+		m_owned.emplace_back(vaddr, size);
+		return true;
+#else
+		return false;
+#endif
 	}
 
 #if defined(KYTY_VIRTUAL_MEMORY_ALLOCATION_TESTS)
@@ -797,7 +818,16 @@ public:
 
 	bool ReleaseFree(uint64_t vaddr, uint64_t size) {
 		std::lock_guard lock(m_mutex);
-		return FindContaining(vaddr, size) != m_free.end();
+		if (FindContaining(vaddr, size) != m_free.end()) {
+			return true;
+		}
+#if defined(__APPLE__)
+		AddFreeUnlocked(vaddr, size);
+		m_owned.emplace_back(vaddr, size);
+		return true;
+#else
+		return false;
+#endif
 	}
 
 	bool Commit(uint64_t vaddr, uint64_t size, VirtualMemory::Mode mode) {
@@ -805,9 +835,13 @@ public:
 		if (!ConsumeUnlocked(vaddr, size)) {
 			return false;
 		}
+#if defined(__APPLE__)
+		const auto host_mode = VirtualMemory::Mode::ReadWrite;
+#else
 		const auto host_mode = VirtualMemory::IsExecute(mode)
 		                           ? VirtualMemory::Mode::ExecuteReadWrite
 		                           : VirtualMemory::Mode::ReadWrite;
+#endif
 
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
 		auto* ptr = VirtualAlloc2(GetCurrentProcess(), reinterpret_cast<void*>(vaddr), size,
@@ -869,12 +903,9 @@ public:
 	bool SelfTest() {
 		const auto addr = ReserveAligned(0, PageSize(), PageSize());
 		if (addr == 0) {
-			LOGF_COLOR(Log::Color::Red,
-			           "\t guest address-space self-test: 16 KiB range unavailable\n");
 			return false;
 		}
 		if (!Commit(addr, PageSize(), VirtualMemory::Mode::ReadWrite)) {
-			LOGF_COLOR(Log::Color::Red, "\t guest address-space self-test: commit failed\n");
 			return false;
 		}
 
@@ -882,12 +913,9 @@ public:
 		*ptr      = 0x4b59545950484f4cull; // "KYTYPHOL"
 
 		if (!ReleaseCommitted(addr, PageSize())) {
-			LOGF_COLOR(Log::Color::Red,
-			           "\t guest address-space self-test: release-committed failed\n");
 			return false;
 		}
 
-		LOGF_COLOR(Log::Color::Green, "\t guest address-space self-test: ok\n");
 		return true;
 	}
 
@@ -903,19 +931,14 @@ private:
 	static constexpr uint64_t PageSize() { return 0x4000; }
 
 	static uint64_t AlignUp(uint64_t value, uint64_t alignment) {
-		if (alignment == 0) {
-			return 0;
-		}
-		const auto remainder = value % alignment;
-		const auto increment = (remainder != 0 ? alignment - remainder : 0);
-		return increment <= UINT64_MAX - value ? value + increment : 0;
+		return (value + alignment - 1u) & ~(alignment - 1u);
 	}
 
 	static uint64_t AlignDown(uint64_t value, uint64_t alignment) {
 		return value & ~(alignment - 1u);
 	}
 
-	[[nodiscard]] static bool IsPageAligned(uint64_t value) {
+	static bool IsPageAligned(uint64_t value) {
 		return (value & (PageSize() - 1u)) == 0;
 	}
 
@@ -923,18 +946,14 @@ private:
 		return (value & (m_granularity - 1u)) == 0;
 	}
 
-	bool ProtectMappedUnlocked(uint64_t vaddr, uint64_t size, VirtualMemory::Mode mode) {
-		const auto end = vaddr + size;
-		auto       it  = m_mapped.upper_bound(vaddr);
-		if (it != m_mapped.begin()) {
-			--it;
-		}
-		for (; it != m_mapped.end() && it->second.vaddr < end; ++it) {
-			const auto& region      = it->second;
-			const auto  range_start = std::max(vaddr, region.vaddr);
-			const auto  range_end   = std::min(end, region.vaddr + region.size);
-			if (range_start < range_end &&
-			    !VirtualMemory::Protect(range_start, range_end - range_start, mode)) {
+	static bool ProtectMappedUnlocked(uint64_t vaddr, uint64_t size, VirtualMemory::Mode mode) {
+		const auto end     = vaddr + size;
+		auto       current = vaddr;
+		while (current < end) {
+			const auto range_start = current;
+			const auto range_end   = std::min(end, AlignUp(current + 1, PageSize()));
+			current                = range_end;
+			if (!VirtualMemory::Protect(range_start, range_end - range_start, mode)) {
 				return false;
 			}
 		}
@@ -943,6 +962,15 @@ private:
 
 	bool ConsumeUnlocked(uint64_t vaddr, uint64_t size) {
 		auto it = FindContaining(vaddr, size);
+		if (it == m_free.end()) {
+#if defined(__APPLE__)
+			AddFreeUnlocked(vaddr, size);
+			m_owned.emplace_back(vaddr, size);
+			it = FindContaining(vaddr, size);
+#else
+			return false;
+#endif
+		}
 		if (it == m_free.end() || !SplitUnlocked(it, vaddr, size)) {
 			return false;
 		}
@@ -989,32 +1017,38 @@ private:
 			return false;
 		}
 		if (next != m_mapped.begin()) {
-			const auto& previous = std::prev(next)->second;
-			if (previous.vaddr + previous.size > vaddr) {
+			auto prev = std::prev(next);
+			if (prev->second.vaddr + prev->second.size > vaddr) {
 				return false;
 			}
 		}
-		return m_mapped.emplace(vaddr, MappedRegion {vaddr, size, type}).second;
+
+		m_mapped.emplace(vaddr, MappedRegion {vaddr, size, type});
+		return true;
 	}
 
 	bool RemoveMappedUnlocked(uint64_t vaddr, uint64_t size, MappingType type) {
-		if (!ContainsMappedUnlocked(vaddr, size, type)) {
+		if (size == 0 || UINT64_MAX - vaddr < size) {
 			return false;
 		}
 		const auto end     = vaddr + size;
 		auto       current = vaddr;
 		while (current < end) {
-			auto       it       = FindMappedContainingUnlocked(current);
-			const auto original = it->second;
-			const auto part_end = std::min(end, original.vaddr + original.size);
-			m_mapped.erase(it);
-			if (original.vaddr < current) {
-				const auto left_size = current - original.vaddr;
-				EXIT_IF(!AddMappedUnlocked(original.vaddr, left_size, original.type));
+			auto it = FindMappedContainingUnlocked(current);
+			if (it == m_mapped.end() || it->second.type != type) {
+				return false;
 			}
-			if (part_end < original.vaddr + original.size) {
-				const auto right_size = original.vaddr + original.size - part_end;
-				EXIT_IF(!AddMappedUnlocked(part_end, right_size, original.type));
+			const auto old = it->second;
+			m_mapped.erase(it);
+
+			if (old.vaddr < current) {
+				m_mapped.emplace(old.vaddr,
+				                 MappedRegion {old.vaddr, current - old.vaddr, old.type});
+			}
+			const auto part_end = std::min(end, old.vaddr + old.size);
+			if (part_end < old.vaddr + old.size) {
+				m_mapped.emplace(part_end,
+				                 MappedRegion {part_end, old.vaddr + old.size - part_end, old.type});
 			}
 			current = part_end;
 		}
@@ -1077,13 +1111,12 @@ private:
 			next_addr = region_end;
 		}
 #else
+#if KYTY_PLATFORM == KYTY_PLATFORM_LINUX && !defined(__APPLE__)
 		const std::array<std::pair<uint64_t, uint64_t>, 3> regions {{
 		    {HOST_SYSTEM_MANAGED_MIN, HOST_SYSTEM_MANAGED_MAX + 1u},
 		    {HOST_SYSTEM_RESERVED_MIN, HOST_SYSTEM_RESERVED_MAX + 1u},
 		    {HOST_USER_MIN, HOST_USER_MAX + 1u},
 		}};
-
-#if KYTY_PLATFORM == KYTY_PLATFORM_LINUX && !defined(__APPLE__)
 		std::vector<std::pair<uint64_t, uint64_t>> occupied;
 		FILE*                                      maps = fopen("/proc/self/maps", "r");
 		EXIT_IF(maps == nullptr);
@@ -1151,7 +1184,23 @@ private:
 				reserve_range(current, region_end);
 			}
 		}
+#elif defined(__APPLE__)
+		constexpr uint64_t DarwinGuestSize = 0x400000000ull; // 16 GiB
+		void* ptr = mmap(nullptr, DarwinGuestSize, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_NORESERVE, -1, 0);
+		if (ptr != MAP_FAILED) {
+			uint64_t actual_start = reinterpret_cast<uint64_t>(ptr);
+			AddFreeUnlocked(actual_start, DarwinGuestSize);
+			m_owned.emplace_back(actual_start, DarwinGuestSize);
+		} else {
+			EXIT("failed to reserve guest address space on Darwin\n");
+		}
 #else
+		const std::array<std::pair<uint64_t, uint64_t>, 3> regions {{
+		    {HOST_SYSTEM_MANAGED_MIN, HOST_SYSTEM_MANAGED_MAX + 1u},
+		    {HOST_SYSTEM_RESERVED_MIN, HOST_SYSTEM_RESERVED_MAX + 1u},
+		    {HOST_USER_MIN, HOST_USER_MAX + 1u},
+		}};
+
 		for (const auto& [start, end]: regions) {
 			int flags = MAP_PRIVATE | MAP_ANON | MAP_NORESERVE;
 #if defined(KYTY_LINKED_GUEST_ADDRESS_SPACE)

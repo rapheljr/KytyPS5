@@ -344,7 +344,11 @@ static KYTY_SYSV_ABI uint64_t ResolveImportStubWithId(uint64_t record_id) {
 	return 0;
 }
 
+#if defined(__APPLE__)
+constexpr uint64_t SYSTEM_RESERVED  = 0x7000000000ull;
+#else
 constexpr uint64_t SYSTEM_RESERVED  = 0x800000000u;
+#endif
 constexpr uint64_t CODE_BASE_INCR   = 0x010000000u;
 constexpr uint64_t INVALID_OFFSET   = 0x040000000u;
 constexpr uint64_t CODE_BASE_OFFSET = 0x100000000u;
@@ -2239,10 +2243,16 @@ void RuntimeLinker::LoadProgramToMemory(Program* program) {
 		program->mapped_size += RED_ZONE_TRAMPOLINE_SIZE;
 	}
 #endif
-
+	LOGF("RuntimeLinker: attempting AllocateProgramMemory g_desired_base_addr=0x%016" PRIx64 " mapped_size=0x%016" PRIx64 " file=%s\n",
+	     g_desired_base_addr, program->mapped_size, Common::PathToString(program->file_name.filename()).c_str());
 	program->base_vaddr = Libs::LibKernel::Memory::AllocateProgramMemory(
 	    g_desired_base_addr, program->mapped_size, Common::VirtualMemory::Mode::ExecuteReadWrite,
 	    Common::PathToString(program->file_name.filename()).c_str());
+	if (program->base_vaddr == 0) {
+		program->base_vaddr = Libs::LibKernel::Memory::AllocateProgramMemory(
+		    0, program->mapped_size, Common::VirtualMemory::Mode::ExecuteReadWrite,
+		    Common::PathToString(program->file_name.filename()).c_str());
+	}
 	EXIT_IF(program->base_vaddr == 0);
 
 #if KYTY_PLATFORM == KYTY_PLATFORM_WINDOWS
@@ -2560,6 +2570,10 @@ static void InstallRelocateHandler(Program* program) {
 		auto size                      = Jit::CallPlt::GetSize(program->custom_call_plt_num);
 		program->custom_call_plt_vaddr = Libs::LibKernel::Memory::AllocateRuntimeMemory(
 		    SYSTEM_RESERVED, size, Common::VirtualMemory::Mode::Write, "custom_call_plt");
+		if (program->custom_call_plt_vaddr == 0) {
+			program->custom_call_plt_vaddr = Libs::LibKernel::Memory::AllocateRuntimeMemory(
+			    0, size, Common::VirtualMemory::Mode::Write, "custom_call_plt");
+		}
 		EXIT_NOT_IMPLEMENTED(program->custom_call_plt_vaddr == 0);
 		auto* code = new (reinterpret_cast<void*>(program->custom_call_plt_vaddr))
 		    Jit::CallPlt(program->custom_call_plt_num);
@@ -2578,6 +2592,10 @@ void RuntimeLinker::Relocate(Program* program) {
 	if (g_invalid_memory == 0) {
 		g_invalid_memory = Libs::LibKernel::Memory::AllocateRuntimeMemory(
 		    INVALID_MEMORY, 4096, Common::VirtualMemory::Mode::NoAccess, "invalid_memory", true);
+		if (g_invalid_memory == 0) {
+			g_invalid_memory = Libs::LibKernel::Memory::AllocateRuntimeMemory(
+			    0, 4096, Common::VirtualMemory::Mode::NoAccess, "invalid_memory", false);
+		}
 		EXIT_NOT_IMPLEMENTED(g_invalid_memory == 0);
 	}
 

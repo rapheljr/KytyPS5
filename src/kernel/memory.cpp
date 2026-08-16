@@ -45,6 +45,10 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#endif
 #endif
 
 namespace Libs::LibKernel::Memory {
@@ -848,11 +852,20 @@ static uint64_t FindGuestFreeRange(uint64_t search_addr, uint64_t size, uint64_t
 	};
 
 	if (search_addr != 0) {
-		return find_in(search_addr, HOST_USER_MAX + 1u);
+		auto addr = find_in(search_addr, HOST_USER_MAX + 1u);
+		if (addr != 0) {
+			return addr;
+		}
 	}
 	auto addr = find_in(GUEST_DEFAULT_MAP_BASE, HOST_SYSTEM_MANAGED_MAX + 1u);
 	if (addr == 0) {
 		addr = find_in(HOST_USER_MIN, HOST_USER_MAX + 1u);
+	}
+	if (addr == 0) {
+		addr = find_in(HOST_SYSTEM_MANAGED_MIN, HOST_SYSTEM_MANAGED_MAX + 1u);
+	}
+	if (addr == 0) {
+		addr = find_in(0, UINT64_MAX);
 	}
 	return addr;
 }
@@ -2945,6 +2958,9 @@ int KYTY_SYSV_ABI KernelMapDirectMemory(void** addr, size_t len, int prot, int f
 			map_consumed_reserved_fixed();
 		}
 		if (!consumed_reservation) {
+			std::fprintf(stderr, "[DEBUG] KernelMapDirectMemory fixed failed: in_addr=0x%llx len=0x%llx ReplaceFixed=%d\n",
+			             (unsigned long long)in_addr, (unsigned long long)len,
+			             ReplaceFixedRangeWithReserved(in_addr, len));
 			return KERNEL_ERROR_ENOMEM;
 		}
 	} else {
@@ -3579,19 +3595,27 @@ static uint64_t AllocateGuestRuntimeMemory(uint64_t search_addr, uint64_t size,
 	constexpr uint64_t GuestPageSize = 0x4000;
 	if (size == 0 || size > UINT64_MAX - (GuestPageSize - 1u) || name == nullptr ||
 	    (fixed && (search_addr == 0 || (search_addr & (GuestPageSize - 1u)) != 0))) {
+		LOGF_COLOR(Log::Color::BrightRed, "[Alloc] Invalid size=0x%llx fixed=%d search_addr=0x%llx\n",
+		           (unsigned long long)size, (int)fixed, (unsigned long long)search_addr);
 		return 0;
 	}
 	const auto mapped_size = (size + GuestPageSize - 1u) & ~(GuestPageSize - 1u);
 	const auto vaddr =
 	    fixed ? search_addr : FindGuestFreeRange(search_addr, mapped_size, GuestPageSize);
 	if (vaddr == 0 || g_virtual_ranges->HasOverlap(vaddr, mapped_size)) {
+		LOGF_COLOR(Log::Color::BrightRed, "[Alloc] FindGuestFreeRange failed or overlap: vaddr=0x%llx mapped_sz=0x%llx\n",
+		           (unsigned long long)vaddr, (unsigned long long)mapped_size);
 		return 0;
 	}
 	UnmapGpuRange(vaddr, mapped_size);
 	if (!g_guest_address_space->Commit(vaddr, mapped_size, mode)) {
+		LOGF_COLOR(Log::Color::BrightRed, "[Alloc] g_guest_address_space->Commit failed: vaddr=0x%llx mapped_sz=0x%llx\n",
+		           (unsigned long long)vaddr, (unsigned long long)mapped_size);
 		return 0;
 	}
 	if (!g_virtual_ranges->Add(vaddr, mapped_size, 0, ProgramProtection(mode), 0, type, name)) {
+		LOGF_COLOR(Log::Color::BrightRed, "[Alloc] g_virtual_ranges->Add failed: vaddr=0x%llx mapped_sz=0x%llx\n",
+		           (unsigned long long)vaddr, (unsigned long long)mapped_size);
 		EXIT_IF(!g_guest_address_space->ReleaseCommitted(vaddr, mapped_size));
 		return 0;
 	}
@@ -3615,8 +3639,12 @@ void SetProgramMemoryProtection(uint64_t vaddr, uint64_t size, VirtualMemory::Mo
 		     vaddr, size);
 	}
 
+#if defined(__APPLE__)
+	const auto host_mode = VirtualMemory::Mode::ReadWrite;
+#else
 	const auto host_mode = VirtualMemory::IsExecute(mode) ? VirtualMemory::Mode::ExecuteReadWrite
 	                                                      : VirtualMemory::Mode::ReadWrite;
+#endif
 	EXIT_IF(!g_guest_address_space->Protect(vaddr, size, host_mode));
 	g_virtual_ranges->Protect(vaddr, size, ProgramProtection(mode));
 }
