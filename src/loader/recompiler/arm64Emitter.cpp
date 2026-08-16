@@ -291,6 +291,18 @@ void Arm64Emitter::EmitUbfx(Arm64Reg dst, Arm64Reg src, uint8_t lsb, uint8_t wid
 	Emit32((sf ? 0xD3400000u : 0x53000000u) | (immr << 16u) | (imms << 10u) | (static_cast<uint32_t>(src) << 5u) | static_cast<uint32_t>(dst));
 }
 
+void Arm64Emitter::EmitDmb(uint8_t option) {
+	Emit32(0xD50330BFu | ((static_cast<uint32_t>(option) & 0x0Fu) << 8u));
+}
+
+void Arm64Emitter::EmitDsb(uint8_t option) {
+	Emit32(0xD503309Fu | ((static_cast<uint32_t>(option) & 0x0Fu) << 8u));
+}
+
+void Arm64Emitter::EmitIsb() {
+	Emit32(0xD5033FDFu);
+}
+
 bool Arm64Emitter::CompileBlock(const RecompilerBasicBlock& block) {
 	for (const auto& inst : block.GetInstructions()) {
 		if (!inst.active) continue;

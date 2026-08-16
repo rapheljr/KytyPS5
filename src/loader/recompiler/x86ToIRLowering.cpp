@@ -283,6 +283,47 @@ std::unique_ptr<ControlFlowGraph> X86ToIRLowering::LowerBlock(const uint8_t* cod
 				break;
 			}
 
+			case X86Opcode::Call: {
+				// 1. RSP -= 8
+				VirtualReg rsp_vr = cfg->AllocateVReg(DataType::Int64);
+				rsp_vr.phys_pin = static_cast<int8_t>(X86Reg::RSP);
+
+				auto sub_rsp = std::make_unique<IRInstruction>(IROpcode::Sub);
+				sub_rsp->SetGuestRip(current_rip);
+				sub_rsp->SetDst(rsp_vr);
+				sub_rsp->AddOperand(Value::MakeVReg(rsp_vr));
+				sub_rsp->AddOperand(Value::MakeImmInt(8));
+				entry_bb->AddInstruction(std::move(sub_rsp));
+
+				// 2. Store return RIP to [RSP]
+				uint64_t return_rip = current_rip + decoded.length;
+				auto store_ret = std::make_unique<IRInstruction>(IROpcode::Store);
+				store_ret->SetGuestRip(current_rip);
+				store_ret->AddOperand(Value::MakeImmInt(return_rip));
+				VirtualReg none_idx{};
+				store_ret->AddOperand(Value::MakeMemory(rsp_vr, none_idx, 1, 0));
+				entry_bb->AddInstruction(std::move(store_ret));
+
+				// 3. Emit Call IR
+				auto call_inst = std::make_unique<IRInstruction>(IROpcode::Call);
+				call_inst->SetGuestRip(current_rip);
+				if (decoded.dst.kind == X86Operand::Kind::Imm) {
+					uint64_t target_rip = current_rip + decoded.length + decoded.dst.imm;
+					call_inst->AddOperand(Value::MakeImmInt(target_rip));
+				} else if (decoded.dst.kind == X86Operand::Kind::Reg || decoded.dst.kind == X86Operand::Kind::Mem) {
+					call_inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.dst));
+				}
+				entry_bb->AddInstruction(std::move(call_inst));
+				break;
+			}
+
+			case X86Opcode::Syscall: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Syscall);
+				inst->SetGuestRip(current_rip);
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
 			case X86Opcode::Ret: {
 				auto inst = std::make_unique<IRInstruction>(IROpcode::Return);
 				inst->SetGuestRip(current_rip);
@@ -302,7 +343,7 @@ std::unique_ptr<ControlFlowGraph> X86ToIRLowering::LowerBlock(const uint8_t* cod
 		current_rip += decoded.length;
 		count++;
 
-		if (decoded.opcode == X86Opcode::Ret || decoded.opcode == X86Opcode::Jmp) break;
+		if (decoded.opcode == X86Opcode::Ret || decoded.opcode == X86Opcode::Jmp || decoded.opcode == X86Opcode::Syscall) break;
 	}
 
 	return cfg;

@@ -46,6 +46,12 @@ public:
 		m_relocations.push_back({host_offset, target_rip, is_link});
 	}
 
+	void SetInstruction(size_t index, uint32_t inst) noexcept {
+		if (index < m_code.size()) {
+			m_code[index] = inst;
+		}
+	}
+
 	// GPR Mapping: x86-64 GPR -> ARM64 Host GPR
 	static Arm64Reg MapX86ToArm64Reg(X86Reg reg) noexcept;
 
@@ -112,6 +118,14 @@ public:
 	void EmitRbit(Arm64Reg dst, Arm64Reg src, bool sf = true);
 	void EmitBicReg(Arm64Reg dst, Arm64Reg src1, Arm64Reg src2, bool sf = true);
 	void EmitUbfx(Arm64Reg dst, Arm64Reg src, uint8_t lsb, uint8_t width, bool sf = true);
+
+	// 7. Memory Barriers & Synchronization
+	void EmitDmb(uint8_t option = 0x0B);
+	void EmitDsb(uint8_t option = 0x0B);
+	void EmitIsb();
+	void EmitDmbIsh()   { EmitDmb(0x0B); }
+	void EmitDmbIshld() { EmitDmb(0x09); }
+	void EmitDmbIshst() { EmitDmb(0x0A); }
 
 	// Translation Engine
 	bool CompileBlock(const RecompilerBasicBlock& block);

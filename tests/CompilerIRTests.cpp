@@ -149,6 +149,59 @@ void TestX86ToIRAndArm64Codegen() {
 	std::printf("  [OK] IR Test 5: Lowering & Codegen passed\n");
 }
 
+void TestBranchDisplacementAndCalls() {
+	std::printf("  [IR Test 6] Testing Branch Displacement Calculation, JIT Calls & Syscalls...\n");
+
+	// 1. Test conditional branch displacement within CFG
+	ControlFlowGraph cfg;
+	BasicBlock* b_entry = cfg.CreateBlock("b_entry");
+	BasicBlock* b_target = cfg.CreateBlock("b_target");
+
+	// b_entry:
+	//   inst1: Guest RIP 0x2000: BranchCond (Equal), target RIP 0x2020
+	auto branch_inst = std::make_unique<IRInstruction>(IROpcode::BranchCond);
+	branch_inst->SetGuestRip(0x2000);
+	branch_inst->SetCondition(IRCondition::Equal);
+	branch_inst->AddOperand(Value::MakeImmInt(0x2020));
+	b_entry->AddInstruction(std::move(branch_inst));
+
+	//   inst2: Guest RIP 0x2006: Nop
+	auto nop_inst = std::make_unique<IRInstruction>(IROpcode::Nop);
+	nop_inst->SetGuestRip(0x2006);
+	b_entry->AddInstruction(std::move(nop_inst));
+
+	// b_target:
+	//   inst3: Guest RIP 0x2020: Syscall
+	auto sys_inst = std::make_unique<IRInstruction>(IROpcode::Syscall);
+	sys_inst->SetGuestRip(0x2020);
+	b_target->AddInstruction(std::move(sys_inst));
+
+	Arm64Emitter emitter;
+	Arm64IRCodegen codegen;
+	bool ok = codegen.CompileCFG(cfg, emitter);
+	Check(ok, "CompileCFG must succeed for branch test");
+
+	const auto& code = emitter.GetCode();
+	Check(!code.empty(), "Emitted code must not be empty");
+
+	// 2. Test Call instruction lowering
+	uint8_t x86_call_code[] = {
+		0xE8, 0x10, 0x00, 0x00, 0x00, // CALL +0x10 (target: 0x3000 + 5 + 0x10 = 0x3015)
+		0xC3                          // RET
+	};
+	auto call_cfg = X86ToIRLowering::LowerBlock(x86_call_code, sizeof(x86_call_code), 0x3000);
+	Check(call_cfg && !call_cfg->GetBlocks().empty(), "LowerBlock for CALL failed");
+
+	Arm64Emitter call_emitter;
+	bool call_ok = codegen.CompileCFG(*call_cfg, call_emitter);
+	Check(call_ok, "CompileCFG for CALL must succeed");
+	Check(!call_emitter.GetRelocations().empty(), "Call instruction must register a relocation");
+	Check(call_emitter.GetRelocations()[0].target_guest_rip == 0x3015, "Relocation target RIP must match CALL target");
+	Check(call_emitter.GetRelocations()[0].is_branch_link == true, "Call relocation must be marked as branch-link");
+
+	std::printf("  [OK] IR Test 6: Branch Displacement & Calls passed\n");
+}
+
 } // namespace
 
 int main() {
@@ -161,6 +214,7 @@ int main() {
 	TestOptimizationPasses();
 	TestIRVerifierAndGraphviz();
 	TestX86ToIRAndArm64Codegen();
+	TestBranchDisplacementAndCalls();
 
 	std::printf("\nALL COMPILER IR TESTS PASSED SUCCESSFULLY!\n");
 	return 0;

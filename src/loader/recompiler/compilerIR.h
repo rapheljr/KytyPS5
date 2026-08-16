@@ -63,6 +63,8 @@ enum class IROpcode : uint16_t {
 	// Control Flow
 	Jump,
 	BranchCond,
+	Call,
+	Syscall,
 	Return,
 	Switch,
 	Unreachable,

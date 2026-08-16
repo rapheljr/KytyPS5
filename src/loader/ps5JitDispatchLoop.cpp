@@ -169,7 +169,14 @@ bool Ps5JitDispatchLoop::DispatchOneBlock(DispatchResult& result) {
     // Check code cache first
     auto& block_cache = m_bridge.GetBlockCache();
     if (block_cache.Lookup(rip) != nullptr) {
-        // Cache hit — execute cached translation
+        // Cache hit — record execution frequency for Tier-2 optimization
+        Recompiler::ExecutionTier new_tier = Recompiler::ExecutionTier::Tier0_LazyFastJit;
+        if (m_bridge.GetOptimizer().RecordExecution(rip, new_tier)) {
+            if (new_tier == Recompiler::ExecutionTier::Tier2_TraceJit) {
+                LOGF("[Ps5JitDispatchLoop] Hot block at RIP=0x%llx promoted to Tier-2\n",
+                     (unsigned long long)rip);
+            }
+        }
         m_telemetry.RecordBlockCacheHit(primary_opcode);
         bool ok = m_bridge.ExecuteBlock(m_ctx, code_ptr, max_bytes);
         (void)ok;

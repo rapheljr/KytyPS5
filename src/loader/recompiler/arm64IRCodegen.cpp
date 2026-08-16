@@ -3,7 +3,12 @@
 // Target-Independent Compiler IR to Native ARM64 Code Generator.
 
 #include "loader/recompiler/arm64IRCodegen.h"
+#include "loader/recompiler/x86RuntimeBridge.h"
 #include "common/profiler.h"
+
+#include <cstddef>
+#include <unordered_map>
+#include <vector>
 
 namespace Loader::Recompiler {
 
@@ -115,10 +120,23 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 		emitter.EmitRet();
 	};
 
+	struct BranchFixup {
+		size_t   inst_idx       = 0;
+		uint64_t target_rip     = 0;
+		bool     is_conditional = false;
+		uint32_t cond_code      = 0;
+	};
+	std::vector<BranchFixup> fixups;
+	std::unordered_map<uint64_t, size_t> rip_to_inst_idx;
+
 	// 3. Emit Body Instructions
 	for (BasicBlock* block : rpo) {
 		for (const auto& inst : block->GetInstructions()) {
 			if (!inst->IsActive()) continue;
+
+			if (inst->GetGuestRip() != 0 && rip_to_inst_idx.find(inst->GetGuestRip()) == rip_to_inst_idx.end()) {
+				rip_to_inst_idx[inst->GetGuestRip()] = emitter.GetCode().size();
+			}
 
 			Arm64Reg   dst_reg = inst->HasDst() ? MapOperandToArm64Reg(inst->GetDst()) : Arm64Reg::X0;
 			Arm64FpReg dst_fp  = inst->HasDst() ? MapOperandToArm64FpReg(inst->GetDst()) : Arm64FpReg::V0;
@@ -293,6 +311,7 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 				case IROpcode::Store:
 					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsMemoryRef()) {
 						emitter.EmitStr64(MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].mem_ref.base), ops[1].mem_ref.disp);
+						emitter.EmitDmbIshst();
 					}
 					break;
 
@@ -391,7 +410,45 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 						case IRCondition::Greater:        cond_code = 0xC; break;
 						case IRCondition::LessOrEqual:    cond_code = 0xD; break;
 					}
-					emitter.Emit32(0x54000000u | (cond_code & 0x0Fu));
+					uint64_t target_rip = 0;
+					if (!ops.empty() && ops[0].IsImmInt()) {
+						target_rip = static_cast<uint64_t>(ops[0].imm_int);
+					}
+					size_t branch_idx = emitter.GetCode().size();
+					emitter.Emit32(0x54000000u | (cond_code & 0x0Fu)); // Placeholder
+					fixups.push_back({branch_idx, target_rip, true, cond_code});
+					break;
+				}
+
+				case IROpcode::Jump: {
+					if (!ops.empty() && ops[0].IsImmInt()) {
+						uint64_t target_rip = static_cast<uint64_t>(ops[0].imm_int);
+						size_t branch_idx = emitter.GetCode().size();
+						emitter.EmitB(0); // Placeholder
+						fixups.push_back({branch_idx, target_rip, false, 0});
+					} else if (!ops.empty() && ops[0].IsVReg()) {
+						emitter.EmitBr(MapOperandToArm64Reg(ops[0].vreg));
+					}
+					break;
+				}
+
+				case IROpcode::Call: {
+					if (!ops.empty() && ops[0].IsImmInt()) {
+						uint64_t target_rip = static_cast<uint64_t>(ops[0].imm_int);
+						emitter.AddRelocation(emitter.GetCodeSizeBytes(), target_rip, true);
+						emitter.EmitBl(0);
+					} else if (!ops.empty() && ops[0].IsVReg()) {
+						emitter.EmitBlr(MapOperandToArm64Reg(ops[0].vreg));
+					}
+					break;
+				}
+
+				case IROpcode::Syscall: {
+					// Store next RIP to guest context [X19 + offsetof(GuestCpuContext, rip)]
+					uint64_t next_rip = inst->GetGuestRip() + 2;
+					emitter.EmitMovImm64(Arm64Reg::X16, next_rip);
+					emitter.EmitStr64(Arm64Reg::X16, Arm64Reg::X19, static_cast<int32_t>(offsetof(GuestCpuContext, rip)));
+					emit_epilogue();
 					break;
 				}
 
@@ -403,6 +460,26 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 					emitter.EmitNop();
 					break;
 			}
+		}
+	}
+
+	// 4. Resolve PC-Relative Branch Displacements
+	for (const auto& fixup : fixups) {
+		auto it = (fixup.target_rip != 0) ? rip_to_inst_idx.find(fixup.target_rip) : rip_to_inst_idx.end();
+		if (it != rip_to_inst_idx.end()) {
+			// Intra-CFG target resolution
+			size_t target_inst_idx = it->second;
+			int32_t offset_words = static_cast<int32_t>(target_inst_idx) - static_cast<int32_t>(fixup.inst_idx);
+			if (fixup.is_conditional) {
+				uint32_t imm19 = static_cast<uint32_t>(offset_words) & 0x7FFFFu;
+				emitter.SetInstruction(fixup.inst_idx, 0x54000000u | (imm19 << 5u) | (fixup.cond_code & 0x0Fu));
+			} else {
+				uint32_t imm26 = static_cast<uint32_t>(offset_words) & 0x03FFFFFFu;
+				emitter.SetInstruction(fixup.inst_idx, 0x14000000u | imm26);
+			}
+		} else {
+			// External / out-of-CFG jump target -> Register relocation for block linker
+			emitter.AddRelocation(fixup.inst_idx * sizeof(uint32_t), fixup.target_rip, false);
 		}
 	}
 

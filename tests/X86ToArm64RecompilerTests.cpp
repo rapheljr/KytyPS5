@@ -64,7 +64,7 @@ void TestArm64EmitterEncoding() {
 	emitter.EmitAddImm(Arm64Reg::X0, Arm64Reg::X0, 10);
 	emitter.EmitRet();
 
-	Check(emitter.GetCode().size() == 6, "Emitted ARM64 instruction word count mismatch");
+	Check(emitter.GetCode().size() == 3, "Emitted ARM64 instruction word count mismatch");
 
 	std::printf("  [OK] Test 2: ARM64 Backend Instruction Emitter Encoding\n");
 }

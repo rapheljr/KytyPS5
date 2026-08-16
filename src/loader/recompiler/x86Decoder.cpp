@@ -145,6 +145,7 @@ static const OpcodeEntry* GetTwoByteOpcodeEntry(uint8_t opcode) {
 	if (!initialized) {
 		for (int i = 0; i < 256; ++i) table[i] = {X86Opcode::Invalid, OpcodeFormat::Invalid, 0, X86Condition::Equal, false};
 
+		table[0x05] = {X86Opcode::Syscall, OpcodeFormat::NoOperands, 0, X86Condition::Equal, false};
 		table[0x10] = {X86Opcode::Movups, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x11] = {X86Opcode::Movups, OpcodeFormat::ModRm_Rm_Reg, 0, X86Condition::Equal, false};
 		table[0x28] = {X86Opcode::Movaps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};

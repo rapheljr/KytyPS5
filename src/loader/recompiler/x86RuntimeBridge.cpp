@@ -50,7 +50,27 @@ CompiledBlockFunc X86RuntimeBridge::CompileAndCacheBlock(const uint8_t* code_ptr
 	CompiledBlockFunc func = reinterpret_cast<CompiledBlockFunc>(host_code_ptr);
 	m_block_cache.Insert(guest_rip, func);
 
-	// 6. Resolve Pending Links in Direct Block Linker
+	// 6. Register Relocations & Patch Known Direct Links
+	for (const auto& reloc : emitter.GetRelocations()) {
+		LinkType lt = reloc.is_branch_link ? LinkType::DirectCall : LinkType::DirectJump;
+		m_linker.RegisterLinkSite(
+			host_code_ptr + reloc.host_code_offset,
+			guest_rip,
+			reloc.target_guest_rip,
+			lt
+		);
+
+		CompiledBlockFunc target_func = m_block_cache.Lookup(reloc.target_guest_rip);
+		if (target_func) {
+			BlockLinker::PatchBranchTarget(
+				host_code_ptr + reloc.host_code_offset,
+				reinterpret_cast<const void*>(target_func),
+				lt
+			);
+		}
+	}
+
+	// 7. Resolve Pending Links in Direct Block Linker
 	m_linker.ResolvePendingLinks(guest_rip, host_code_ptr);
 
 	return func;

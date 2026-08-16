@@ -52,6 +52,7 @@ enum class X86Opcode : uint16_t {
 	Loop,
 	Call,
 	Ret,
+	Syscall,
 	Push,
 	Pop,
 	Cmov,
