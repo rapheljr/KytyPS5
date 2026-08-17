@@ -14,7 +14,7 @@ namespace Loader {
 
 constexpr uint32_t kSelfMagic = 0x4F534C46; // "OSLF"
 
-struct SelfHeader {
+struct ParsedSelfHeader {
 	uint32_t magic          = 0;
 	uint8_t  version        = 0;
 	uint8_t  mode           = 0;
@@ -28,21 +28,23 @@ struct SelfHeader {
 	uint16_t flags          = 0;
 };
 
-struct SelfSegmentHeader {
+struct ParsedSelfSegmentHeader {
 	uint64_t flags             = 0;
 	uint64_t offset            = 0;
 	uint64_t compressed_size   = 0;
 	uint64_t uncompressed_size = 0;
 };
 
+using SelfSegmentHeader = ParsedSelfSegmentHeader;
+
 struct SelfInfo {
-	SelfHeader                    header;
-	std::vector<SelfSegmentHeader> segments;
-	bool                          valid           = false;
-	bool                          decrypted       = false;
-	uint32_t                      encryption_type = 0;
-	size_t                        elf_offset      = 0;
-	size_t                        elf_size        = 0;
+	ParsedSelfHeader                    header;
+	std::vector<ParsedSelfSegmentHeader> segments;
+	bool                                valid           = false;
+	bool                                decrypted       = false;
+	uint32_t                            encryption_type = 0;
+	size_t                              elf_offset      = 0;
+	size_t                              elf_size        = 0;
 };
 
 class SelfParser {

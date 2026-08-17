@@ -30,17 +30,17 @@ static void TestIsSelfBuffer() {
 static void TestParseHeaderAndSegments() {
 	std::printf("[TEST] SelfParserParseHeaderAndSegments\n");
 
-	std::vector<uint8_t> buffer(sizeof(Loader::SelfHeader) + sizeof(Loader::SelfSegmentHeader));
-	auto* hdr = reinterpret_cast<Loader::SelfHeader*>(buffer.data());
+	std::vector<uint8_t> buffer(sizeof(Loader::ParsedSelfHeader) + sizeof(Loader::ParsedSelfSegmentHeader));
+	auto* hdr = reinterpret_cast<Loader::ParsedSelfHeader*>(buffer.data());
 	hdr->magic = Loader::kSelfMagic;
 	hdr->version = 1;
 	hdr->key_type = 0;
 	hdr->segment_count = 1;
 	hdr->header_size = static_cast<uint16_t>(buffer.size());
 
-	auto* seg = reinterpret_cast<Loader::SelfSegmentHeader*>(buffer.data() + sizeof(Loader::SelfHeader));
+	auto* seg = reinterpret_cast<Loader::ParsedSelfSegmentHeader*>(buffer.data() + sizeof(Loader::ParsedSelfHeader));
 	seg->flags = 0x1;
-	seg->offset = sizeof(Loader::SelfHeader) + sizeof(Loader::SelfSegmentHeader);
+	seg->offset = sizeof(Loader::ParsedSelfHeader) + sizeof(Loader::ParsedSelfSegmentHeader);
 	seg->compressed_size = 64;
 	seg->uncompressed_size = 64;
 
@@ -101,17 +101,17 @@ static void TestExtractElfMultiSegment() {
 	// Construct a multi-segment mock SELF
 	// Segment 0: ELF Header (uncompressed, offset 0 in ELF, size 64)
 	// Segment 1: Program Code (uncompressed/direct copy, offset 64 in ELF, size 128)
-	size_t self_hdr_size = sizeof(Loader::SelfHeader) + 2 * sizeof(Loader::SelfSegmentHeader);
+	size_t self_hdr_size = sizeof(Loader::ParsedSelfHeader) + 2 * sizeof(Loader::ParsedSelfSegmentHeader);
 	std::vector<uint8_t> buffer(self_hdr_size + 64 + 128, 0);
 
-	auto* hdr = reinterpret_cast<Loader::SelfHeader*>(buffer.data());
+	auto* hdr = reinterpret_cast<Loader::ParsedSelfHeader*>(buffer.data());
 	hdr->magic = Loader::kSelfMagic;
 	hdr->version = 1;
 	hdr->key_type = 0;
 	hdr->segment_count = 2;
 	hdr->header_size = static_cast<uint16_t>(self_hdr_size);
 
-	auto* segs = reinterpret_cast<Loader::SelfSegmentHeader*>(buffer.data() + sizeof(Loader::SelfHeader));
+	auto* segs = reinterpret_cast<Loader::ParsedSelfSegmentHeader*>(buffer.data() + sizeof(Loader::ParsedSelfHeader));
 
 	// Segment 0
 	segs[0].flags = 0x1;

@@ -117,22 +117,22 @@ void CreateTestFile(const std::filesystem::path& path, const std::string& conten
 void TestSelfParser() {
 	std::printf("  [Test 1] PS5 Signed ELF (SELF) Header & Segment Parser...\n");
 
-	std::vector<uint8_t> dummy_self(sizeof(SelfHeader) + sizeof(SelfSegmentHeader) * 2 + 100, 0);
+	std::vector<uint8_t> dummy_self(sizeof(ParsedSelfHeader) + sizeof(ParsedSelfSegmentHeader) * 2 + 100, 0);
 
-	SelfHeader hdr{};
+	ParsedSelfHeader hdr{};
 	hdr.magic         = kSelfMagic; // 0x4F534C46
 	hdr.version       = 1;
-	hdr.header_size   = sizeof(SelfHeader) + sizeof(SelfSegmentHeader) * 2;
+	hdr.header_size   = sizeof(ParsedSelfHeader) + sizeof(ParsedSelfSegmentHeader) * 2;
 	hdr.segment_count = 2;
 	hdr.file_size     = dummy_self.size();
 
-	std::memcpy(dummy_self.data(), &hdr, sizeof(SelfHeader));
+	std::memcpy(dummy_self.data(), &hdr, sizeof(ParsedSelfHeader));
 
-	SelfSegmentHeader seg0{0x1, 0x100, 0x50, 0x50};
-	SelfSegmentHeader seg1{0x2, 0x150, 0x50, 0x50};
+	ParsedSelfSegmentHeader seg0{0x1, 0x100, 0x50, 0x50};
+	ParsedSelfSegmentHeader seg1{0x2, 0x150, 0x50, 0x50};
 
-	std::memcpy(dummy_self.data() + sizeof(SelfHeader), &seg0, sizeof(SelfSegmentHeader));
-	std::memcpy(dummy_self.data() + sizeof(SelfHeader) + sizeof(SelfSegmentHeader), &seg1, sizeof(SelfSegmentHeader));
+	std::memcpy(dummy_self.data() + sizeof(ParsedSelfHeader), &seg0, sizeof(ParsedSelfSegmentHeader));
+	std::memcpy(dummy_self.data() + sizeof(ParsedSelfHeader) + sizeof(ParsedSelfSegmentHeader), &seg1, sizeof(ParsedSelfSegmentHeader));
 
 	CHECK(SelfParser::IsSelfBuffer(dummy_self.data(), dummy_self.size()));
 

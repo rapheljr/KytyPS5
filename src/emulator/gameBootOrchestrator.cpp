@@ -4,8 +4,13 @@
 
 #include "emulator/gameBootOrchestrator.h"
 #include "kernel/machExceptionHandler.h"
+#include "kernel/ps5PkgParser.h"
+#include "loader/selfParser.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <unistd.h>
 #include <vector>
 
 namespace Emulator {
@@ -71,9 +76,62 @@ BootResult GameBootOrchestrator::BootExecutable(const std::string& file_path, bo
 	m_loader = std::make_unique<Loader::OpenOrbisElfLoader>();
 	auto resolver = m_subsystem_hub->CreateSymbolResolver(0x80000000);
 
-	auto result = m_loader->Load(file_path, resolver);
-	if (!result.success && m_boot_result.detected_format == ExecutableFormat::Elf) {
-		m_boot_result.error_message = result.error_message.empty() ? "Failed to load and relocate ELF binary" : result.error_message;
+	Loader::OpenOrbisLoadResult result{};
+
+	if (m_boot_result.detected_format == ExecutableFormat::Elf) {
+		result = m_loader->Load(file_path, resolver);
+	} else if (m_boot_result.detected_format == ExecutableFormat::Self) {
+		std::ifstream in(file_path, std::ios::binary | std::ios::ate);
+		if (in) {
+			size_t size = in.tellg();
+			in.seekg(0, std::ios::beg);
+			std::vector<uint8_t> self_data(size);
+			in.read(reinterpret_cast<char*>(self_data.data()), size);
+			std::vector<uint8_t> extracted_elf;
+			if (Loader::SelfParser::ExtractElf(self_data.data(), self_data.size(), extracted_elf)) {
+				result = m_loader->LoadFromMemory(extracted_elf.data(), extracted_elf.size(), file_path, resolver);
+			} else {
+				result = m_loader->Load(file_path, resolver);
+			}
+		}
+	} else if (m_boot_result.detected_format == ExecutableFormat::Pkg) {
+		std::ifstream in(file_path, std::ios::binary | std::ios::ate);
+		if (in) {
+			size_t size = in.tellg();
+			in.seekg(0, std::ios::beg);
+			std::vector<uint8_t> pkg_data(size);
+			in.read(reinterpret_cast<char*>(pkg_data.data()), size);
+
+			char temp_dir[] = "/tmp/kyty_pkg_XXXXXX";
+			if (mkdtemp(temp_dir) != nullptr) {
+				std::string content_id;
+				if (Libs::Kernel::Ps5::PkgInstaller::InstallPackageBuffer(pkg_data.data(), pkg_data.size(), temp_dir, &content_id)) {
+					std::filesystem::path eboot_path = std::filesystem::path(temp_dir) / "eboot.bin";
+					if (std::filesystem::exists(eboot_path)) {
+						auto eboot_fmt = DetectFormat(eboot_path.string());
+						if (eboot_fmt == ExecutableFormat::Self) {
+							std::ifstream eb_in(eboot_path, std::ios::binary | std::ios::ate);
+							if (eb_in) {
+								size_t eb_size = eb_in.tellg();
+								eb_in.seekg(0, std::ios::beg);
+								std::vector<uint8_t> eb_data(eb_size);
+								eb_in.read(reinterpret_cast<char*>(eb_data.data()), eb_size);
+								std::vector<uint8_t> extracted_elf;
+								if (Loader::SelfParser::ExtractElf(eb_data.data(), eb_data.size(), extracted_elf)) {
+									result = m_loader->LoadFromMemory(extracted_elf.data(), extracted_elf.size(), eboot_path.string(), resolver);
+								}
+							}
+						} else {
+							result = m_loader->Load(eboot_path, resolver);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (!result.success) {
+		m_boot_result.error_message = result.error_message.empty() ? "Failed to load and relocate binary" : result.error_message;
 		return m_boot_result;
 	}
 

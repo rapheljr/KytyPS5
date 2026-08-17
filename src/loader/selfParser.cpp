@@ -113,27 +113,27 @@ bool SelfParser::DecompressSegment(const uint8_t* src, size_t src_size, uint8_t*
 }
 
 bool SelfParser::Parse(const uint8_t* buffer, size_t size, SelfInfo& out_info) {
-	if (!IsSelfBuffer(buffer, size) || size < sizeof(SelfHeader)) {
+	if (!IsSelfBuffer(buffer, size) || size < sizeof(ParsedSelfHeader)) {
 		out_info.valid = false;
 		return false;
 	}
 
-	std::memcpy(&out_info.header, buffer, sizeof(SelfHeader));
+	std::memcpy(&out_info.header, buffer, sizeof(ParsedSelfHeader));
 	out_info.encryption_type = out_info.header.key_type;
 	out_info.decrypted       = (out_info.header.key_type == 0);
 
-	size_t curr_offset = sizeof(SelfHeader);
+	size_t curr_offset = sizeof(ParsedSelfHeader);
 	out_info.segments.clear();
 
 	for (uint16_t i = 0; i < out_info.header.segment_count; ++i) {
-		if (curr_offset + sizeof(SelfSegmentHeader) > size) {
+		if (curr_offset + sizeof(ParsedSelfSegmentHeader) > size) {
 			out_info.valid = false;
 			return false;
 		}
-		SelfSegmentHeader seg{};
-		std::memcpy(&seg, buffer + curr_offset, sizeof(SelfSegmentHeader));
+		ParsedSelfSegmentHeader seg{};
+		std::memcpy(&seg, buffer + curr_offset, sizeof(ParsedSelfSegmentHeader));
 		out_info.segments.push_back(seg);
-		curr_offset += sizeof(SelfSegmentHeader);
+		curr_offset += sizeof(ParsedSelfSegmentHeader);
 	}
 
 	out_info.elf_offset = out_info.header.header_size;
