@@ -93,13 +93,14 @@ static KYTY_SYSV_ABI int UserServiceGetLoginUserIdList(UserServiceLoginUserIdLis
 }
 
 static KYTY_SYSV_ABI int UserServiceGetUserName(int user_id, char* name, size_t size) {
-	EXIT_NOT_IMPLEMENTED(user_id != 1000);
-	EXIT_NOT_IMPLEMENTED(size < 5);
+	if (name == nullptr || size == 0) {
+		return USER_SERVICE_ERROR_INVALID_ARGUMENT;
+	}
+	if (user_id != 1000) {
+		return USER_SERVICE_ERROR_NOT_LOGGED_IN;
+	}
 
-	int s = snprintf(name, size, "%s", "Kyty");
-
-	EXIT_NOT_IMPLEMENTED(static_cast<size_t>(s) >= size);
-
+	snprintf(name, size, "%s", "Kyty");
 	return OK;
 }
 
