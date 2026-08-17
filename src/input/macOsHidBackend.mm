@@ -176,8 +176,31 @@ bool MacOsHidBackend::PollInput(uint32_t /*controller_index*/, DualSenseState& o
 	return true;
 }
 
-bool MacOsHidBackend::SendOutputReport(uint32_t /*controller_index*/, const DualSenseState& /*state*/) {
+bool MacOsHidBackend::SendOutputReport(uint32_t /*controller_index*/, const DualSenseState& state) {
 	if (!m_initialized) return false;
+
+	uint8_t report_buf[64] = {0};
+	size_t report_len = EncodeDualSenseOutputReport(state, report_buf, sizeof(report_buf));
+	if (report_len == 0) return false;
+
+#if defined(__APPLE__)
+	std::lock_guard<std::mutex> lock(m_mutex);
+	if (m_hid_manager) {
+		CFSetRef device_set = IOHIDManagerCopyDevices(m_hid_manager);
+		if (device_set) {
+			CFIndex count = CFSetGetCount(device_set);
+			if (count > 0) {
+				std::vector<const void*> devices(count);
+				CFSetGetValues(device_set, devices.data());
+				for (CFIndex i = 0; i < count; ++i) {
+					auto dev = static_cast<IOHIDDeviceRef>(const_cast<void*>(devices[i]));
+					IOHIDDeviceSetReport(dev, kIOHIDReportTypeOutput, report_buf[0], report_buf, report_len);
+				}
+			}
+			CFRelease(device_set);
+		}
+	}
+#endif
 	return true;
 }
 
