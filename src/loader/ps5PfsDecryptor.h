@@ -65,12 +65,19 @@ public:
 	/// Decrypt a block sector in-place
 	bool DecryptBlock(uint8_t* block_data, size_t block_size, uint64_t sector_index);
 
+	/// Find entry by relative path
+	[[nodiscard]] const PfsEntryInfo* FindEntry(const std::string& path) const noexcept;
+
+	/// Extract file contents from loaded PFS buffer
+	bool ExtractFile(const uint8_t* pfs_data, size_t size, const std::string& path, std::vector<uint8_t>& out_file) const;
+
 	[[nodiscard]] bool IsValid() const noexcept { return m_is_valid; }
 	[[nodiscard]] const PfsSuperBlock& GetSuperBlock() const noexcept { return m_super_block; }
 	[[nodiscard]] const std::vector<PfsEntryInfo>& GetEntries() const noexcept { return m_entries; }
 
 	/// Helper to synthesize a valid mock PFS container image for unit testing
 	static std::vector<uint8_t> CreateMockPfsImage(const std::string& test_filename, const std::string& file_content);
+	static std::vector<uint8_t> CreateMultiFileMockPfsImage(const std::vector<std::pair<std::string, std::string>>& files);
 
 private:
 	PfsSuperBlock             m_super_block{};
