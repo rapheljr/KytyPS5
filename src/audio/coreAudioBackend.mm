@@ -16,20 +16,16 @@ struct CoreAudioBackend::Impl {
 };
 
 static OSStatus CoreAudioRenderCallback(void* inRefCon,
-                                       AudioUnitRenderActionFlags* ioActionFlags,
-                                       const AudioTimeStamp* inTimeStamp,
-                                       UInt32 inBusNumber,
+                                       AudioUnitRenderActionFlags* /*ioActionFlags*/,
+                                       const AudioTimeStamp* /*inTimeStamp*/,
+                                       UInt32 /*inBusNumber*/,
                                        UInt32 inNumberFrames,
                                        AudioBufferList* ioData) {
 	auto* backend = static_cast<CoreAudioBackend*>(inRefCon);
-	if (!backend || !ioData) return noErr;
+	if (!backend || !ioData || ioData->mNumberBuffers == 0) return noErr;
 
 	float* out_buffer = static_cast<float*>(ioData->mBuffers[0].mData);
-	uint32_t channels = backend->GetChannels();
-	size_t requested_samples = inNumberFrames * channels;
-
-	// In real-time callback: fetch from ring buffer or zero-fill on underrun
-	std::memset(out_buffer, 0, requested_samples * sizeof(float));
+	backend->ReadSamples(out_buffer, inNumberFrames);
 	return noErr;
 }
 
@@ -142,6 +138,29 @@ size_t CoreAudioBackend::WriteSamples(const float* interleaved_pcm, size_t num_f
 	return num_frames;
 }
 
+size_t CoreAudioBackend::ReadSamples(float* out_pcm, size_t num_frames) {
+	if (!m_initialized || !out_pcm || num_frames == 0) return 0;
+
+	size_t requested_samples = num_frames * m_channels;
+	size_t available_frames  = GetAvailableFramesToRead();
+	size_t frames_to_read    = std::min(num_frames, available_frames);
+	size_t samples_to_read   = frames_to_read * m_channels;
+
+	size_t curr_r = m_read_pos.load(std::memory_order_relaxed);
+	for (size_t i = 0; i < samples_to_read; ++i) {
+		out_pcm[i] = m_ring_buffer[(curr_r + i) % m_capacity];
+	}
+
+	if (samples_to_read < requested_samples) {
+		std::memset(out_pcm + samples_to_read, 0, (requested_samples - samples_to_read) * sizeof(float));
+		m_stats.buffer_underruns++;
+	}
+
+	m_read_pos.store((curr_r + samples_to_read) % m_capacity, std::memory_order_release);
+	m_stats.total_frames_played += num_frames;
+	return num_frames;
+}
+
 size_t CoreAudioBackend::GetAvailableFramesToRead() const noexcept {
 	size_t w = m_write_pos.load(std::memory_order_acquire);
 	size_t r = m_read_pos.load(std::memory_order_relaxed);
@@ -158,11 +177,17 @@ size_t CoreAudioBackend::GetAvailableFramesToRead() const noexcept {
 
 namespace Libs::Audio {
 struct CoreAudioBackend::Impl {};
-CoreAudioBackend::CoreAudioBackend() : m_impl(nullptr) {}
+CoreAudioBackend::CoreAudioBackend(AudioEngine*) : m_impl(nullptr) {}
 CoreAudioBackend::~CoreAudioBackend() = default;
+bool CoreAudioBackend::Initialize(const AudioStreamConfig&) { return true; }
 bool CoreAudioBackend::Initialize(uint32_t sample_rate, uint32_t channels, size_t) { m_sample_rate = sample_rate; m_channels = channels; m_initialized = true; return true; }
 void CoreAudioBackend::Shutdown() { m_initialized = false; }
+bool CoreAudioBackend::StartStream() { return true; }
+bool CoreAudioBackend::StopStream() { return true; }
+uint64_t CoreAudioBackend::GetAudioTimeUs() const { return 0; }
+void CoreAudioBackend::SetLatencyUs(uint32_t) {}
 size_t CoreAudioBackend::WriteSamples(const float*, size_t num_frames) { m_stats.total_frames_written += num_frames; return num_frames; }
+size_t CoreAudioBackend::ReadSamples(float* out_pcm, size_t num_frames) { if (out_pcm) std::memset(out_pcm, 0, num_frames * m_channels * sizeof(float)); return num_frames; }
 size_t CoreAudioBackend::GetAvailableFramesToRead() const noexcept { return 0; }
 } // namespace Libs::Audio
 

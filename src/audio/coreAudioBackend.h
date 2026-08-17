@@ -42,6 +42,9 @@ public:
 	/// Push interleaved float PCM audio samples into the ring buffer
 	size_t WriteSamples(const float* interleaved_pcm, size_t num_frames);
 
+	/// Pull interleaved float PCM audio samples from the ring buffer into the output buffer
+	size_t ReadSamples(float* out_pcm, size_t num_frames);
+
 	[[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
 	[[nodiscard]] uint32_t GetSampleRate() const noexcept { return m_sample_rate; }
 	[[nodiscard]] uint32_t GetChannels() const noexcept { return m_channels; }
