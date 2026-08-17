@@ -51,8 +51,14 @@ enum class IROpcode : uint16_t {
 	Popcnt,
 	Andn,
 	Bextr,
+	Blsi,
 	Blsr,
 	Blsmsk,
+	Rorx,
+	Sarx,
+	Shlx,
+	Shrx,
+	Crc32,
 	// Casts & Extensions
 	ZExt,
 	SExt,
@@ -93,7 +99,11 @@ enum class IROpcode : uint16_t {
 	VecSqrt,
 	VecLoad,
 	VecStore,
-	VecMov
+	VecMov,
+	VectorExtract,
+	VectorInsert,
+	VectorBlend,
+	VectorZeroExtend
 };
 
 enum class IRCondition : uint8_t {

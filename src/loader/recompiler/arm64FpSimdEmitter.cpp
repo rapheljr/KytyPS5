@@ -192,6 +192,28 @@ void Arm64FpSimdEmitter::EmitCmgt4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm)
 	m_emitter.Emit32(inst);
 }
 
+void Arm64FpSimdEmitter::EmitCnt8B(Arm64FpReg rd, Arm64FpReg rn) {
+	uint32_t inst = 0x0E205800u | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitUaddlv8B(Arm64FpReg rd, Arm64FpReg rn) {
+	uint32_t inst = 0x2E303800u | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitIns4S(Arm64FpReg rd, uint8_t lane, Arm64Reg rn) {
+	uint32_t imm5 = 0x04u | ((lane & 3u) << 3u);
+	uint32_t inst = 0x4E001C00u | (imm5 << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitUmov4S(Arm64Reg rd, Arm64FpReg rn, uint8_t lane) {
+	uint32_t imm5 = 0x04u | ((lane & 3u) << 3u);
+	uint32_t inst = 0x0E003C00u | (imm5 << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
 // ─── 6. Vector Conversions ────────────────────────────────────────────────────
 
 void Arm64FpSimdEmitter::EmitFcvtns4S(Arm64FpReg rd, Arm64FpReg rn) {

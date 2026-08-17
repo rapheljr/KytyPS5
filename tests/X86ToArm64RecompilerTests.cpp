@@ -153,6 +153,67 @@ void TestMultiThreadedCompilation() {
 	std::printf("  [OK] Test 5: Multi-Threaded Compilation Stress Test\n");
 }
 
+// ─── 6. SSE4.1/SSE4.2 & BMI1/BMI2 Extended Instruction Decoder Test ──────────
+
+void TestExtendedInstructions() {
+	std::printf("  [Test 6] SSE4.1/SSE4.2 & BMI1/BMI2 Instruction Decoding & Lowering...\n");
+
+	// 1. POPCNT rax, rbx (F3 48 0F B8 C3)
+	uint8_t popcnt_code[] = {0xF3, 0x48, 0x0F, 0xB8, 0xC3};
+	DecodedX86Instruction d_pop = X86Decoder::DecodeInstruction(popcnt_code, sizeof(popcnt_code), 0x1000);
+	Check(d_pop.opcode == X86Opcode::Popcnt, "Popcnt opcode decode failed");
+	Check(d_pop.dst.reg == X86Reg::RAX && d_pop.src.reg == X86Reg::RBX, "Popcnt operands decode failed");
+
+	// 2. ANDN rax, rbx, rcx (VEX.LZ.0F38.W1 F2 /r -> C4 E2 E0 F2 C1)
+	uint8_t andn_code[] = {0xC4, 0xE2, 0xE0, 0xF2, 0xC1};
+	DecodedX86Instruction d_andn = X86Decoder::DecodeInstruction(andn_code, sizeof(andn_code), 0x1005);
+	Check(d_andn.opcode == X86Opcode::Andn, "Andn opcode decode failed");
+	Check(d_andn.dst.reg == X86Reg::RAX, "Andn dst reg failed");
+
+	// 3. BLSR rax, rbx (VEX.LZ.0F38.W1 F3 /1 -> C4 E2 E0 F3 CB)
+	uint8_t blsr_code[] = {0xC4, 0xE2, 0xE0, 0xF3, 0xCB};
+	DecodedX86Instruction d_blsr = X86Decoder::DecodeInstruction(blsr_code, sizeof(blsr_code), 0x100A);
+	Check(d_blsr.opcode == X86Opcode::Blsr, "Blsr opcode decode failed");
+
+	// 4. BLSI rax, rbx (VEX.LZ.0F38.W1 F3 /3 -> C4 E2 E0 F3 DB)
+	uint8_t blsi_code[] = {0xC4, 0xE2, 0xE0, 0xF3, 0xDB};
+	DecodedX86Instruction d_blsi = X86Decoder::DecodeInstruction(blsi_code, sizeof(blsi_code), 0x100F);
+	Check(d_blsi.opcode == X86Opcode::Blsi, "Blsi opcode decode failed");
+
+	// 5. BLSMSK rax, rbx (VEX.LZ.0F38.W1 F3 /2 -> C4 E2 E0 F3 D3)
+	uint8_t blsmsk_code[] = {0xC4, 0xE2, 0xE0, 0xF3, 0xD3};
+	DecodedX86Instruction d_blsmsk = X86Decoder::DecodeInstruction(blsmsk_code, sizeof(blsmsk_code), 0x1014);
+	Check(d_blsmsk.opcode == X86Opcode::Blsmsk, "Blsmsk opcode decode failed");
+
+	// 6. SHLX rax, rbx, rcx (VEX.LZ.66.0F38.W1 F7 /r -> C4 E2 E1 F7 C1)
+	uint8_t shlx_code[] = {0xC4, 0xE2, 0xE1, 0xF7, 0xC1};
+	DecodedX86Instruction d_shlx = X86Decoder::DecodeInstruction(shlx_code, sizeof(shlx_code), 0x1019);
+	Check(d_shlx.opcode == X86Opcode::Shlx, "Shlx opcode decode failed");
+
+	// 7. PINSRD xmm0, eax, 1 (66 0F 3A 22 C0 01)
+	uint8_t pinsrd_code[] = {0x66, 0x0F, 0x3A, 0x22, 0xC0, 0x01};
+	DecodedX86Instruction d_pinsrd = X86Decoder::DecodeInstruction(pinsrd_code, sizeof(pinsrd_code), 0x101E);
+	Check(d_pinsrd.opcode == X86Opcode::Pinsrd, "Pinsrd opcode decode failed");
+	Check(d_pinsrd.src2.imm == 1, "Pinsrd lane imm failed");
+
+	// 8. PEXTRD eax, xmm0, 1 (66 0F 3A 16 C0 01)
+	uint8_t pextrd_code[] = {0x66, 0x0F, 0x3A, 0x16, 0xC0, 0x01};
+	DecodedX86Instruction d_pextrd = X86Decoder::DecodeInstruction(pextrd_code, sizeof(pextrd_code), 0x1024);
+	Check(d_pextrd.opcode == X86Opcode::Pextrd, "Pextrd opcode decode failed");
+
+	// 9. PBLENDVB xmm0, xmm1 (66 0F 38 10 C1)
+	uint8_t pblendvb_code[] = {0x66, 0x0F, 0x38, 0x10, 0xC1};
+	DecodedX86Instruction d_pblendvb = X86Decoder::DecodeInstruction(pblendvb_code, sizeof(pblendvb_code), 0x102A);
+	Check(d_pblendvb.opcode == X86Opcode::Pblendvb, "Pblendvb opcode decode failed");
+
+	// 10. CRC32 eax, ebx (F2 0F 38 F1 C3)
+	uint8_t crc32_code[] = {0xF2, 0x0F, 0x38, 0xF1, 0xC3};
+	DecodedX86Instruction d_crc32 = X86Decoder::DecodeInstruction(crc32_code, sizeof(crc32_code), 0x102F);
+	Check(d_crc32.opcode == X86Opcode::Crc32, "Crc32 opcode decode failed");
+
+	std::printf("  [OK] Test 6: SSE4.1/SSE4.2 & BMI1/BMI2 Instruction Decoding & Lowering\n");
+}
+
 // ─── Benchmarks ──────────────────────────────────────────────────────────────
 
 void BenchmarkX86ToArm64Recompiler() {
@@ -211,6 +272,7 @@ int main() {
 	TestLockFreeCodeCache();
 	TestNativeJitExecution();
 	TestMultiThreadedCompilation();
+	TestExtendedInstructions();
 
 	BenchmarkX86ToArm64Recompiler();
 

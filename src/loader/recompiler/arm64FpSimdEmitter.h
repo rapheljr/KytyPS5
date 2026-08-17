@@ -71,6 +71,10 @@ public:
 	void EmitVbsl16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitCmeq4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitCmgt4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitCnt8B(Arm64FpReg rd, Arm64FpReg rn);
+	void EmitUaddlv8B(Arm64FpReg rd, Arm64FpReg rn);
+	void EmitIns4S(Arm64FpReg rd, uint8_t lane, Arm64Reg rn);
+	void EmitUmov4S(Arm64Reg rd, Arm64FpReg rn, uint8_t lane);
 
 	// 6. Vector Conversions
 	void EmitFcvtns4S(Arm64FpReg rd, Arm64FpReg rn);

@@ -97,6 +97,10 @@ enum class X86Opcode : uint16_t {
 	Pmaxsd,
 	Pminsd,
 	Pblendvb,
+	Pinsrd,
+	Pextrd,
+	Pmovzx,
+	Crc32,
 	Pcmpestri,
 	Pcmpistri,
 	// SSE2 Packed Compare & Convert
@@ -119,6 +123,7 @@ enum class X86Opcode : uint16_t {
 	Tzcnt,
 	Andn,
 	Bextr,
+	Blsi,
 	Blsr,
 	Blsmsk,
 	Rorx,

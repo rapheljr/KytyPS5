@@ -324,6 +324,165 @@ std::unique_ptr<ControlFlowGraph> X86ToIRLowering::LowerBlock(const uint8_t* cod
 				break;
 			}
 
+			case X86Opcode::Popcnt: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Popcnt);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Andn: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Andn);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.dst));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Blsi: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Blsi);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src.kind != X86Operand::Kind::None ? decoded.src : decoded.dst));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Blsr: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Blsr);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src.kind != X86Operand::Kind::None ? decoded.src : decoded.dst));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Blsmsk: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Blsmsk);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src.kind != X86Operand::Kind::None ? decoded.src : decoded.dst));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Bextr: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Bextr);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src2));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Shlx:
+			case X86Opcode::Shrx:
+			case X86Opcode::Sarx:
+			case X86Opcode::Rorx: {
+				IROpcode op = (decoded.opcode == X86Opcode::Shlx) ? IROpcode::Shlx :
+				              (decoded.opcode == X86Opcode::Shrx) ? IROpcode::Shrx :
+				              (decoded.opcode == X86Opcode::Sarx) ? IROpcode::Sarx : IROpcode::Rorx;
+				auto inst = std::make_unique<IRInstruction>(op);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src2.kind != X86Operand::Kind::None ? decoded.src2 : decoded.dst));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Pinsrd: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::VectorInsert);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(DataType::Vec128);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(Value::MakeVReg(dst_vr));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				inst->AddOperand(Value::MakeImmInt(decoded.src2.imm));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Pextrd: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::VectorExtract);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(DataType::Int32);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				inst->AddOperand(Value::MakeImmInt(decoded.src2.imm));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Pblendvb: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::VectorBlend);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(DataType::Vec128);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(Value::MakeVReg(dst_vr));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Pmovzx: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::VectorZeroExtend);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(DataType::Vec128);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Pminsd:
+			case X86Opcode::Pmaxsd: {
+				auto inst = std::make_unique<IRInstruction>(decoded.opcode == X86Opcode::Pminsd ? IROpcode::VecMin : IROpcode::VecMax);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(DataType::Vec128);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(Value::MakeVReg(dst_vr));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
+			case X86Opcode::Crc32: {
+				auto inst = std::make_unique<IRInstruction>(IROpcode::Crc32);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(decoded.dst.size_bytes == 4 ? DataType::Int32 : DataType::Int64);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+				inst->AddOperand(Value::MakeVReg(dst_vr));
+				inst->AddOperand(MapX86OperandToIR(*cfg, entry_bb, decoded.src));
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
 			case X86Opcode::Ret: {
 				auto inst = std::make_unique<IRInstruction>(IROpcode::Return);
 				inst->SetGuestRip(current_rip);

@@ -274,15 +274,106 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 					}
 					break;
 
-				case IROpcode::Andn:
+				case IROpcode::Popcnt:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						Arm64Reg src_r = MapOperandToArm64Reg(ops[0].vreg);
+						emitter.Emit32(0x9E670000u | ((static_cast<uint32_t>(src_r) & 0x1Fu) << 5) | 16u);
+						fp_emitter.EmitCnt8B(Arm64FpReg::V16, Arm64FpReg::V16);
+						fp_emitter.EmitUaddlv8B(Arm64FpReg::V16, Arm64FpReg::V16);
+						emitter.Emit32(0x9E660000u | (16u << 5) | (static_cast<uint32_t>(dst_reg) & 0x1Fu));
+					}
+					break;
+
+				case IROpcode::Blsi:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						Arm64Reg src_r = MapOperandToArm64Reg(ops[0].vreg);
+						emitter.EmitSubReg(Arm64Reg::X16, Arm64Reg::XZR, src_r);
+						emitter.EmitAndReg(dst_reg, src_r, Arm64Reg::X16);
+					}
+					break;
+
+				case IROpcode::Blsr:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						Arm64Reg src_r = MapOperandToArm64Reg(ops[0].vreg);
+						emitter.EmitSubImm(Arm64Reg::X16, src_r, 1);
+						emitter.EmitAndReg(dst_reg, src_r, Arm64Reg::X16);
+					}
+					break;
+
+				case IROpcode::Blsmsk:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						Arm64Reg src_r = MapOperandToArm64Reg(ops[0].vreg);
+						emitter.EmitSubImm(Arm64Reg::X16, src_r, 1);
+						emitter.EmitEorReg(dst_reg, src_r, Arm64Reg::X16);
+					}
+					break;
+
+				case IROpcode::Shlx:
 					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
-						emitter.EmitBicReg(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+						emitter.EmitLsl(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+					}
+					break;
+
+				case IROpcode::Shrx:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+						emitter.EmitLsr(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+					}
+					break;
+
+				case IROpcode::Sarx:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+						emitter.EmitAsr(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+					}
+					break;
+
+				case IROpcode::Rorx:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+						emitter.EmitRor(dst_reg, MapOperandToArm64Reg(ops[0].vreg), MapOperandToArm64Reg(ops[1].vreg));
+					} else if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsImmInt()) {
+						emitter.EmitMovImm64(Arm64Reg::X16, static_cast<uint64_t>(ops[1].imm_int));
+						emitter.EmitRor(dst_reg, MapOperandToArm64Reg(ops[0].vreg), Arm64Reg::X16);
 					}
 					break;
 
 				case IROpcode::Bextr:
 					if (ops.size() >= 3 && ops[0].IsVReg() && ops[1].IsImmInt() && ops[2].IsImmInt()) {
 						emitter.EmitUbfx(dst_reg, MapOperandToArm64Reg(ops[0].vreg), static_cast<uint8_t>(ops[1].imm_int), static_cast<uint8_t>(ops[2].imm_int));
+					}
+					break;
+
+				case IROpcode::VectorInsert:
+					if (ops.size() >= 3 && ops[1].IsVReg() && ops[2].IsImmInt()) {
+						uint8_t lane = static_cast<uint8_t>(ops[2].imm_int & 0x03);
+						fp_emitter.EmitIns4S(dst_fp, lane, MapOperandToArm64Reg(ops[1].vreg));
+					}
+					break;
+
+				case IROpcode::VectorExtract:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsImmInt()) {
+						uint8_t lane = static_cast<uint8_t>(ops[1].imm_int & 0x03);
+						fp_emitter.EmitUmov4S(dst_reg, MapOperandToArm64FpReg(ops[0].vreg), lane);
+					}
+					break;
+
+				case IROpcode::VectorBlend:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+						fp_emitter.EmitVbsl16B(dst_fp, MapOperandToArm64FpReg(ops[0].vreg), MapOperandToArm64FpReg(ops[1].vreg));
+					}
+					break;
+
+				case IROpcode::VectorZeroExtend:
+					if (ops.size() >= 1 && ops[0].IsVReg()) {
+						fp_emitter.EmitZip14S(dst_fp, MapOperandToArm64FpReg(ops[0].vreg), MapOperandToArm64FpReg(ops[0].vreg));
+					}
+					break;
+
+				case IROpcode::Crc32:
+					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
+						Arm64Reg rn = MapOperandToArm64Reg(ops[0].vreg);
+						Arm64Reg rm = MapOperandToArm64Reg(ops[1].vreg);
+						uint32_t inst_crc = 0x9AC04800u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) |
+						                    ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(dst_reg) & 0x1Fu);
+						emitter.Emit32(inst_crc);
 					}
 					break;
 
