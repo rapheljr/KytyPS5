@@ -106,6 +106,38 @@ void Arm64FpSimdEmitter::EmitFsqrt4S(Arm64FpReg rd, Arm64FpReg rn) {
 	m_emitter.Emit32(inst);
 }
 
+void Arm64FpSimdEmitter::EmitFmla4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4E20CC00u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFmls4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4EA0CC00u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFmla2D(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4EE0CC00u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFmls2D(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {
+	uint32_t inst = 0x4F60CC00u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFmaddS(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm, Arm64FpReg ra) {
+	uint32_t inst = 0x1F000000u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(ra) & 0x1Fu) << 10) |
+	                ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
+void Arm64FpSimdEmitter::EmitFmsubS(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm, Arm64FpReg ra) {
+	uint32_t inst = 0x1F008000u | ((static_cast<uint32_t>(rm) & 0x1Fu) << 16) | ((static_cast<uint32_t>(ra) & 0x1Fu) << 10) |
+	                ((static_cast<uint32_t>(rn) & 0x1Fu) << 5) | (static_cast<uint32_t>(rd) & 0x1Fu);
+	m_emitter.Emit32(inst);
+}
+
 // ─── 3. Vector Integer Operations (.4S / .16B) ────────────────────────────────
 
 void Arm64FpSimdEmitter::EmitVadd16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm) {

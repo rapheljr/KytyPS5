@@ -367,6 +367,53 @@ bool Arm64IRCodegen::CompileCFG(ControlFlowGraph& cfg, Arm64Emitter& emitter) {
 					}
 					break;
 
+				case IROpcode::VecFmadd:
+					if (ops.size() >= 3 && ops[0].IsVReg() && ops[1].IsVReg() && ops[2].IsVReg()) {
+						Arm64FpReg rn = MapOperandToArm64FpReg(ops[0].vreg);
+						Arm64FpReg rm = MapOperandToArm64FpReg(ops[1].vreg);
+						Arm64FpReg ra = MapOperandToArm64FpReg(ops[2].vreg);
+						if (dst_fp != ra) {
+							fp_emitter.EmitVorr16B(dst_fp, ra, ra); // mov dst, ra
+						}
+						fp_emitter.EmitFmla4S(dst_fp, rn, rm);
+					}
+					break;
+
+				case IROpcode::VecFmsub:
+					if (ops.size() >= 3 && ops[0].IsVReg() && ops[1].IsVReg() && ops[2].IsVReg()) {
+						Arm64FpReg rn = MapOperandToArm64FpReg(ops[0].vreg);
+						Arm64FpReg rm = MapOperandToArm64FpReg(ops[1].vreg);
+						Arm64FpReg ra = MapOperandToArm64FpReg(ops[2].vreg);
+						fp_emitter.EmitVmul4S(dst_fp, rn, rm);
+						fp_emitter.EmitVsub4S(dst_fp, dst_fp, ra);
+					}
+					break;
+
+				case IROpcode::VecFnmadd:
+					if (ops.size() >= 3 && ops[0].IsVReg() && ops[1].IsVReg() && ops[2].IsVReg()) {
+						Arm64FpReg rn = MapOperandToArm64FpReg(ops[0].vreg);
+						Arm64FpReg rm = MapOperandToArm64FpReg(ops[1].vreg);
+						Arm64FpReg ra = MapOperandToArm64FpReg(ops[2].vreg);
+						if (dst_fp != ra) {
+							fp_emitter.EmitVorr16B(dst_fp, ra, ra);
+						}
+						fp_emitter.EmitFmls4S(dst_fp, rn, rm);
+					}
+					break;
+
+				case IROpcode::VecFnmsub:
+					if (ops.size() >= 3 && ops[0].IsVReg() && ops[1].IsVReg() && ops[2].IsVReg()) {
+						Arm64FpReg rn = MapOperandToArm64FpReg(ops[0].vreg);
+						Arm64FpReg rm = MapOperandToArm64FpReg(ops[1].vreg);
+						Arm64FpReg ra = MapOperandToArm64FpReg(ops[2].vreg);
+						fp_emitter.EmitVmul4S(dst_fp, rn, rm);
+						fp_emitter.EmitVadd4S(dst_fp, dst_fp, ra);
+						// Negate dst
+						uint32_t inst_fneg = 0x6EA0F800u | ((static_cast<uint32_t>(dst_fp) & 0x1Fu) << 5) | (static_cast<uint32_t>(dst_fp) & 0x1Fu);
+						emitter.Emit32(inst_fneg);
+					}
+					break;
+
 				case IROpcode::Crc32:
 					if (ops.size() >= 2 && ops[0].IsVReg() && ops[1].IsVReg()) {
 						Arm64Reg rn = MapOperandToArm64Reg(ops[0].vreg);

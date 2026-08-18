@@ -483,6 +483,66 @@ std::unique_ptr<ControlFlowGraph> X86ToIRLowering::LowerBlock(const uint8_t* cod
 				break;
 			}
 
+			case X86Opcode::Vfmadd132ps:
+			case X86Opcode::Vfmadd213ps:
+			case X86Opcode::Vfmadd231ps:
+			case X86Opcode::Vfmadd132pd:
+			case X86Opcode::Vfmadd213pd:
+			case X86Opcode::Vfmadd231pd:
+			case X86Opcode::Vfmsub132ps:
+			case X86Opcode::Vfmsub213ps:
+			case X86Opcode::Vfmsub231ps:
+			case X86Opcode::Vfnmadd132ps:
+			case X86Opcode::Vfnmadd213ps:
+			case X86Opcode::Vfnmadd231ps:
+			case X86Opcode::Vfnmsub132ps:
+			case X86Opcode::Vfnmsub213ps:
+			case X86Opcode::Vfnmsub231ps: {
+				IROpcode ir_op = IROpcode::VecFmadd;
+				if (decoded.opcode == X86Opcode::Vfmsub132ps || decoded.opcode == X86Opcode::Vfmsub213ps || decoded.opcode == X86Opcode::Vfmsub231ps) {
+					ir_op = IROpcode::VecFmsub;
+				} else if (decoded.opcode == X86Opcode::Vfnmadd132ps || decoded.opcode == X86Opcode::Vfnmadd213ps || decoded.opcode == X86Opcode::Vfnmadd231ps) {
+					ir_op = IROpcode::VecFnmadd;
+				} else if (decoded.opcode == X86Opcode::Vfnmsub132ps || decoded.opcode == X86Opcode::Vfnmsub213ps || decoded.opcode == X86Opcode::Vfnmsub231ps) {
+					ir_op = IROpcode::VecFnmsub;
+				}
+
+				auto inst = std::make_unique<IRInstruction>(ir_op);
+				inst->SetGuestRip(current_rip);
+				VirtualReg dst_vr = cfg->AllocateVReg(DataType::Vec128);
+				dst_vr.phys_pin = static_cast<int8_t>(decoded.dst.reg);
+				inst->SetDst(dst_vr);
+
+				VirtualReg vvvv_vr = cfg->AllocateVReg(DataType::Vec128);
+				vvvv_vr.phys_pin = static_cast<int8_t>(decoded.vex_vvvv);
+
+				Value val_dst = Value::MakeVReg(dst_vr);
+				Value val_src = MapX86OperandToIR(*cfg, entry_bb, decoded.src);
+				Value val_vvvv = Value::MakeVReg(vvvv_vr);
+
+				if (decoded.opcode == X86Opcode::Vfmadd132ps || decoded.opcode == X86Opcode::Vfmadd132pd ||
+				    decoded.opcode == X86Opcode::Vfmsub132ps || decoded.opcode == X86Opcode::Vfnmadd132ps || decoded.opcode == X86Opcode::Vfnmsub132ps) {
+					// 132: (dst * src) +/- vvvv
+					inst->AddOperand(val_dst);
+					inst->AddOperand(val_src);
+					inst->AddOperand(val_vvvv);
+				} else if (decoded.opcode == X86Opcode::Vfmadd213ps || decoded.opcode == X86Opcode::Vfmadd213pd ||
+				           decoded.opcode == X86Opcode::Vfmsub213ps || decoded.opcode == X86Opcode::Vfnmadd213ps || decoded.opcode == X86Opcode::Vfnmsub213ps) {
+					// 213: (vvvv * dst) +/- src
+					inst->AddOperand(val_vvvv);
+					inst->AddOperand(val_dst);
+					inst->AddOperand(val_src);
+				} else {
+					// 231: (vvvv * src) +/- dst
+					inst->AddOperand(val_vvvv);
+					inst->AddOperand(val_src);
+					inst->AddOperand(val_dst);
+				}
+
+				entry_bb->AddInstruction(std::move(inst));
+				break;
+			}
+
 			case X86Opcode::Ret: {
 				auto inst = std::make_unique<IRInstruction>(IROpcode::Return);
 				inst->SetGuestRip(current_rip);

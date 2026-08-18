@@ -40,7 +40,7 @@ public:
 	void EmitLd116B(Arm64FpReg rt, Arm64Reg rn);
 	void EmitSt116B(Arm64FpReg rt, Arm64Reg rn);
 
-	// 2. Vector Floating-Point Operations (.4S)
+	// 2. Vector Floating-Point Operations (.4S / .2D) & Fused Multiply-Add (FMA)
 	void EmitVadd4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitVsub4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitVmul4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
@@ -49,6 +49,12 @@ public:
 	void EmitFmax4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitFmin4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
 	void EmitFsqrt4S(Arm64FpReg rd, Arm64FpReg rn);
+	void EmitFmla4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFmls4S(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFmla2D(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFmls2D(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);
+	void EmitFmaddS(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm, Arm64FpReg ra);
+	void EmitFmsubS(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm, Arm64FpReg ra);
 
 	// 3. Vector Integer Operations (.4S / .16B)
 	void EmitVadd16B(Arm64FpReg rd, Arm64FpReg rn, Arm64FpReg rm);

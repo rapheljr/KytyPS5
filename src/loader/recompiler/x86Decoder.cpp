@@ -213,6 +213,32 @@ static const OpcodeEntry* GetThreeByte38OpcodeEntry(uint8_t opcode) {
 		table[0x38] = {X86Opcode::Pminsd,   OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x39] = {X86Opcode::Pminsd,   OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0x3D] = {X86Opcode::Pmaxsd,   OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+
+		// FMA3 (0F 38 98..BF)
+		table[0x98] = {X86Opcode::Vfmadd132ps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x99] = {X86Opcode::Vfmadd132pd, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x9A] = {X86Opcode::Vfmadd132ss, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x9B] = {X86Opcode::Vfmadd132sd, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x9C] = {X86Opcode::Vfnmadd132ps,OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x9E] = {X86Opcode::Vfmsub132ps,  OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0x9F] = {X86Opcode::Vfnmsub132ps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+
+		table[0xA8] = {X86Opcode::Vfmadd213ps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xA9] = {X86Opcode::Vfmadd213pd, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xAA] = {X86Opcode::Vfmadd213ss, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xAB] = {X86Opcode::Vfmadd213sd, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xAC] = {X86Opcode::Vfnmadd213ps,OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xAE] = {X86Opcode::Vfmsub213ps,  OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xAF] = {X86Opcode::Vfnmsub213ps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+
+		table[0xB8] = {X86Opcode::Vfmadd231ps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xB9] = {X86Opcode::Vfmadd231pd, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBA] = {X86Opcode::Vfmadd231ss, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBB] = {X86Opcode::Vfmadd231sd, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBC] = {X86Opcode::Vfnmadd231ps,OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBE] = {X86Opcode::Vfmsub231ps,  OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+		table[0xBF] = {X86Opcode::Vfnmsub231ps, OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
+
 		table[0xF0] = {X86Opcode::Crc32,    OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xF1] = {X86Opcode::Crc32,    OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
 		table[0xF2] = {X86Opcode::Andn,     OpcodeFormat::ModRm_Reg_Rm, 0, X86Condition::Equal, false};
@@ -419,8 +445,17 @@ DecodedX86Instruction X86Decoder::DecodeInstruction(const uint8_t* code_ptr, siz
 	     inst.opcode == X86Opcode::Psubd  || inst.opcode == X86Opcode::Pshufb ||
 	     inst.opcode == X86Opcode::Pabsd  || inst.opcode == X86Opcode::Pmaxsd ||
 	     inst.opcode == X86Opcode::Pminsd || inst.opcode == X86Opcode::Pblendvb ||
-	     inst.opcode == X86Opcode::Pmovzx)) {
-		op_size_bytes = 16;
+	     inst.opcode == X86Opcode::Pmovzx ||
+	     inst.opcode == X86Opcode::Vfmadd132ps || inst.opcode == X86Opcode::Vfmadd213ps || inst.opcode == X86Opcode::Vfmadd231ps ||
+	     inst.opcode == X86Opcode::Vfmadd132pd || inst.opcode == X86Opcode::Vfmadd213pd || inst.opcode == X86Opcode::Vfmadd231pd ||
+	     inst.opcode == X86Opcode::Vfmsub132ps  || inst.opcode == X86Opcode::Vfmsub213ps  || inst.opcode == X86Opcode::Vfmsub231ps  ||
+	     inst.opcode == X86Opcode::Vfnmadd132ps || inst.opcode == X86Opcode::Vfnmadd213ps || inst.opcode == X86Opcode::Vfnmadd231ps ||
+	     inst.opcode == X86Opcode::Vfnmsub132ps || inst.opcode == X86Opcode::Vfnmsub213ps || inst.opcode == X86Opcode::Vfnmsub231ps)) {
+		op_size_bytes = inst.vex_l ? 32 : 16;
+	} else if (inst.opcode == X86Opcode::Vfmadd132ss || inst.opcode == X86Opcode::Vfmadd213ss || inst.opcode == X86Opcode::Vfmadd231ss) {
+		op_size_bytes = 4;
+	} else if (inst.opcode == X86Opcode::Vfmadd132sd || inst.opcode == X86Opcode::Vfmadd213sd || inst.opcode == X86Opcode::Vfmadd231sd) {
+		op_size_bytes = 8;
 	} else if (inst.rex_w) {
 		op_size_bytes = 8;
 	} else if (inst.operand_size_override) {

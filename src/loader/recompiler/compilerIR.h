@@ -86,7 +86,11 @@ enum class IROpcode : uint16_t {
 	FMul,
 	FDiv,
 	FNeg,
-	// Vector SIMD (128-Bit NEON / SSE)
+	Fmadd,
+	Fmsub,
+	Fnmadd,
+	Fnmsub,
+	// Vector SIMD (128-Bit NEON / SSE / AVX)
 	VecAdd,
 	VecSub,
 	VecMul,
@@ -100,6 +104,10 @@ enum class IROpcode : uint16_t {
 	VecLoad,
 	VecStore,
 	VecMov,
+	VecFmadd,
+	VecFmsub,
+	VecFnmadd,
+	VecFnmsub,
 	VectorExtract,
 	VectorInsert,
 	VectorBlend,
